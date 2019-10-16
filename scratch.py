@@ -29,7 +29,7 @@ class Linear(tf.keras.Model):
         dummy_z = np.random.normal(0, 1, (3, 5))
         self(dummy_z)
 
-# 以下代码结构与前节类似
+
 model = Linear()
 model.dummy_run()
 optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
@@ -51,5 +51,4 @@ print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('
 
 
 tf.debugging.set_log_device_placement(True)
-
 
