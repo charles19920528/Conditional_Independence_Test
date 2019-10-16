@@ -70,7 +70,8 @@ def log_ising_null(x_y_mat, parameter_mat):
 
     return dot_product_sum + normalizing_constant
 
-
+def log_ising_full(x_y_mat, parameter_mat):
+    pass
 
 
 
