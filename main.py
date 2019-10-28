@@ -29,6 +29,7 @@ null_network_generate.set_weights([ linear_1_weight_array, linear_1_bias_array,
 ##############
 # Generate z #
 ##############
+"""
 np.random.seed(1)
 for sample_size in sample_size_vet:
     z = np.random.normal(0, 10, (sample_size, dim_z))
@@ -40,6 +41,8 @@ for sample_size in sample_size_vet:
 
     x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size, 2)).astype("float32") * 2 -1
     np.savetxt("./data/x_y_mat_%d.txt" % sample_size, x_y_mat)
+"""
+
 
 ####################
 # Generate x and y #
