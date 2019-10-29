@@ -13,7 +13,7 @@ y = true_y + np.random.normal(0, 5, (sample_size, 1))
 
 plt.scatter(x, y)
 
-
+# For this example, one has to be very careful about the learning  rate. 0.001 seems to work.
 sample_size = 10000
 x = np.random.normal(0, 10, (sample_size, 2))
 beta_mat = np.array([2, -5]).reshape(2, 1)

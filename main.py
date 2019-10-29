@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import generate_train as gt
-
+import matplotlib.pyplot as plt
 
 ####################
 # Hyper parameters #
@@ -48,44 +48,54 @@ for sample_size in sample_size_vet:
 # Generate x and y #
 ####################
 """
-This block is left for debuging purposes.
+# This block is left for debuging purposes.
 z = np.loadtxt("./data/z_30.txt", dtype = "float32")
 parameter_mat = null_network_generate(z)
 
-# We let the first column of parameter_mat correspond to Jx.
+# We let the first column correspond to x.
 p_equal_1_mat = gt.pmf_null(1, parameter_mat)
-#p_equal_1_mat[:, 1] = np.ones(30) This line is to check the broadcasting in np.binomial is correct.
+# Next two lines are to check the broadcasting in np.binomial is correct.
+#p_equal_1_mat[:, 1] = np.ones(30)
+#p_equal_1_mat[:10, 0] = 0
 
 # First column corresponds to x.
 x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0], 2)).astype("float32") * 2 -1
+gt.log_ising_null(x_y_mat, p_equal_1_mat)
 """
-
-
 
 ####################
 # Network Training #
 ####################
-z = np.loadtxt("./data/z_30.txt", dtype = "float32")
-x_y_mat = np.loadtxt("./data/x_y_mat_30.txt", dtype = "float32")
+z = np.loadtxt("./data/z_100.txt", dtype = "float32")
+x_y_mat = np.loadtxt("./data/x_y_mat_100.txt", dtype = "float32")
 
 null_network_train = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
 null_network_train.dummy_run()
-optimizer = tf.keras.optimizers.SGD(learning_rate = 0.00001, momentum = True)
-# optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
-for i in range(200):
+#optimizer = tf.keras.optimizers.SGD(learning_rate = 0.00001, momentum = True)
+optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+
+iteration = 1000
+train_loss = np.zeros(iteration)
+for i in range(iteration):
     with tf.GradientTape() as tape:
         parameter_mat_pred = null_network_train(z)
         loss = gt.log_ising_null(x_y_mat, parameter_mat_pred)
     grads = tape.gradient(loss, null_network_train.variables)
     optimizer.apply_gradients(grads_and_vars = zip(grads, null_network_train.variables))
 
-    if i % 5 == 0:
+    train_loss[i] = loss.numpy()
+
+    if i % 10 == 0:
         print("Iteration %d, the loss is %f " % (i, loss))
 
 
 predicted_parameter = null_network_train(z)
 predicted_p_equal_1_mat = gt.pmf_null(1, predicted_parameter)
 
-p_equal_1_mat = np.loadtxt("./data/p_equal_1_mat_%d.txt" % 30)
-predicted_p_equal_1_mat - p_equal_1_mat
+p_equal_1_mat = np.loadtxt("./data/p_equal_1_mat_%d.txt" % 100)
+abs_difference = np.abs(predicted_p_equal_1_mat - p_equal_1_mat)
+plt.hist(abs_difference, normed = True, bins = 10)
 
+
+np.mean(np.abs(predicted_p_equal_1_mat - p_equal_1_mat))
+np.std(np.abs(predicted_p_equal_1_mat - p_equal_1_mat))

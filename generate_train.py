@@ -57,10 +57,12 @@ def log_ising_null(x_y_mat, parameter_mat):
     :param parameter_mat: A tensor of shape [n, 2]. It should be the output of an object of class NullNetwork.
     :return: - LogLikelihood
     """
-    dot_product_sum = tf.reduce_sum( tf.linalg.diag_part( x_y_mat.dot( tf.transpose(parameter_mat) ) ) )
+#    dot_product_sum = tf.reduce_sum( tf.linalg.diag_part( x_y_mat.dot( tf.transpose(parameter_mat) ) ) )
+    dot_product_sum = tf.reduce_sum(x_y_mat * parameter_mat)
 
     normalizing_constant = 0
     for i in np.arange(parameter_mat.shape[0]):
+        # Extract the ith row of the parameter_mat and change it into a (2, 1) tensor.
         j_vet = parameter_mat[i, :][..., None]
         one_vet = tf.constant([1, -1], dtype="float32")[None, ...]
         outer_product = j_vet * one_vet
