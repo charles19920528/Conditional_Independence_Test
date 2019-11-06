@@ -54,10 +54,9 @@ def log_ising_null(x_y_mat, parameter_mat):
     """
     Compute - log likelihood of the Ising model under the null and use it as the loss function for model training.
     :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
-    :param parameter_mat: A tensor of shape [n, 2]. It should be the output of an object of class NullNetwork.
-    :return: - LogLikelihood
+    :param parameter_mat: a tensor of shape [n, 2]. It should be the output of an object of class IsingNetwork.
+    :return: negative_log_likelihood
     """
-#    dot_product_sum = tf.reduce_sum( tf.linalg.diag_part( x_y_mat.dot( tf.transpose(parameter_mat) ) ) )
     dot_product_sum = tf.reduce_sum(x_y_mat * parameter_mat)
 
     normalizing_constant = 0
@@ -69,11 +68,32 @@ def log_ising_null(x_y_mat, parameter_mat):
         log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
         normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
         normalizing_constant += normalizing_constant_i
+        negative_log_likelihood = dot_product_sum + normalizing_constant
 
-    return dot_product_sum + normalizing_constant
+    return negative_log_likelihood
 
-def log_ising_full(x_y_mat, parameter_mat):
-    pass
+def log_ising_alternative(x_y_mat, parameter_mat):
+    """
+    Compute - log likelihood of the Ising model under the alternative and use it as the loss function for
+    model training.
+    :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
+    :param parameter_mat: a tensor of shape [n, 3]. It should be the output of an object of class IsingNetwork.
+    Columns of the matrices are Jx, Jy and Jxy respectively.
+    :return: negative_log_likelihood
+    """
+
+    x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
+    x_times_y = x_times_y.reshape(x_times_y.shape[0], 1)
+    x_y_xy_mat = np.hstack((x_y_mat, x_times_y))
+    dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
+
+
+    one_mat = np.array([
+        [-1, -1, -1],
+        [1, -1, 1],
+        [1, 1, -1],
+        [-1, 1, 1]
+    ])
 
 
 
@@ -82,30 +102,4 @@ def log_ising_full(x_y_mat, parameter_mat):
 
 
 
-
-
-
-
-"""
-class LogIsingNull(tf.keras.losses.Loss):
-    def call(self, y_true, y_pred):
-        
-       # Compute - log likelihood of the Ising model under the null and use it as the loss function for model training.
-       # :param y_true: Expect a n by 2 array which stores observed x's any y's.
-       # :param y_pred: A tensor of shape [n, 2]. It should be the output of an object of class NullNetwork.
-       # :return: - LogLikelihood
-       
-        dot_product_sum = tf.reduce_sum( tf.linalg.diag_part( y_true.dot( tf.transpose(y_pred) ) ) )
-
-        normalizing_constant = 0
-        for i in np.arange(y_pred.shape[0]):
-            j_vet = y_pred[i, :][..., None]
-            one_vet = tf.constant([1, -1], dtype = "float32")[None, ...]
-            outer_product = j_vet * one_vet
-            log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
-            normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
-            normalizing_constant += normalizing_constant_i
-
-        return dot_product_sum + normalizing_constant
-"""
 
