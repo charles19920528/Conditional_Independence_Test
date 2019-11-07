@@ -50,6 +50,42 @@ def pmf_null(x, hx):
 
     return pmf
 
+
+def pmf_collection(parameter_mat, null_True):
+    """
+    Compute P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1) given by parameters stored
+    in the row of parameter mat.
+    :param parameter_mat: a tensor with shape [n, 2] or [n, 3]. Each row corresponds to a set of parameters for the
+    Ising model.
+    :param null_True: a boolean value. If it is true, we compute the pmf using the null model.
+    :return: pmf_mat: a tensor of [n, 4]. Each row is a
+    """
+
+
+    dot_product_mat = x_y_mat * parameter_mat
+
+    sample_size = parameter_mat.shape[0]
+    normalizing_constant_vet = np.zeros(sample_size)
+    for i in np.arange(sample_size):
+        parameter_vet = parameter_mat[i, :]
+        one_mat = np.array([
+            [-1, -1, -1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [1, 1, -1]
+        ])
+        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
+        sum_exp = tf.reduce_sum(tf.exp(exponent_vet))
+        normalizing_constant_vet[i] = sum_exp
+
+    joint_probability = tf.exp(dot_product_mat) / normalizing_constant_vet
+    return joint_probability
+
+
+
+
+
+
 def log_ising_null(x_y_mat, parameter_mat):
     """
     Compute - log likelihood of the Ising model under the null and use it as the loss function for model training.
@@ -68,8 +104,8 @@ def log_ising_null(x_y_mat, parameter_mat):
         log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
         normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
         normalizing_constant += normalizing_constant_i
-        negative_log_likelihood = dot_product_sum + normalizing_constant
 
+    negative_log_likelihood = dot_product_sum + normalizing_constant
     return negative_log_likelihood
 
 def log_ising_alternative(x_y_mat, parameter_mat):
@@ -83,17 +119,40 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     """
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
-    x_times_y = x_times_y.reshape(x_times_y.shape[0], 1)
+    x_times_y = x_times_y.reshape(-1, 1)
     x_y_xy_mat = np.hstack((x_y_mat, x_times_y))
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
+    normalizing_constant = 0
+    for i in np.arange(parameter_mat.shape[0]):
+        parameter_vet = parameter_mat[i, :]
+        one_mat = np.array([
+            [-1, -1, -1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [1, 1, -1]
+        ])
+        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis = 1)
+        log_sum_exp = tf.reduce_logsumexp(exponent_vet)
+        normalizing_constant += log_sum_exp
+
+    negative_log_likelihood = dot_product_sum + normalizing_constant
+    return negative_log_likelihood
+
+
+def kl_divergence_null_vs_alt(parameter_mat_null, parameter_mat_alt):
+    sample_size = parameter_mat_null.shape[0]
 
     one_mat = np.array([
         [-1, -1, -1],
+        [-1, 1, 1],
         [1, -1, 1],
-        [1, 1, -1],
-        [-1, 1, 1]
+        [1, 1, -1]
     ])
+
+    for i in np.arange(sample_size):
+
+
 
 
 

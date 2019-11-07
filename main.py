@@ -60,8 +60,38 @@ p_equal_1_mat = gt.pmf_null(1, parameter_mat)
 
 # First column corresponds to x.
 x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0], 2)).astype("float32") * 2 -1
-gt.log_ising_null(x_y_mat, p_equal_1_mat)
 """
+
+
+#############################
+# Fit the alternative model #
+#############################
+z = np.loadtxt("./data/z_%d.txt" % 30, dtype="float32")
+p_equal_1_mat = np.loadtxt("./data/p_equal_1_mat_%d.txt" % 30, dtype="float32")
+
+
+x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0], 2)).astype("float32") * 2 -1
+alt_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 3)
+alt_network.dummy_run()
+
+learning_rate = 0.005
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+training_iteration = 3000
+train_loss = np.zeros(training_iteration)
+alt_network(z)
+
+for i in range(training_iteration):
+    with tf.GradientTape() as tape:
+        parameter_mat_pred = alt_network(z)
+        loss = gt.log_ising_alternative(x_y_mat, parameter_mat_pred)
+    grads = tape.gradient(loss, alt_network.variables)
+    optimizer.apply_gradients(grads_and_vars=zip(grads, alt_network.variables))
+
+    train_loss[i] = loss.numpy()
+
+    if i % 10 == 0:
+        print("Iteration %d, the loss is %f " % (i, loss))
+
 
 
 ####################
@@ -106,8 +136,6 @@ for training_sample_size in sample_size_vet:
 
     np.savetxt("./results/train_loss_%d.txt" % training_sample_size, train_loss)
     np.savetxt("./results/kl_%d.txt" % training_sample_size, kl_divergence)
-
-
 
 
 # Saved for graduate student descent
