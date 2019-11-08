@@ -70,6 +70,11 @@ z = np.loadtxt("./data/z_%d.txt" % 30, dtype="float32")
 parameter_mat = null_network_generate(z)
 p_equal_1_mat = gt.pmf_null(1, parameter_mat)
 
+test_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
+test_network.dummy_run()
+predicted_parameter_mat = test_network(z)
+
+gt.kl_divergence(parameter_mat, predicted_parameter_mat)
 
 x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0], 2)).astype("float32") * 2 -1
 alt_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 3)

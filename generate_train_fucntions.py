@@ -1,5 +1,5 @@
 import tensorflow as tf
-import numpy as np
+
 
 class IsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
@@ -10,19 +10,18 @@ class IsingNetwork(tf.keras.Model):
         self.output_dim = hidden_1_out_dim
 
         self.linear_1 = tf.keras.layers.Dense(
-            units = hidden_1_out_dim,
-            input_shape = (input_dim, )
+            units=hidden_1_out_dim,
+            input_shape=(input_dim,)
         )
-        #self.leakyRelu = tf.keras.layers.LeakyReLU(alpha=0.03)
+        # self.leakyRelu = tf.keras.layers.LeakyReLU(alpha=0.03)
         self.linear_2 = tf.keras.layers.Dense(
-            units = output_dim,
-            input_shape = (hidden_1_out_dim, )
+            units=output_dim,
+            input_shape=(hidden_1_out_dim,)
         )
-
 
     def call(self, input):
         output = self.linear_1(input)
-        #output = self.leakyRelu(output)
+        # output = self.leakyRelu(output)
         output = tf.keras.activations.tanh(output)
         output = self.linear_2(output)
         return output
@@ -32,8 +31,7 @@ class IsingNetwork(tf.keras.Model):
         This method is to let python initialize the network and weights not just the computation graph.
         :return: None.
         """
-
-        dummy_z = tf.random.normal(shape = (1, self.input_dim), mean = 0, stddev = 1)
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1)
         self(dummy_z)
 
 
@@ -60,7 +58,7 @@ def pmf_collection(parameter_mat):
             [-1, 1],
             [1, -1],
             [1, 1]
-        ], dtype = "float32")
+        ], dtype="float32")
 
     elif number_of_columns == 3:
         one_mat = tf.constant([
@@ -68,17 +66,36 @@ def pmf_collection(parameter_mat):
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype = "float32")
+        ], dtype="float32")
 
     else:
         raise Exception("The shape of the parameter_mat doesn't satisfy the requirement")
 
-    kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b = True)
+    kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b=True)
     exp_kernel_mat = tf.exp(kernel_mat)
-    prob_mat = tf.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis = 1)
+    prob_mat = tf.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
 
     return tf.transpose(prob_mat)
 
+
+def kl_divergence(true_parameter_mat, predicted_parameter_mat):
+    """
+    Compute the average KL divergence between two sets of Ising models. KL(True distribution, Fitted distribution) / n.
+    See Wikipedia for detail description.
+    :param true_parameter_mat: an n by p tensor storing parameters for the true distribution. Each row contains a
+    parameter for a one sample. If p = 2, we assume the sample is under the null model. If p = 3, we assume the
+    sample is under the full model.
+    :param predicted_parameter_mat: an n by p tensor storing parameters for the fitted distribution. We again assume
+    that p can either be 2 or 3.
+    :return: kl_divergence: a scalar.
+    """
+    pmf_mat_true = pmf_collection(true_parameter_mat)
+    pmf_mat_prediction = pmf_collection(predicted_parameter_mat)
+
+    kl_divergence_mat = pmf_mat_true * tf.math.log(pmf_mat_true / pmf_mat_prediction)
+    kl_divergence = tf.reduce_sum(kl_divergence_mat) / true_parameter_mat.shape[0]
+
+    return kl_divergence
 
 #################################
 # Functions used under the null #
@@ -107,7 +124,7 @@ def log_ising_null(x_y_mat, parameter_mat):
     dot_product_sum = tf.reduce_sum(x_y_mat * parameter_mat)
 
     normalizing_constant = 0
-    for i in np.arange(parameter_mat.shape[0]):
+    for i in tf.range(parameter_mat.shape[0]):
         # Extract the ith row of the parameter_mat and change it into a (2, 1) tensor.
         j_vet = parameter_mat[i, :][..., None]
         one_vet = tf.constant([1, -1], dtype="float32")[None, ...]
@@ -120,21 +137,11 @@ def log_ising_null(x_y_mat, parameter_mat):
     return negative_log_likelihood
 
 
-def kl_divergence_null(true_parameter_mat, predicted_parameter_mat):
-    """
-    Compute the KL divergence under the null. When predicted_parameter
-    :param true_parameter_mat:
-    :param predicted_parameter_mat:
-    :return:
-    """
-
 ########################################
 # Functions used under the alternative #
 ########################################
 def pmf_full(x, ):
     pass
-
-
 
 
 def log_ising_alternative(x_y_mat, parameter_mat):
@@ -161,7 +168,7 @@ def log_ising_alternative(x_y_mat, parameter_mat):
             [1, -1, 1],
             [1, 1, -1]
         ])
-        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis = 1)
+        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
         normalizing_constant += log_sum_exp
 
@@ -185,14 +192,3 @@ def kl_divergence_null_vs_alt(parameter_mat_null, parameter_mat_alt):
     :param parameter_mat_alt:
     :return:
     """
-
-
-
-
-
-
-
-
-
-
-
