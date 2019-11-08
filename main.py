@@ -67,7 +67,8 @@ x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0
 # Fit the alternative model #
 #############################
 z = np.loadtxt("./data/z_%d.txt" % 30, dtype="float32")
-p_equal_1_mat = np.loadtxt("./data/p_equal_1_mat_%d.txt" % 30, dtype="float32")
+parameter_mat = null_network_generate(z)
+p_equal_1_mat = gt.pmf_null(1, parameter_mat)
 
 
 x_y_mat = np.random.binomial(n = 1, p = p_equal_1_mat, size = (sample_size_vet[0], 2)).astype("float32") * 2 -1

@@ -33,7 +33,7 @@ class IsingNetwork(tf.keras.Model):
         :return: None.
         """
 
-        dummy_z = np.random.normal(0, 1, (1, self.input_dim))
+        dummy_z = tf.random.normal(shape = (1, self.input_dim), mean = 0, stddev = 1)
         self(dummy_z)
 
 
@@ -41,12 +41,43 @@ def pmf_collection(parameter_mat):
     """
     Compute the full distribution P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
     under the Ising model.
-    :param parameter_mat: an n by p matrix. Each row contains a parameter for a one sample. If p = 2, we
+    :param parameter_mat: an n by p tensor. Each row contains a parameter for a one sample. If p = 2, we
     assume the sample correpsonds the null model. If p = 3, we assume the sample corresponds to full model.
-    :return: prob_mat: an n by 4 matrix. Each row contains four joint probabilities.
+    Columns of the parameter_mat are Jx, Jy and Jxy.
+    :return: prob_mat: an n by 4 tensor. Each row contains four joint probabilities.
     """
+    #############################
+    # Attention !!!!!!!!!!!! There may be numerical issue. The result is slightly different with the one obtained from
+    # pmf_null. Difference is 10^(-8).
+    # Use gt.pmf_null(, parameter_mat)[:, 0] * gt.pmf_null(, parameter_mat)[:, 1] - pmf_collection(parameter_mat)[:, 0]
+    # to check.
+    #############################
+    number_of_columns = parameter_mat.shape[1]
 
-    
+    if number_of_columns == 2:
+        one_mat = tf.constant([
+            [-1, -1],
+            [-1, 1],
+            [1, -1],
+            [1, 1]
+        ], dtype = "float32")
+
+    elif number_of_columns == 3:
+        one_mat = tf.constant([
+            [-1, -1, -1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [1, 1, -1]
+        ], dtype = "float32")
+
+    else:
+        raise Exception("The shape of the parameter_mat doesn't satisfy the requirement")
+
+    kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b = True)
+    exp_kernel_mat = tf.exp(kernel_mat)
+    prob_mat = tf.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis = 1)
+
+    return tf.transpose(prob_mat)
 
 
 #################################
@@ -59,8 +90,8 @@ def pmf_null(x, hx):
     :param hx: The parameter corresponds to x.
     :return: pmf: P(X = x).
     """
-    numerator = np.exp(- x * hx)
-    denominator = np.exp(- x * hx) + np.exp(x * hx)
+    numerator = tf.exp(- x * hx)
+    denominator = tf.exp(- x * hx) + tf.exp(x * hx)
     pmf = numerator / denominator
 
     return pmf
@@ -101,45 +132,7 @@ def kl_divergence_null(true_parameter_mat, predicted_parameter_mat):
 # Functions used under the alternative #
 ########################################
 def pmf_full(x, ):
-
-
-
-
-
-
-def pmf_collection(parameter_mat, null_True):
-    """
-    Compute P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1) given by parameters stored
-    in the row of parameter mat.
-    :param parameter_mat: a tensor with shape [n, 2] or [n, 3]. Each row corresponds to a set of parameters for the
-    Ising model.
-    :param null_True: a boolean value. If it is true, we compute the pmf using the null model.
-    :return: pmf_mat: a tensor of [n, 4]. Each row is a
-    """
-
-
-    dot_product_mat = x_y_mat * parameter_mat
-
-    sample_size = parameter_mat.shape[0]
-    normalizing_constant_vet = np.zeros(sample_size)
-    for i in np.arange(sample_size):
-        parameter_vet = parameter_mat[i, :]
-        one_mat = np.array([
-            [-1, -1, -1],
-            [-1, 1, 1],
-            [1, -1, 1],
-            [1, 1, -1]
-        ])
-        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
-        sum_exp = tf.reduce_sum(tf.exp(exponent_vet))
-        normalizing_constant_vet[i] = sum_exp
-
-    joint_probability = tf.exp(dot_product_mat) / normalizing_constant_vet
-    return joint_probability
-
-
-
-
+    pass
 
 
 
