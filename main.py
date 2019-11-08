@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import generate_train as gt
+import generate_train_fucntions as gt
 import matplotlib.pyplot as plt
 
 ####################
