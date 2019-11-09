@@ -2,21 +2,15 @@ import numpy as np
 import tensorflow as tf
 import generate_train_fucntions as gt
 import matplotlib.pyplot as plt
+import pickle
+from generate_z import dim_z, sample_size_vet
 
 ####################
 # Hyper parameters #
 ####################
 hidden_1_out_dim = 3
-dim_z = 3
-sample_size_vet = [30, 100, 500, 1000]
 
-##############
-# Generate z #
-##############
-np.random.seed(1)
-for sample_size in sample_size_vet:
-    z = np.random.normal(0, 10, (sample_size, dim_z))
-    np.savetxt("./data/z_%d.txt" % sample_size, z)
+
 
 ###########################
 # Simulate under the null #
@@ -35,39 +29,97 @@ linear_2_bias_array = np.zeros(shape=(2,))
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
 
-# Produce p_equal_1_mat.
-z = np.loadtxt("./data/z_30.txt", dtype="float32")
-true_parameter_mat = null_network_generate(z)
-p_equal_1_mat = gt.pmf_null(1, true_parameter_mat)
 
-########## loop over different simulated sample start
-# Generate samples
-x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(30, 2)).astype("float32") * 2 - 1
 
-train_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
-train_network.dummy_run()
+# See results for just one sample.
+loss_one_sample_dictionary = dict()
 
-learning_rate = 0.005
-optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-epoch = 600
+for sample_size in sample_size_vet:
+    # Produce raw data
+    z_mat = np.loadtxt("./data/z_%d.txt" % sample_size, dtype="float32")
+    true_parameter_mat = null_network_generate(z_mat)
+    p_equal_1_mat = gt.pmf_null(1, true_parameter_mat)
+    x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(sample_size, 2)).astype("float32") * 2 - 1
 
-kl_divergence = np.zeros(epoch)
-training_loss = np.zeros(epoch)
+    train_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
+    train_network.dummy_run()
 
-for i in range(epoch):
-    with tf.GradientTape() as tape:
-        predicted_parameter_mat = train_network(z)
-        loss = gt.log_ising_null(x_y_mat, predicted_parameter_mat)
-    grads = tape.gradient(loss, train_network.variables)
-    optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+    # Hyperparameters for training.
+    learning_rate = 0.005
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    buffer_size = 1000
+    batch_size = 30
+    epoch = 2
 
-    training_loss[i] = loss.numpy()
-    kl_divergence[i] = gt.kl_divergence(true_parameter_mat, predicted_parameter_mat)
+    # Prepare training data.
+    train_ds = tf.data.Dataset.from_tensor_slices((z_mat, x_y_mat))
+    train_ds = train_ds.shuffle(buffer_size).batch(batch_size)
 
-    if i % 10 == 0:
-        print("Iteration %d, the loss is %f " % (i, loss))
-        print("The KL divergence is %f" % kl_divergence[i])
+    # Assume the first row corresponds to the likelihood
+    loss_kl_array = np.zeros((2, epoch * len( list(train_ds) ) ) )
+    loss_kl_array_index = 0
+#    kl_divergence = np.zeros()
+#    training_loss = np.zeros(epoch * len(list(train_ds)))
 
+    for i in range(epoch):
+        batch_index = 0
+        for z_batch, x_y_batch in train_ds:
+            with tf.GradientTape() as tape:
+                batch_predicted_parameter_mat = train_network(z_batch)
+                loss = gt.log_ising_null(x_y_batch, batch_predicted_parameter_mat)
+            grads = tape.gradient(loss, train_network.variables)
+            optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+
+            predicted_parameter_mat = train_network(z_mat)
+            ###### keep fixing index
+            loss_kl_array[0, loss_kl_array_index] = loss.numpy()
+            loss_kl_array[1, loss_kl_array_index] = gt.kl_divergence(true_parameter_mat,
+                                                                               predicted_parameter_mat)
+            batch_index += 1
+            loss_kl_array_index += 1
+
+            if loss_kl_array_index % 10 == 0:
+                print("Epoch %d" % i)
+                print("Batch %d, the loss is %f " % (batch_index, loss))
+                print("The KL divergence is %f" % loss_kl_array[1, batch_index + i * batch_index])
+
+    loss_one_sample_dictionary[sample_size] = loss_kl_array
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
+    pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+#with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
+#    loss_one_sample_dictionary = pickle.load(fp)
+
+plt.figure(sample_size)
 plt.plot(training_loss, label = "likelihood")
 plt.plot(kl_divergence, label = "kl")
 plt.legend()
+plt.savefig("./figure/Loss function_%d.png" % sample_size)
+
+

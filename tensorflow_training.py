@@ -1,59 +1,63 @@
 import numpy as np
 import tensorflow as tf
+import generate_train_fucntions as gt
 import matplotlib.pyplot as plt
 
-###################
-# Data Generation #
-###################
+hidden_1_out_dim = 3
+dim_z = 3
+
 np.random.seed(1)
-sample_size = 100
-x = np.random.normal(0, 10, (sample_size, 1))
-true_y = 3 * x - 2
-y = true_y + np.random.normal(0, 5, (sample_size, 1))
+null_network_generate = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
+null_network_generate.dummy_run()
 
-plt.scatter(x, y)
+linear_1_weight_array = np.random.normal(1, 1, size=(dim_z, hidden_1_out_dim))
+linear_1_bias_array = np.zeros(shape=(hidden_1_out_dim,))
 
-# For this example, one has to be very careful about the learning  rate. 0.001 seems to work.
-sample_size = 10000
-x = np.random.normal(0, 10, (sample_size, 2))
-beta_mat = np.array([2, -5]).reshape(2, 1)
-true_y = x.dot(beta_mat) + 3
-y = true_y + np.random.normal(0, 5, (sample_size, 1))
+linear_2_weight_array = np.random.normal(1, 1, size=(hidden_1_out_dim, 2))
+linear_2_bias_array = np.zeros(shape=(2,))
+
+null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
+                                   linear_2_weight_array, linear_2_bias_array])
 
 
-###############
-#
-###############
-class LinearModel(tf.keras.Model):
-    def __init__(self):
-        super().__init__()
-        self.linear = tf.keras.layers.Dense(
-            input_dim = 2,
-            units = 1,
-            activation = None,
-            kernel_initializer = tf.initializers.RandomUniform(-1, 1),
-            bias_initializer = tf.initializers.RandomUniform(-1, 1)
-        )
 
-    def call(self, input):
-        output = self.linear(input)
-        return output
+sample_size = 30
+
+z = np.loadtxt("./data/z_%d.txt" % sample_size, dtype="float32")
+true_parameter_mat = null_network_generate(z)
+p_equal_1_mat = gt.pmf_null(1, true_parameter_mat)
+
+# Generate samples
+x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(sample_size, 2)).astype("float32") * 2 - 1
 
 
-def mse_loss(y_pred, y):
-    return tf.reduce_mean(tf.square(y_pred - y))
+train_dt = tf.data.Dataset.from_tensor_slices((z, x_y_mat))
+train_dt = train_dt.shuffle(100).batch(10)
+for z_i, x_y in train_dt:
+    print(x_y)
 
 
-model = LinearModel()
-model(x)
-#model.set_weights([ np.array([2, -5]).reshape(2, 1), np.array([3])])
-optimizer = tf.keras.optimizers.SGD(learning_rate = 0.001)
-for i in range(1000):
+
+
+train_network = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
+train_network.dummy_run()
+
+learning_rate = 0.005
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+epoch = 700
+
+kl_divergence = np.zeros(epoch)
+training_loss = np.zeros(epoch)
+
+for i in range(epoch):
     with tf.GradientTape() as tape:
-        y_pred = model(x)
-        loss = mse_loss(y_pred, y)
-    grads = tape.gradient(loss, model.variables)
-    optimizer.apply_gradients(grads_and_vars = zip(grads, model.variables))
-    if i % 10 == 0:
-        print("The loss is %f." % loss)
+        predicted_parameter_mat = train_network(z)
+        loss = gt.log_ising_null(x_y_mat, predicted_parameter_mat)
+    grads = tape.gradient(loss, train_network.variables)
+    optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
+    training_loss[i] = loss.numpy()
+    kl_divergence[i] = gt.kl_divergence(true_parameter_mat, predicted_parameter_mat)
+    if i % 10 == 0:
+        print("Iteration %d, the loss is %f " % (i, loss))
+        print("The KL divergence is %f" % kl_divergence[i])
