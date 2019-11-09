@@ -29,8 +29,6 @@ linear_2_bias_array = np.zeros(shape=(2,))
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
 
-
-
 # See results for just one sample.
 loss_one_sample_dictionary = dict()
 
@@ -48,8 +46,8 @@ for sample_size in sample_size_vet:
     learning_rate = 0.005
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     buffer_size = 1000
-    batch_size = 30
-    epoch = 2
+    batch_size = 50
+    epoch = 1000
 
     # Prepare training data.
     train_ds = tf.data.Dataset.from_tensor_slices((z_mat, x_y_mat))
@@ -62,7 +60,6 @@ for sample_size in sample_size_vet:
 #    training_loss = np.zeros(epoch * len(list(train_ds)))
 
     for i in range(epoch):
-        batch_index = 0
         for z_batch, x_y_batch in train_ds:
             with tf.GradientTape() as tape:
                 batch_predicted_parameter_mat = train_network(z_batch)
@@ -71,20 +68,30 @@ for sample_size in sample_size_vet:
             optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
             predicted_parameter_mat = train_network(z_mat)
-            ###### keep fixing index
+
             loss_kl_array[0, loss_kl_array_index] = loss.numpy()
-            loss_kl_array[1, loss_kl_array_index] = gt.kl_divergence(true_parameter_mat,
-                                                                               predicted_parameter_mat)
-            batch_index += 1
+            loss_kl_array[1, loss_kl_array_index] = gt.kl_divergence(true_parameter_mat, predicted_parameter_mat)
             loss_kl_array_index += 1
 
-            if loss_kl_array_index % 10 == 0:
-                print("Epoch %d" % i)
-                print("Batch %d, the loss is %f " % (batch_index, loss))
-                print("The KL divergence is %f" % loss_kl_array[1, batch_index + i * batch_index])
+        if i % 5 == 0:
+            print("Sample size %d, Epoch %d" % (sample_size, i))
+            print("The loss is %f " % loss)
+            print("The KL divergence is %f" % loss_kl_array[1, loss_kl_array_index - 1])
 
     loss_one_sample_dictionary[sample_size] = loss_kl_array
 
+with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
+    pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+
+sample_size = 30
+plt.figure(sample_size)
+plt.plot(test[0,:], label = "likelihood")
+plt.plot(test[1,:], label = "kl")
+plt.legend()
+plt.show()
+plt.savefig("./figure/Loss function_%d.png" % sample_size)
 
 
 
@@ -98,13 +105,7 @@ for sample_size in sample_size_vet:
 
 
 
-
-
-
-
-
-
-
+"""
 
 
 
@@ -113,8 +114,8 @@ for sample_size in sample_size_vet:
 with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
     pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-#with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
-#    loss_one_sample_dictionary = pickle.load(fp)
+with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
+    loss_one_sample_dictionary = pickle.load(fp)
 
 plt.figure(sample_size)
 plt.plot(training_loss, label = "likelihood")
@@ -123,3 +124,5 @@ plt.legend()
 plt.savefig("./figure/Loss function_%d.png" % sample_size)
 
 
+
+"""
