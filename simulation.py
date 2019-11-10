@@ -83,12 +83,13 @@ for sample_size in sample_size_vet:
 with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
     pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
+with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
+    loss_one_sample_dictionary = pickle.load(fp)
 
-
-sample_size = 30
+sample_size = 100
 plt.figure(sample_size)
-plt.plot(test[0,:], label = "likelihood")
-plt.plot(test[1,:], label = "kl")
+plt.plot(loss_one_sample_dictionary[sample_size][0,:], label = "likelihood")
+plt.plot(loss_one_sample_dictionary[sample_size][1,:], label = "kl")
 plt.legend()
 plt.show()
 plt.savefig("./figure/Loss function_%d.png" % sample_size)
