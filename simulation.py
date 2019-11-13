@@ -16,15 +16,15 @@ hidden_1_out_dim = 3
 # Simulate under the null #
 ###########################
 # Create null network
-np.random.seed(1)
+tf.random.set_seed(1)
 null_network_generate = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
 null_network_generate.dummy_run()
 
-linear_1_weight_array = np.random.normal(1, 1, size=(dim_z, hidden_1_out_dim))
-linear_1_bias_array = np.zeros(shape=(hidden_1_out_dim,))
+linear_1_weight_array = tf.random.normal(shape = (dim_z, hidden_1_out_dim), mean = 1, stddev = 1)
+linear_1_bias_array = tf.zeros(shape=(hidden_1_out_dim,))
 
-linear_2_weight_array = np.random.normal(1, 1, size=(hidden_1_out_dim, 2))
-linear_2_bias_array = np.zeros(shape=(2,))
+linear_2_weight_array = tf.random.normal(shape = (hidden_1_out_dim, 2), mean = 1, stddev = 1)
+linear_2_bias_array = tf.zeros(shape=(2,))
 
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
@@ -54,10 +54,8 @@ for sample_size in sample_size_vet:
     train_ds = train_ds.shuffle(buffer_size).batch(batch_size)
 
     # Assume the first row corresponds to the likelihood
-    loss_kl_array = np.zeros((2, epoch * len( list(train_ds) ) ) )
+    loss_kl_array = tf.zeros((2, epoch * len( list(train_ds) ) ) )
     loss_kl_array_index = 0
-#    kl_divergence = np.zeros()
-#    training_loss = np.zeros(epoch * len(list(train_ds)))
 
     for i in range(epoch):
         for z_batch, x_y_batch in train_ds:
@@ -85,45 +83,3 @@ with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
 
 with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
     loss_one_sample_dictionary = pickle.load(fp)
-
-sample_size = 100
-plt.figure(sample_size)
-plt.plot(loss_one_sample_dictionary[sample_size][0,:], label = "likelihood")
-plt.plot(loss_one_sample_dictionary[sample_size][1,:], label = "kl")
-plt.legend()
-plt.show()
-plt.savefig("./figure/Loss function_%d.png" % sample_size)
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-
-
-
-
-
-with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
-    pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
-    loss_one_sample_dictionary = pickle.load(fp)
-
-plt.figure(sample_size)
-plt.plot(training_loss, label = "likelihood")
-plt.plot(kl_divergence, label = "kl")
-plt.legend()
-plt.savefig("./figure/Loss function_%d.png" % sample_size)
-
-
-
-"""

@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import generate_train_fucntions as gt
-import matplotlib.pyplot as plt
+import evaluation_functions as ef
 import pickle
 from generate_z import dim_z, sample_size_vet
 
@@ -12,9 +12,9 @@ hidden_1_out_dim = 3
 
 
 
-###########################
-# Simulate under the null #
-###########################
+######################
+# Fit the null model #
+######################
 # Create null network
 np.random.seed(1)
 null_network_generate = gt.IsingNetwork(dim_z, hidden_1_out_dim, 2)
@@ -29,9 +29,29 @@ linear_2_bias_array = np.zeros(shape=(2,))
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
 
+
+class IsingSimulation:
+    def __init__(self, z_mat, true_network, learning_rate, buffer_size, batch_size, epoch):
+        """
+        Create a class which can generate data and train a network.
+        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
+        :param true_network: An object of
+        :param learning_rate:
+        :param buffer_size:
+        :param batch_size:
+        :param epoch:
+        """
+        self.z_mat = z_mat
+        self.true_network = true_network
+        self.learning_rate = learning_rate
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.epoch = epoch
+
+
+
 # See results for just one sample.
 loss_one_sample_dictionary = dict()
-"""
 
 for sample_size in sample_size_vet:
     # Produce raw data
@@ -83,65 +103,19 @@ for sample_size in sample_size_vet:
 
 with open("./results/loss_one_sample_dictionary.p", "wb") as fp:
     pickle.dump(loss_one_sample_dictionary, fp, protocol=pickle.HIGHEST_PROTOCOL)
-"""
+
 
 with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
     loss_one_sample_dictionary = pickle.load(fp)
 
-class Loss_Dict:
-    def __init__(self, loss_one_sample_dictionary, sample_size_vet, batch_size):
-        # Assume we only have four sample size.
-        self.loss_dict = loss_one_sample_dictionary
-        self.sample_size_vet = sample_size_vet
-        self.batch_size = batch_size
+loss_dict_null = ef.Loss_Dict(loss_one_sample_dictionary, sample_size_vet, 50)
+loss_dict_null.plot_epoch_loss(100, 500)
+loss_dict_null.plot_epoch_kl(200, 400)
 
-    def plot_epoch_loss(self, start_epoch, end_epoch):
-        start_index = start_epoch - 1
-        end_index = end_epoch - 1
-
-        fig, axs = plt.subplots(4)
-        for i in range(4):
-            sample_size = sample_size_vet[i]
-            negLogLikelihood = self.loss_dict[sample_size_vet[i]][0, :]
-            kl = self.loss_dict[sample_size_vet[i]][1, :]
-            if sample_size // self.batch_size != 0:
-                epoch_index_boolean = np.mod(np.arange(len(kl)) + 1, np.ceil(sample_size // self.batch_size)) == 0
-                negLogLikelihood = negLogLikelihood[epoch_index_boolean]
-                kl = kl[epoch_index_boolean]
-
-            negLogLikelihood = negLogLikelihood[start_index: end_index]
-            kl = kl[start_index: end_index]
-
-            axs[i].plot(negLogLikelihood, label="likelihood")
-            axs[i].plot(kl, label="kl")
-            axs[i].legend()
-            axs[i].set_title("Sample size %d" % sample_size)
-
-    def plot_epoch_kl(self, start_epoch, end_epoch):
-        start_index = start_epoch - 1
-        end_index = end_epoch - 1
-
-        fig, axs = plt.subplots(4)
-        for i in range(4):
-            sample_size = sample_size_vet[i]
-            kl = self.loss_dict[sample_size_vet[i]][1, :]
-            if sample_size // self.batch_size != 0:
-                epoch_index_boolean = np.mod(np.arange(len(kl)) + 1, np.ceil(sample_size // self.batch_size)) == 0
-                kl = kl[epoch_index_boolean]
-
-            kl = kl[start_index: end_index]
-
-            axs[i].plot(kl, label="kl")
-            axs[i].legend()
-            axs[i].set_title("Sample size %d" % sample_size)
+# Training epoch under null 380, 360, 300, 150
 
 
-
-
-
-test = Loss_Dict(loss_one_sample_dictionary, sample_size_vet, 50)
-test.plot_epoch_loss(200, 500)
-test.plot_epoch_kl(200, 500)
+"""
 sample_size = 100
 plt.figure(sample_size)
 plt.plot(loss_one_sample_dictionary[sample_size][0,:], label = "likelihood")
@@ -149,3 +123,7 @@ plt.plot(loss_one_sample_dictionary[sample_size][1,:], label = "kl")
 plt.legend()
 plt.show()
 plt.savefig("./figure/Loss function_%d.png" % sample_size)
+"""
+
+
+

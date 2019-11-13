@@ -140,10 +140,6 @@ def log_ising_null(x_y_mat, parameter_mat):
 ########################################
 # Functions used under the alternative #
 ########################################
-def pmf_full(x, ):
-    pass
-
-
 def log_ising_alternative(x_y_mat, parameter_mat):
     """
     Compute - log likelihood of the Ising model under the alternative and use it as the loss function for
@@ -155,19 +151,20 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     """
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
-    x_times_y = x_times_y.reshape(-1, 1)
-    x_y_xy_mat = np.hstack((x_y_mat, x_times_y))
+    #x_times_y = x_times_y.reshape(-1, 1)
+    x_times_y_reshape = tf.reshape(x_times_y, (x_times_y.shape[0], 1))
+    x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y_reshape], axis = 1)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
     normalizing_constant = 0
-    for i in np.arange(parameter_mat.shape[0]):
+    for i in tf.range(parameter_mat.shape[0]):
         parameter_vet = parameter_mat[i, :]
-        one_mat = np.array([
+        one_mat = tf.constant([
             [-1, -1, -1],
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ])
+        ], dtype = "float32")
         exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
         normalizing_constant += log_sum_exp
@@ -176,19 +173,9 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     return negative_log_likelihood
 
 
-def kl_divergence_null_vs_alt(parameter_mat_null, parameter_mat_alt):
-    """
-        sample_size = parameter_mat_null.shape[0]
+########################################
+# Functions used under the alternative #
+########################################
 
-    one_mat = np.array([
-        [-1, -1, -1],
-        [-1, 1, 1],
-        [1, -1, 1],
-        [1, 1, -1]
-    ])
 
-    for i in np.arange(sample_size):
-    :param parameter_mat_null:
-    :param parameter_mat_alt:
-    :return:
-    """
+
