@@ -10,8 +10,6 @@ from generate_z import dim_z, sample_size_vet
 ####################
 hidden_1_out_dim = 3
 
-
-
 ######################
 # Fit the null model #
 ######################
@@ -28,27 +26,6 @@ linear_2_bias_array = np.zeros(shape=(2,))
 
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
-
-
-class IsingSimulation:
-    def __init__(self, z_mat, true_network, learning_rate, buffer_size, batch_size, epoch):
-        """
-        Create a class which can generate data and train a network.
-        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-        :param true_network: An object of
-        :param learning_rate:
-        :param buffer_size:
-        :param batch_size:
-        :param epoch:
-        """
-        self.z_mat = z_mat
-        self.true_network = true_network
-        self.learning_rate = learning_rate
-        self.buffer_size = buffer_size
-        self.batch_size = batch_size
-        self.epoch = epoch
-
-
 
 # See results for just one sample.
 loss_one_sample_dictionary = dict()
@@ -111,8 +88,6 @@ with open('./results/loss_one_sample_dictionary.p', 'rb') as fp:
 loss_dict_null = ef.Loss_Dict(loss_one_sample_dictionary, sample_size_vet, 50)
 loss_dict_null.plot_epoch_loss(100, 500)
 loss_dict_null.plot_epoch_kl(200, 400)
-
-# Training epoch under null 380, 360, 300, 150
 
 
 """

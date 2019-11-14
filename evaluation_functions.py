@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class Loss_Dict:
     def __init__(self, loss_one_sample_dictionary, sample_size_vet, batch_size):
         # Assume we only have four sample size.
@@ -47,6 +48,3 @@ class Loss_Dict:
             axs[i].plot(kl, label="kl")
             axs[i].legend()
             axs[i].set_title("Sample size %d" % sample_size)
-
-
-
