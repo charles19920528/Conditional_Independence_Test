@@ -228,10 +228,11 @@ class IsingSimulation:
 
             return x_y_mat
 
-    def trainning(self, x_y_mat):
+    def trainning(self, x_y_mat, print_loss_boolean):
         """
         Train a neural network.
         :param x_y_mat: An n x 2 numpy array. Each row is the response of the ith observation.
+        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
         :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
         result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
         second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
@@ -245,21 +246,21 @@ class IsingSimulation:
         loss_kl_array = np.zeros((2, self.epoch))
         result_dict = dict()
 
-        train_network = IsingNetwork(self.z_mat.shape[1], self.hidden_1_out_dim, 2)
+        train_network = IsingNetwork(self.z_mat.shape[1], self.hidden_1_out_dim, 3)
         optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
 
         for i in range(self.epoch):
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = train_network(z_batch)
-                    loss = log_ising_null(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
                 predicted_parameter_mat = train_network(self.z_mat)
                 batch_kl = kl_divergence(self.true_parameter_mat, predicted_parameter_mat)
 
-            if i % 5 == 0:
+            if i % 5 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, i))
                 print("The loss is %f " % loss)
                 print("The KL divergence is %f" % batch_kl)

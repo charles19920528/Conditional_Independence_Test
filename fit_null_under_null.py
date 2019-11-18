@@ -101,4 +101,3 @@ plt.savefig("./figure/Loss function_%d.png" % sample_size)
 """
 
 
-
