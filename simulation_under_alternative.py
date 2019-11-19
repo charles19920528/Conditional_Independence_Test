@@ -10,7 +10,7 @@ from generate_z import dim_z, sample_size_vet
 ####################
 hidden_1_out_dim = 3
 # Number of times we run the simulation for each sample size
-simulation_times = 1000
+simulation_times = 100
 epoch_vet = [250, 250, 100, 90]
 
 ##################################
@@ -29,3 +29,20 @@ linear_2_bias_array = tf.zeros(shape=(3,))
 
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    linear_2_weight_array, linear_2_bias_array])
+
+alternative_result_dict = dict()
+for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    z_mat = np.loadtxt("./data/z_%d.txt" % sample_size, dtype="float32")
+
+    ising_simulation = gt.IsingSimulation(z_mat=z_mat, true_network=null_network_generate, null_boolean=False,
+                                          hidden_1_out_dim=hidden_1_out_dim, learning_rate=0.005, buffer_size=1000,
+                                          batch_size=50, epoch=epoch)
+    sample_result_dict = dict()
+    for j in np.arange(simulation_times):
+        x_y_mat = ising_simulation.generate_x_y_mat()
+        sample_result_dict[j] = ising_simulation.trainning(x_y_mat, print_loss_boolean=False)
+        print("Training finished. Sample size : %d, simulation sample: %d" % (sample_size, j))
+    alternative_result_dict[sample_size] = sample_result_dict
+
+with open("./results/alternative_result_dict.p", "wb") as fp:
+    pickle.dump(alternative_result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
