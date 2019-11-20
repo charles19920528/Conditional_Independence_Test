@@ -10,7 +10,7 @@ from generate_z import dim_z, sample_size_vet
 ####################
 hidden_1_out_dim = 3
 # Number of times we run the simulation for each sample size
-simulation_times = 100
+simulation_times = 1000
 epoch_vet = [250, 250, 100, 90]
 
 ###########################

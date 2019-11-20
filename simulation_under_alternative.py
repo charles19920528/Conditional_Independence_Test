@@ -4,13 +4,17 @@ import generate_train_fucntions as gt
 import matplotlib.pyplot as plt
 import pickle
 from generate_z import dim_z, sample_size_vet
+import os
+
+# Only run on CPU
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 ####################
 # Hyper parameters #
 ####################
 hidden_1_out_dim = 3
 # Number of times we run the simulation for each sample size
-simulation_times = 100
+simulation_times = 1000
 epoch_vet = [250, 250, 100, 90]
 
 ##################################
@@ -46,3 +50,4 @@ for sample_size, epoch in zip(sample_size_vet, epoch_vet):
 
 with open("./results/alternative_result_dict.p", "wb") as fp:
     pickle.dump(alternative_result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
