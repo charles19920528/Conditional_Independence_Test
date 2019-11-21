@@ -149,9 +149,8 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     """
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
-    # x_times_y = tf.reshape(x_times_y, (x_times_y.shape[0], 1)) won't work. Weird... Check the reason later.
-    x_times_y_reshape = tf.reshape(x_times_y, (x_times_y.shape[0], 1))
-    x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y_reshape], axis = 1)
+    x_times_y = tf.reshape(x_times_y, (x_times_y.shape[0], 1))
+    x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y], axis = 1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
