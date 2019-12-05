@@ -7,7 +7,7 @@ from generate_z import dim_z, sample_size_vet
 import os
 
 # Only run on CPU
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 ####################
 # Hyper parameters #
