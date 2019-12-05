@@ -5,7 +5,7 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 
 # Only run on CPU
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 with open('./results/null_result_dict_30.p', 'rb') as fp:
@@ -29,7 +29,7 @@ combined_test_statistic_vet = np.concatenate((test_statistic_null, test_statisti
 fpr, tpr, thresholds = metrics.roc_curve(true_label, combined_test_statistic_vet, pos_label=1)
 plt.plot(fpr, tpr)
 plt.axvline(x = 0.05)
-
+plt.show()
 
 
 
