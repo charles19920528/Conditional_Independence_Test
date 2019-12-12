@@ -3,7 +3,7 @@ import tensorflow as tf
 import generate_train_fucntions as gt
 import evaluation_functions as ef
 import pickle
-from generate_z import dim_z, sample_size_vet
+from data_generation import dim_z, sample_size_vet
 
 ####################
 # Hyper parameters #

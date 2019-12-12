@@ -1,4 +1,5 @@
 import tensorflow as tf
+# Numpy is for the generate_x_y_mat method and trainning method in the IsingSimulation class.
 import numpy as np
 
 class IsingNetwork(tf.keras.Model):
@@ -210,7 +211,6 @@ class IsingSimulation:
         if self.null_boolean:
             p_equal_1_mat = pmf_null(1, true_parameter_mat)
             x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(self.sample_size, 2)).astype("float32") * 2 - 1
-
             return x_y_mat
         else:
             p_mat = pmf_collection(true_parameter_mat)
@@ -228,6 +228,8 @@ class IsingSimulation:
 
             return x_y_mat
 
+    tf.random.categorical(tf.math.log([[0.5, 0.5],
+                                       [1, 0]]), 100)
     def trainning(self, x_y_mat, print_loss_boolean):
         """
         Train a neural network.
@@ -273,7 +275,3 @@ class IsingSimulation:
 
         return result_dict
 
-
-####################
-# Results analysis #
-####################

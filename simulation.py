@@ -1,17 +1,8 @@
 import numpy as np
 import tensorflow as tf
 import generate_train_fucntions as gt
-import matplotlib.pyplot as plt
 import pickle
-from generate_z import dim_z, sample_size_vet
-
-####################
-# Hyper parameters #
-####################
-hidden_1_out_dim = 3
-# Number of times we run the simulation for each sample size
-simulation_times = 1000
-epoch_vet = [250, 250, 100, 90]
+from hyperparameters import hidden_1_out_dim, simulation_times, dim_z, sample_size_vet, epoch_vet
 
 ###########################
 # Simulate under the null #
@@ -50,7 +41,4 @@ with open("./results/null_result_dict.p", "wb") as fp:
 #with open('./results/null_result_dict.p', 'rb') as fp:
 #    null_result_dict = pickle.load(fp)
 
-##################################
-# Simulate under the alternative #
-##################################
 
