@@ -1,26 +1,11 @@
 import numpy as np
-import pandas as pd
-from scipy.stats import chi2_contingency
 from sklearn.cluster import KMeans
 import hyperparameters as hp
 import multiprocessing as mp
 from functools import partial
 import pickle
 
-
-def chi_squared_test(x_y_mat):
-    """
-    Perform unconditional Chi-squared test.
-
-    :param x_y_mat: A 2-d numpy array with columns corresponding to x and y.
-    :return: result_vet: A length 2 tuple. result_vet[0] is the test statistic and result_vet[1] is the p-value.
-    """
-    x_vet = x_y_mat[:, 0]
-    y_vet = x_y_mat[:, 1]
-    contingency_table = pd.crosstab(x_vet, y_vet, rownames = "x", colnames = "y")
-
-    result_vet = chi2_contingency(contingency_table)[0:2]
-    return result_vet
+from naive_chisquare import chi_squared_test
 
 
 def stratify_x_y_mat(x_y_mat, z_mat, cluster_number):
@@ -73,7 +58,7 @@ def simulation_wrapper_stratified(simulation_index, scenario, sample_size):
     x_y_mat_vet = stratify_x_y_mat(x_y_mat = x_y_mat, z_mat = z_mat, cluster_number = hp.cluster_number)
     test_statistic = stratified_chi_squared_test(x_y_mat_vet)
 
-    return test_statistic
+    return (simulation_index, test_statistic)
 
 
 #######################

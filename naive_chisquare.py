@@ -40,72 +40,69 @@ def simulation_wrapper_naive(simulation_index, scenario, sample_size):
     result_vet = chi_squared_test(x_y_mat)
     return (simulation_index, result_vet)
 
+if __name__ == "__main__":
 
-#######################
-# Test under the null #
-#######################
-naive_chisq_result_null_dict = dict()
-# start_time = time.time()
-for sample_size in hp.sample_size_vet:
+    #######################
+    # Test under the null #
+    #######################
+    naive_chisq_result_null_dict = dict()
+    # start_time = time.time()
+    for sample_size in hp.sample_size_vet:
+        pool = mp.Pool(processes=hp.process_number)
+        simulation_index_vet = range(hp.simulation_times)
+        pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size=sample_size, scenario="null"),
+                                   simulation_index_vet)
 
-    pool = mp.Pool(processes = hp.process_number)
-    simulation_index_vet = range(hp.simulation_times)
-    pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size = sample_size, scenario = "null"),
-                               simulation_index_vet)
+        sample_result_dict = dict(pool_result_vet)
+        naive_chisq_result_null_dict[sample_size] = sample_result_dict
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    with open("./results/naive_chisq_result_null_dict.p", "wb") as fp:
+        pickle.dump(naive_chisq_result_null_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    sample_result_dict = dict(pool_result_vet)
-    naive_chisq_result_null_dict[sample_size] = sample_result_dict
-# print("--- %s seconds ---" % (time.time() - start_time))
-with open("./results/naive_chisq_result_null_dict.p", "wb") as fp:
-    pickle.dump(naive_chisq_result_null_dict, fp, protocol = pickle.HIGHEST_PROTOCOL)
+    ##############################
+    # Test under the alternative #
+    ##############################
+    naive_chisq_result_alt_dict = dict()
+    # start_time = time.time()
+    for sample_size in hp.sample_size_vet:
+        pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size=sample_size, scenario="alt"),
+                                   simulation_index_vet)
 
+        sample_result_dict = dict(pool_result_vet)
+        naive_chisq_result_alt_dict[sample_size] = sample_result_dict
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    with open("./results/naive_chisq_result_alt_dict.p", "wb") as fp:
+        pickle.dump(naive_chisq_result_alt_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-##############################
-# Test under the alternative #
-##############################
-naive_chisq_result_alt_dict = dict()
-# start_time = time.time()
-for sample_size in hp.sample_size_vet:
+    """
+    Sequential version. Saved for debugging.
+    #######################
+    # Test under the null #
+    #######################
+    start_time = time.time()
+    naive_chisq_result_null_dict = dict()
+    for sample_size in hp.sample_size_vet:
 
-    pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size = sample_size, scenario = "alt"),
-                               simulation_index_vet)
+        sample_result_dict = sample_result_dict = dict()
+        for simulation in range(hp.simulation_times):
+            x_y_mat = np.loadtxt(f"./data/null/x_y_mat_{sample_size}_{simulation}.txt")
+            sample_result_dict[simulation] = chi_squared_test(x_y_mat)
 
-    sample_result_dict = dict(pool_result_vet)
-    naive_chisq_result_alt_dict[sample_size] = sample_result_dict
-# print("--- %s seconds ---" % (time.time() - start_time))
-with open("./results/naive_chisq_result_alt_dict.p", "wb") as fp:
-    pickle.dump(naive_chisq_result_alt_dict, fp, protocol = pickle.HIGHEST_PROTOCOL)
+        naive_chisq_result_null_dict[sample_size] = sample_result_dict
+    print("--- %s seconds ---" % (time.time() - start_time))
 
+    ##############################
+    # Test under the alternative #
+    ##############################
+    naive_chisq_result_alt_dict = dict()
+    for sample_size in hp.sample_size_vet:
 
+        sample_result_dict = dict()
+        for simulation in range(hp.simulation_times):
+            x_y_mat = np.loadtxt(f"./data/alt/x_y_mat_{sample_size}_{simulation}.txt")
+            sample_result_dict[simulation] = chi_squared_test(x_y_mat)
 
-"""
-Sequential version. Saved for debugging.
-#######################
-# Test under the null #
-#######################
-start_time = time.time()
-naive_chisq_result_null_dict = dict()
-for sample_size in hp.sample_size_vet:
+        naive_chisq_result_alt_dict[sample_size] = sample_result_dict
+    """
 
-    sample_result_dict = sample_result_dict = dict()
-    for simulation in range(hp.simulation_times):
-        x_y_mat = np.loadtxt(f"./data/null/x_y_mat_{sample_size}_{simulation}.txt")
-        sample_result_dict[simulation] = chi_squared_test(x_y_mat)
-
-    naive_chisq_result_null_dict[sample_size] = sample_result_dict
-print("--- %s seconds ---" % (time.time() - start_time))
-
-##############################
-# Test under the alternative #
-##############################
-naive_chisq_result_alt_dict = dict()
-for sample_size in hp.sample_size_vet:
-
-    sample_result_dict = dict()
-    for simulation in range(hp.simulation_times):
-        x_y_mat = np.loadtxt(f"./data/alt/x_y_mat_{sample_size}_{simulation}.txt")
-        sample_result_dict[simulation] = chi_squared_test(x_y_mat)
-
-    naive_chisq_result_alt_dict[sample_size] = sample_result_dict
-"""
 

@@ -27,9 +27,9 @@ null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
 
 # Generate data
 for sample_size in sample_size_vet:
-#    z_mat = tf.random.normal(mean=0, stddev=10, shape=(sample_size, dim_z))
-    centers = tf.random.normal((cluster_number, dim_z), mean=0, stddev=10)
-    z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
+    z_mat = tf.random.normal(mean=0, stddev=10, shape=(sample_size, dim_z))
+#    centers = tf.random.normal((cluster_number, dim_z), mean=0, stddev=10)
+#    z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
     np.savetxt("./data/null/z_mat_%d.txt" % sample_size, z_mat)
 
     ising_simulation = gt.IsingSimulation(z_mat=z_mat, true_network=null_network_generate, null_boolean=True,
@@ -59,8 +59,9 @@ alt_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
 
 # Generate data
 for sample_size in sample_size_vet:
-    centers = tf.random.normal((cluster_number, dim_z), mean=0, stddev=10)
-    z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
+#    centers = tf.random.normal((cluster_number, dim_z), mean=0, stddev=10)
+#    z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
+    z_mat = tf.random.normal(mean=0, stddev=10, shape=(sample_size, dim_z))
     np.savetxt("./data/alt/z_mat_%d.txt" % sample_size, z_mat)
 
     ising_simulation_alt = gt.IsingSimulation(z_mat=z_mat, true_network=alt_network_generate, null_boolean=False,
