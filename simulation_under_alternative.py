@@ -26,7 +26,7 @@ alt_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
 
 alternative_result_dict = dict()
 for sample_size, epoch in zip(sample_size_vet, epoch_vet):
-    z_mat = np.loadtxt("./data/z_%d.txt" % sample_size, dtype="float32")
+    z_mat = np.loadtxt("./data/z_mat_%d.txt" % sample_size, dtype="float32")
 
     ising_simulation = gt.IsingSimulation(z_mat=z_mat, true_network=alt_network_generate, null_boolean=False,
                                           hidden_1_out_dim=hidden_1_out_dim, learning_rate=0.005, buffer_size=1000,

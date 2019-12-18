@@ -1,6 +1,6 @@
-# Number of clusters of Z
-cluster_number = 3
-
+##################
+# Nerual network #
+##################
 # Dimension of the hidden layer in the true network.
 hidden_1_out_dim = 3
 
@@ -15,3 +15,15 @@ sample_size_vet = [30, 100, 500, 1000]
 
 # Training epochs for samples sizes in the sample_size_vet
 epoch_vet = [250, 250, 100, 90]
+
+####################
+# Chi squared test #
+####################
+# Number of process Pool function will run in parallel.
+process_number = 10
+
+###################
+# Data generation #
+###################
+# Number of clusters of Z
+cluster_number = 3

@@ -234,6 +234,7 @@ class IsingSimulation:
         """
         Train a neural network.
         :param x_y_mat: An n x 2 numpy array. Each row is the response of the ith observation.
+        First column corresponds to x.
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
         :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
         result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
