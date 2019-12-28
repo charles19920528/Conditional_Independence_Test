@@ -1,6 +1,7 @@
 import tensorflow as tf
 # Numpy is for the generate_x_y_mat method and trainning method in the IsingSimulation class.
 import numpy as np
+from sklearn.datasets.samples_generator import make_blobs
 
 class IsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
@@ -276,3 +277,57 @@ class IsingSimulation:
 
         return result_dict
 
+
+class IsingGenerate:
+    def __init__(self, ising_network, dim_z, null_boolean, sample_size):
+        """
+        Create a class whose instance can generate z_mat and x_y_mat.
+        :param ising_network: An instance of IsingNetwork class. We use the network to produce the parameter of the
+        Ising model.
+        :param dim_z: An integer which is the random_variables we condition on.
+        :param null_boolean: A boolean value indicating if ising_network is under the the independence assumption.
+        :param sample_size: An integer which control the number of samples to generate.
+        """
+        self.ising_network = ising_network
+        self.dim_z = dim_z
+        self.null_boolean = null_boolean
+        self.sample_size = sample_size
+
+    def generate_normal_z_mat(self, mean = 0, stddev = 5):
+        z_mat = tf.random.normal(mean = mean, stddev = stddev, shape = (self.sample_size, self.dim_z))
+
+        return z_mat
+
+    def generate_clustered_z_mat(self, cluster_number,  mean = 0, stddev = 10):
+        centers = tf.random.normal((cluster_number, self.dim_z), mean = mean, stddev = stddev)
+        z_mat = make_blobs(n_samples = self.sample_size, centers = centers)[0]
+
+        return z_mat
+
+    def generate_x_y_mat(self, z_mat):
+        """
+        The function will generate the matrix of responses (x, y).
+        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
+        Usually, it is the output of the generate_z_mat method.
+        :return: x_y_mat
+        """
+        true_parameter_mat = self.ising_network(z_mat)
+        if self.null_boolean:
+            p_equal_1_mat = pmf_null(1, true_parameter_mat)
+            x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(self.sample_size, 2)).astype("float32") * 2 - 1
+            return x_y_mat
+        else:
+            p_mat = pmf_collection(true_parameter_mat)
+            # Recall that the column of p_mat corresponds to P(X = 1, Y = 1),
+            # P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
+            raw_sample_mat = np.zeros((self.sample_size, 4))
+            for i in np.arange(self.sample_size):
+                p_vet = p_mat[i, :]
+                raw_sample = np.random.multinomial(1, p_vet)
+                raw_sample_mat[i, :] = raw_sample
+            conversion_mat = np.array([
+                [1, 1], [1, -1], [-1, 1], [-1, -1]
+            ])
+            x_y_mat = raw_sample_mat.dot(conversion_mat)
+
+            return x_y_mat
