@@ -22,8 +22,4 @@ epoch_vet = [250, 250, 100, 90]
 # Number of process Pool function will run in parallel.
 process_number = 10
 
-###################
-# Data generation #
-###################
-# Number of clusters of Z
-cluster_number = 3
+

@@ -52,7 +52,7 @@ def simulation_wrapper_stratified(simulation_index, scenario, sample_size):
     :param sample_size: An integer.
     :return: A tuple (simulation_index, result_vet). result_vet is the return of the chi_squared_test function.
     """
-    z_mat = np.loadtxt(f"./data/{scenario}/z_mat_{sample_size}.txt")
+    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
     x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{simulation_index}.txt")
 
     x_y_mat_vet = stratify_x_y_mat(x_y_mat = x_y_mat, z_mat = z_mat, cluster_number = hp.cluster_number)
