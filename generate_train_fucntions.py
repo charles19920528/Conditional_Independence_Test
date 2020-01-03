@@ -328,9 +328,6 @@ class IsingTraining:
         self.batch_size = batch_size
         self.epoch = epoch
 
-    def merge_z_x_y_mat(self, x_y_mat):
-        pass
-
     def trainning(self, x_y_mat):
         """
         Train a neural network.
