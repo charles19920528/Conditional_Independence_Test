@@ -8,7 +8,7 @@ import pickle
 from naive_chisquare import chi_squared_test
 
 
-def stratify_x_y_mat(x_y_mat, z_mat, cluster_number):
+def stratify_x_y_mat(x_y_mat, z_mat, cluster_number = 2):
     """
     Cluster data into {cluster_number} of clusters.
     :param x_y_mat: An n x 2 numpy array. Each row is the response of the ith observation.
@@ -17,7 +17,7 @@ def stratify_x_y_mat(x_y_mat, z_mat, cluster_number):
     :param cluster_number: An integer which is the number of clusters to form by the KMeans function.
     :return: z_mat_vet: A python list of length {cluster_number}. Each element is a 2D numpy array of a data cluster.
     """
-    kmeans_model = KMeans(n_clusters=hp.cluster_number, random_state=0)
+    kmeans_model = KMeans(n_clusters=cluster_number, random_state=0)
     kmeans_result_vet = kmeans_model.fit(z_mat).labels_
     x_y_mat_vet = [x_y_mat[kmeans_result_vet == i, :] for i in range(cluster_number)]
 
@@ -38,7 +38,7 @@ def stratified_chi_squared_test(x_y_mat_vet):
     return sum(chi_square_statistic_vet)
 
 
-def simulation_wrapper_stratified(simulation_index, scenario, sample_size):
+def simulation_wrapper_stratified(simulation_index, scenario, sample_size, z_mat, cluster_number= 2):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
@@ -52,10 +52,10 @@ def simulation_wrapper_stratified(simulation_index, scenario, sample_size):
     :param sample_size: An integer.
     :return: A tuple (simulation_index, result_vet). result_vet is the return of the chi_squared_test function.
     """
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
+#    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
     x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{simulation_index}.txt")
 
-    x_y_mat_vet = stratify_x_y_mat(x_y_mat = x_y_mat, z_mat = z_mat, cluster_number = hp.cluster_number)
+    x_y_mat_vet = stratify_x_y_mat(x_y_mat = x_y_mat, z_mat = z_mat, cluster_number = cluster_number)
     test_statistic = stratified_chi_squared_test(x_y_mat_vet)
 
     return (simulation_index, test_statistic)
@@ -69,11 +69,11 @@ for sample_size in hp.sample_size_vet:
 
     pool = mp.Pool(processes = hp.process_number)
     simulation_index_vet = range(hp.simulation_times)
-    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "null"),
-                               simulation_index_vet)
+    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
+    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "null",
+                                       z_mat = z_mat), simulation_index_vet)
 
-    sample_result_dict = dict(pool_result_vet)
-    stratified_chisq_result_null_dict[sample_size] = sample_result_dict
+    stratified_chisq_result_null_dict[sample_size] = dict(pool_result_vet)
 
     print(f"Null, {sample_size} finished")
 
@@ -87,11 +87,11 @@ with open("./results/stratified_chisq_result_null_dict.p", "wb") as fp:
 stratified_chisq_result_alt_dict = dict()
 for sample_size in hp.sample_size_vet:
 
-    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "alt"),
-                               simulation_index_vet)
+    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
+    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "alt",
+                                       z_mat = z_mat), simulation_index_vet)
 
-    sample_result_dict = dict(pool_result_vet)
-    stratified_chisq_result_alt_dict[sample_size] = sample_result_dict
+    stratified_chisq_result_alt_dict[sample_size] = dict(pool_result_vet)
 
     print(f"Alt, {sample_size} finished")
 

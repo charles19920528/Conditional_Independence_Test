@@ -53,8 +53,7 @@ if __name__ == "__main__":
         pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size=sample_size, scenario="null"),
                                    simulation_index_vet)
 
-        sample_result_dict = dict(pool_result_vet)
-        naive_chisq_result_null_dict[sample_size] = sample_result_dict
+        naive_chisq_result_null_dict[sample_size] = dict(pool_result_vet)
     # print("--- %s seconds ---" % (time.time() - start_time))
     with open("./results/naive_chisq_result_null_dict.p", "wb") as fp:
         pickle.dump(naive_chisq_result_null_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -68,8 +67,7 @@ if __name__ == "__main__":
         pool_result_vet = pool.map(partial(simulation_wrapper_naive, sample_size=sample_size, scenario="alt"),
                                    simulation_index_vet)
 
-        sample_result_dict = dict(pool_result_vet)
-        naive_chisq_result_alt_dict[sample_size] = sample_result_dict
+        naive_chisq_result_alt_dict[sample_size] =  dict(pool_result_vet)
     # print("--- %s seconds ---" % (time.time() - start_time))
     with open("./results/naive_chisq_result_alt_dict.p", "wb") as fp:
         pickle.dump(naive_chisq_result_alt_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)

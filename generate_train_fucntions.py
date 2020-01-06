@@ -150,20 +150,20 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     """
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
-    x_times_y = tf.reshape(x_times_y, (x_times_y.shape[0], 1))
+    x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
     x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y], axis = 1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
-    normalizing_constant = 0
-    for i in tf.range(parameter_mat.shape[0]):
+    normalizing_constant = tf.constant(0., dtype=tf.float32)
+    for i in tf.range(tf.shape(parameter_mat)[0]):
         parameter_vet = parameter_mat[i, :]
         one_mat = tf.constant([
-            [-1, -1, -1],
+            [-1., -1., -1.],
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype = "float32")
+        ], dtype = tf.float32)
         exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
         normalizing_constant += log_sum_exp
@@ -307,13 +307,12 @@ class IsingSimulation:
         return result_dict
 
 
-class IsingTraining:
-    def __init__(self, z_mat, hidden_1_out_dim,learning_rate, buffer_size, batch_size,
-                 epoch):
+class IsingTrainingPool:
+    # Still need debugging.
+    def __init__(self, z_mat,  hidden_1_out_dim, learning_rate, buffer_size, batch_size, epoch):
         """
         Create a class which can generate data and train a network.
         :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-        :param null_boolean: A boolean value indicating if the true model is under the null.
         :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
@@ -321,29 +320,36 @@ class IsingTraining:
         :param epoch: A scalar indicating the number of times training process pass through the data set.
         """
         self.z_mat = z_mat
-        self.sample_size = z_mat.shape[0]
         self.hidden_1_out_dim = hidden_1_out_dim
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.epoch = epoch
 
+        self.sample_size = z_mat.shape[0]
+        self.dim_z = z_mat.shape[1]
+
+
     def trainning(self, x_y_mat):
         """
         Train a neural network.
-        :param x_y_mat: An n x 2 numpy array. Each row is the response of the ith observation.
-        First column corresponds to x.
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
         :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
         result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
         second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
         of parameters in the full Ising Model.
         """
+        """
+                # Prepare training data.
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        """
+
         # Prepare training data.
         train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
 
-        train_network = IsingNetwork(self.z_mat.shape[1], self.hidden_1_out_dim, 3)
+        train_network = IsingNetwork(self.dim_z, self.hidden_1_out_dim, 3)
         optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
 
         for i in range(self.epoch):
@@ -354,8 +360,144 @@ class IsingTraining:
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
-        predicted_parameter_mat = train_network(self.z_mat)
+        predicted_parameter_mat = train_network.predict(self.z_mat)
 
         return predicted_parameter_mat
 
 
+
+
+class IsingTraining_tf_function:
+    # Still need debugging.
+    def __init__(self, z_dataset, x_y_dataset, z_dim, hidden_1_out_dim, sample_size,
+                 learning_rate, buffer_size, batch_size, epoch):
+        """
+        Create a class which can generate data and train a network.
+        :param z_dataset:                                         . This is the data we condition on.
+        :param x_y_dataset:
+        :param z_dim
+        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
+        :param sample_size
+        :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
+        :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
+        :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
+        :param epoch: A scalar indicating the number of times training process pass through the data set.
+        """
+        self.z_dataset = z_dataset
+        self.x_y_dataset = x_y_dataset
+        self.z_dim = z_dim
+        self.hidden_1_out_dim = hidden_1_out_dim
+        self.sample_size = sample_size
+        self.learning_rate = learning_rate
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.epoch = epoch
+
+    def merge_z_x_y_dataset(self):
+        def dt_iterator():
+            for z, x_y in zip(self.z_dataset, self.x_y_dataset):
+                yield (z.numpy(), x_y.numpy())
+
+        merged_dataset = tf.data.Dataset.from_generator(dt_iterator, output_types = (tf.float32, tf.float32),
+                                                        output_shapes=(tf.TensorShape(3), tf.TensorShape(2)))
+
+        return merged_dataset
+
+    def trainning(self):
+        """
+        Train a neural network.
+        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
+        :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
+        result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
+        second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
+        of parameters in the full Ising Model.
+        """
+        """
+                # Prepare training data.
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        """
+
+        train_ds = self.merge_z_x_y_dataset()
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+
+        train_network = IsingNetwork(self.z_dim, self.hidden_1_out_dim, 3)
+        optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
+
+        batch_predicted_parameter_mat = tf.Variable(tf.zeros((self.batch_size, 3), dtype=tf.float32), trainable = True)
+        loss = tf.Variable(0, dtype=tf.float32, trainable = True)
+        predicted_parameter_mat = tf.Variable(tf.zeros((self.sample_size, 3), dtype=tf.float32))
+
+        for i in range(self.epoch):
+            for z_batch, x_y_batch in train_ds:
+                with tf.GradientTape() as tape:
+                    batch_predicted_parameter_mat.assign(train_network(z_batch))
+                    loss.assign(log_ising_alternative(x_y_batch, batch_predicted_parameter_mat))
+                grads = tape.gradient(loss, train_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+
+
+        """
+        for i in range(self.epoch):
+            for z_batch, x_y_batch in train_ds:
+                with tf.GradientTape() as tape:
+                    batch_predicted_parameter_mat = train_network(z_batch)
+                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                grads = tape.gradient(loss, train_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+
+        predicted_parameter_mat = tf.Variable( tf.zeros( (self.sample_size, 3), dtype = tf.float32) )
+        """
+
+        for z_mat in self.z_dataset.batch(self.sample_size):
+            predicted_parameter_mat.assign(train_network(z_mat))
+
+
+        #predicted_parameter_mat = train_network.predict(self.z_dataset.batch(self.batch_size))
+
+        return predicted_parameter_mat
+
+##################################################################
+# Helper functions to load txt data file into Tensorflow dataset #
+##################################################################
+# z_dataset = tf.data.TextLineDataset("./data/z_mat/z_mat_30.txt")
+# x_y_dataset = tf.data.TextLineDataset("./data/null/x_y_mat_30_0.txt")
+
+# Helper functions to read data using tensorflow dataset module.
+def parse_fnc(line):
+    string_vals = tf.strings.split([line]).values
+    return tf.strings.to_number(string_vals, tf.float32)
+# z_dataset = z_dataset.map(parse_fnc)
+# x_y_dataset = x_y_dataset.map(parse_fnc)
+
+def tf_load_z_dataset(sample_size_tensor):
+    z_file_format = tf.strings.format("./data/z_mat/z_mat_{}.txt", inputs=sample_size_tensor)
+    z_dataset = tf.data.TextLineDataset(z_file_format)
+    z_dataset = z_dataset.map(parse_fnc)
+
+    return z_dataset
+
+# z_dataset = tf_load_z_dataset(tf.constant(30))
+# print(list(z_mat.take(1)))
+
+def tf_load_x_y_dataset_null(sample_size_tensor, simulation_times_tensor):
+    x_y_file_format = tf.strings.format("./data/null/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
+                                                                               simulation_times_tensor))
+    x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
+    x_y_dataset = x_y_dataset.map(parse_fnc)
+
+    return x_y_dataset
+
+# x_y_dataset = tf_load_x_y_dataset_null(tf.constant(30), tf.constant(1))
+# print(list(x_y_dataset.take(1)))
+
+def tf_load_x_y_dataset_alt(sample_size_tensor, simulation_times_tensor):
+    x_y_file_format = tf.strings.format("./data/alt/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
+                                                                               simulation_times_tensor))
+    x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
+    x_y_dataset = x_y_dataset.map(parse_fnc)
+
+    return x_y_dataset
+
+# x_y_dataset = tf_load_x_y_dataset_alt(tf.constant(30), tf.constant(1))
+# print(list(x_y_dataset.take(1)))

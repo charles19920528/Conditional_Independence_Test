@@ -16,10 +16,19 @@ sample_size_vet = [30, 100, 500, 1000]
 # Training epochs for samples sizes in the sample_size_vet
 epoch_vet = [250, 250, 100, 90]
 
+# buffer size for tensorflow dataset.
+buffer_size = 1024
+
+# batch size for training.
+batch_size = 30
+
+# learning rate for gradient descent.
+learning_rate = 0.005
+
 ####################
 # Chi squared test #
 ####################
 # Number of process Pool function will run in parallel.
-process_number = 10
+process_number = 15
 
 
