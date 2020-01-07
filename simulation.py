@@ -1,3 +1,5 @@
+# No longer in use.
+
 import numpy as np
 import tensorflow as tf
 import generate_train_fucntions as gt
