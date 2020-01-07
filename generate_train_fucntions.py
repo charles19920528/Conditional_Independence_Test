@@ -77,24 +77,30 @@ def pmf_collection(parameter_mat):
     return tf.transpose(prob_mat)
 
 
-def kl_divergence(true_parameter_mat, predicted_parameter_mat):
+def kl_divergence(true_parameter_mat, predicted_parameter_mat, isAverage):
     """
-    Compute the average KL divergence between two sets of Ising models. KL(True distribution, Fitted distribution) / n.
-    See Wikipedia for detail description.
+    Compute the average or individual KL divergence between two sets of Ising models. KL(True distribution,
+    Fitted distribution) (/ n). See Wikipedia for detail description.
     :param true_parameter_mat: an n by p tensor storing parameters for the true distribution. Each row contains a
     parameter for a one sample. If p = 2, we assume the sample is under the null model. If p = 3, we assume the
     sample is under the full model.
     :param predicted_parameter_mat: an n by p tensor storing parameters for the fitted distribution. We again assume
     that p can either be 2 or 3.
-    :return: kl_divergence: a scalar.
+    :param isAverage: a boolean value. If it is true, then the function will return the average kl divergence of the
+    sample. Otherwise, it will return the kl divergence between distribiutions for each sample (Z)_.
+    :return: kl_divergence_scalr: a scalar
+    or kl_divergence_list: a list
     """
     pmf_mat_true = pmf_collection(true_parameter_mat)
     pmf_mat_prediction = pmf_collection(predicted_parameter_mat)
 
     kl_divergence_mat = pmf_mat_true * tf.math.log(pmf_mat_true / pmf_mat_prediction)
-    kl_divergence = tf.reduce_sum(kl_divergence_mat) / true_parameter_mat.shape[0]
-
-    return kl_divergence
+    if isAverage:
+        kl_divergence_scalar = tf.reduce_sum(kl_divergence_mat) / true_parameter_mat.shape[0]
+        return kl_divergence_scalar
+    else:
+        kl_divergence_list = tf.reduce_sum(kl_divergence_mat, axis = 1)
+        return kl_divergence_list
 
 #################################
 # Functions used under the null #
@@ -148,7 +154,6 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     Columns of the matrices are Jx, Jy and Jxy respectively.
     :return: negative_log_likelihood
     """
-
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
     x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
     x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y], axis = 1)
@@ -291,7 +296,7 @@ class IsingSimulation:
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
                 predicted_parameter_mat = train_network(self.z_mat)
-                batch_kl = kl_divergence(self.true_parameter_mat, predicted_parameter_mat)
+                batch_kl = kl_divergence(self.true_parameter_mat, predicted_parameter_mat, True)
 
             if i % 5 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, i))

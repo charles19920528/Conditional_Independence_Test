@@ -41,7 +41,6 @@ def simulation_wrapper_naive(simulation_index, scenario, sample_size):
     return (simulation_index, result_vet)
 
 if __name__ == "__main__":
-
     #######################
     # Test under the null #
     #######################

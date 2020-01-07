@@ -31,24 +31,27 @@ null_linear_2_bias_array = linear_2_bias_array[: 2]
 null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
                                    null_linear_2_weight_array, null_linear_2_bias_array])
 
+
 #################
 # Generate data #
 #################
-for sample_size in sample_size_vet:
-    centers = [np.repeat(0.5, 3), np.repeat(-0.5, 3)]
-    z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
-    # z_mat = tf.random.normal(mean=0, stddev=10, shape=(sample_size, dim_z))
+if __name__ == "__main__":
+    for sample_size in sample_size_vet:
+        centers = [np.repeat(0.5, 3), np.repeat(-0.5, 3)]
+        z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
+        # z_mat = tf.random.normal(mean=0, stddev=10, shape=(sample_size, dim_z))
 
-    np.savetxt("./data/z_mat/z_mat_%d.txt" % sample_size, z_mat)
+        np.savetxt("./data/z_mat/z_mat_%d.txt" % sample_size, z_mat)
 
-    for i in range(simulation_times):
-        x_y_mat_null = gt.generate_x_y_mat(ising_network=null_network_generate, z_mat=z_mat, null_boolean=True,
-                                           sample_size=sample_size)
-        x_y_mat_alt = gt.generate_x_y_mat(ising_network=alt_network_generate, z_mat=z_mat, null_boolean=False,
-                                          sample_size=sample_size)
+        for i in range(simulation_times):
+            x_y_mat_null = gt.generate_x_y_mat(ising_network=null_network_generate, z_mat=z_mat, null_boolean=True,
+                                               sample_size=sample_size)
+            x_y_mat_alt = gt.generate_x_y_mat(ising_network=alt_network_generate, z_mat=z_mat, null_boolean=False,
+                                              sample_size=sample_size)
 
-        np.savetxt(f"./data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
-        np.savetxt(f"./data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
+            np.savetxt(f"./data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
+            np.savetxt(f"./data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
+
 
 # Check signal strength using KL divergence
 # z_mat_example = tf.random.normal(mean = 0, stddev = 5, shape = (30, dim_z))
