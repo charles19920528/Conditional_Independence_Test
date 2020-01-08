@@ -2,8 +2,6 @@ import tensorflow as tf
 import generate_train_fucntions as gt
 import hyperparameters as hp
 
-
-
 #####################################################################################################
 # Still work on it. Haven't been able to make it work.
 

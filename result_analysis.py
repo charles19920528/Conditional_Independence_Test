@@ -182,3 +182,16 @@ stratified_chisq_fpr_tpr_dict = fpr_tpr(null_result_dict = stratified_chisq_resu
                                         test_statistic_one_sample = stratified_sq_statistic_one_sample)
 plot_roc(naive_chisq_fpr_tpr_dict, "Stratified_Chisq")
 
+
+
+
+# See if test statistics are the same.
+naiv_null, _ = test_statistic_one_sample_size(naive_chisq_result_null_dict[30], naive_chisq_result_alt_dict[30],
+                                              hp.simulation_times,
+               naive_sq_statistic_one_sample, isPvalue = False)
+
+stra_null, _ = test_statistic_one_sample_size(stratified_chisq_result_null_dict[30], stratified_chisq_result_alt_dict[30],
+                                              hp.simulation_times, stratified_sq_statistic_one_sample)
+
+
+test = [x in stra_null for x in naiv_null]

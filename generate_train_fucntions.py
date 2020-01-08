@@ -1,6 +1,7 @@
 import tensorflow as tf
 # Numpy is for the generate_x_y_mat method and trainning method in the IsingSimulation class.
 import numpy as np
+import hyperparameters as hp
 
 class IsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
@@ -208,6 +209,32 @@ def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
 
         return x_y_mat
 
+def generate_alt_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim):
+    """
+    The function will generate an Ising Network under the alternative.
+    :param dim_z: An interger. The dimension of the random_variables we condition on.
+    :param hidden_1_out_dim: A integer which is the output dimension of the hidden layer.
+    :return:
+    alt_network_generate: An instance of the IsingNetwork class.
+    weights_list: A list containing weights of each layers.
+    """
+    alt_network_generate = gt.IsingNetwork(dim_z, hidden_1_out_dim, 3)
+    alt_network_generate.dummy_run()
+
+    linear_1_weight_array = tf.random.normal(shape=(dim_z, hidden_1_out_dim), mean=0, stddev=1)
+    linear_1_bias_array = tf.zeros(shape=(hidden_1_out_dim,))
+
+    linear_2_weight_array = tf.random.normal(shape=(hidden_1_out_dim, 3), mean=0, stddev=1)
+    linear_2_bias_array = tf.zeros(shape=(3,))
+
+    weights_list = [linear_1_weight_array, linear_1_bias_array,
+                                      linear_2_weight_array, linear_2_bias_array]
+    alt_network_generate.set_weights(weights_list)
+
+
+
+    return alt_network_generate, weights_list
+
 #########################################
 # Class for the simulation and training #
 #########################################
@@ -381,7 +408,7 @@ class IsingTraining_tf_function:
         :param z_dataset:                                         . This is the data we condition on.
         :param x_y_dataset:
         :param z_dim
-        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
+        :param hidden_1_out_dim: A integer which is the output dimension of the hidden layer.
         :param sample_size
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
