@@ -12,7 +12,6 @@ sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = 
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt",
                    result_dict_name = "stratified_chisq")
 
-
 # Ising simulation
 start_time = time.time()
 

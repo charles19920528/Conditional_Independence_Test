@@ -32,6 +32,6 @@ learning_rate = 0.005
 # Multiprocess #
 ################
 # Number of process Pool function will run in parallel.
-process_number = 15
+process_number = 20
 
 

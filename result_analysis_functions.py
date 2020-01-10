@@ -62,6 +62,21 @@ def stratified_sq_statistic_one_trail(trail_index, one_sample_size_result_dict):
     test_statisitc = one_sample_size_result_dict[trail_index]
     return test_statisitc
 
+def ccit_one_trail(trail_index, one_sample_size_result_dict):
+    """
+    Obatin the sum of the test statistic of the CCIT test.
+
+    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
+    a particular sample size.
+
+    :return:
+    test_statisitc: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
+    classified.
+    """
+    test_statisitc = 1 - one_sample_size_result_dict[trail_index]
+    return test_statisitc
+
 
 # Shared functions to obtain fpr, tpr.
 def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_size_alt_result_dict, number_of_trails,
@@ -70,11 +85,15 @@ def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_
     Apply test_statistic_one_trail function to each result dictionary of a particular sample size to obtain test
     statistics for all trails.
 
-    :param one_sample_size_null_result_dict:
-    :param one_sample_size_alt_result_dict:
+    :param one_sample_size_null_result_dict: A dictionary containing the raw outputs simulated under the null
+    given a particular sample size.
+    :param one_sample_size_alt_result_dict: A dictionary containing the raw outputs simulated under the
+    alternative given a particular sample size.
     :param number_of_trails:
-    :param test_statistic_one_trail:
-    :param kwargs:
+    :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
+    functions defnied above. 
+    :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function. 
+
     :return:
     """
     pool = mp.Pool(hp.process_number)
@@ -96,10 +115,14 @@ def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_
 
 def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails):
     """
+    A wrap up function is used in the fpr_tpr function which usess the multiprocessing Pool function.
 
-    :param test_statistic_one_sample_size_tuple:
-    :param number_of_trails:
+    :param test_statistic_one_sample_size_tuple: A function which extract test statistic given a sample size. It should
+    be one of the function defined above.
+    :param number_of_trails: An integer which is the number of trails we simulate for each sample size
+
     :return:
+    Two ists containing false positive rates and true positive rates which can be used to draw the RoC curve.
     """
     true_label = np.repeat([-1, 1], np.repeat(number_of_trails, 2))
     combined_test_statistic_vet = np.concatenate(test_statistic_one_sample_size_tuple)
@@ -111,23 +134,28 @@ def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trai
 def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_of_trails = hp.number_of_trails,
             **kwargs):
     """
+    A wrapper function which compute fpr and tpr for simulations of different samples sizes.
 
     :param null_result_dict:
     :param alt_result_dict:
     :param test_statistic_one_trail:
     :param number_of_trails:
     :param kwargs:
+
     :return:
+    fpr_tpr_dict: A dictionary containing lists of fpr and tpr of different sample sizes.
     """
     fpr_tpr_dict = dict()
     for sample_size in null_result_dict.keys():
-        null_result_sample_size_dict = null_result_dict[sample_size]
-        alt_result_dict_sample_size_dict = alt_result_dict[sample_size]
+        one_sample_size_null_result_dict = null_result_dict[sample_size]
+        one_sample_size_alt_result_dict = alt_result_dict[sample_size]
 
-        test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(null_dict = null_result_sample_size_dict,
-                                                                         alt_dict = alt_result_dict_sample_size_dict,
+        test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(one_sample_size_null_result_dict =
+                                                                              one_sample_size_null_result_dict,
+                                                                         one_sample_size_alt_result_dict =
+                                                                         one_sample_size_alt_result_dict,
                                                                          number_of_trails = number_of_trails,
-                                                                         test_statistic_one_sample =
+                                                                         test_statistic_one_trail =
                                                                          test_statistic_one_trail, **kwargs)
 
         fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails)
