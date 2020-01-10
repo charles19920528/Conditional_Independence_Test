@@ -31,7 +31,7 @@ class IsingNetwork(tf.keras.Model):
         This method is to let python initialize the network and weights not just the computation graph.
         :return: None.
         """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1)
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype = tf.float32)
         self(dummy_z)
 
 
@@ -58,7 +58,7 @@ def pmf_collection(parameter_mat):
             [-1, 1],
             [1, -1],
             [1, 1]
-        ], dtype="float32")
+        ], dtype = tf.float64)
 
     elif number_of_columns == 3:
         one_mat = tf.constant([
@@ -66,11 +66,12 @@ def pmf_collection(parameter_mat):
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype="float32")
+        ], dtype = tf.float64)
 
     else:
         raise Exception("The shape of the parameter_mat doesn't satisfy the requirement")
 
+    parameter_mat = tf.cast(parameter_mat, tf.float64)
     kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b=True)
     exp_kernel_mat = tf.exp(kernel_mat)
     prob_mat = tf.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
@@ -113,6 +114,7 @@ def pmf_null(x, hx):
     :param hx: The parameter corresponds to x.
     :return: pmf: P(X = x).
     """
+    hx = tf.cast(hx, tf.float64)
     numerator = tf.exp(- x * hx)
     denominator = tf.exp(- x * hx) + tf.exp(x * hx)
     pmf = numerator / denominator
@@ -133,7 +135,7 @@ def log_ising_null(x_y_mat, parameter_mat):
     for i in tf.range(parameter_mat.shape[0]):
         # Extract the ith row of the parameter_mat and change it into a (2, 1) tensor.
         j_vet = parameter_mat[i, :][..., None]
-        one_vet = tf.constant([1, -1], dtype="float32")[None, ...]
+        one_vet = tf.constant([1, -1], dtype = tf.float32)[None, ...]
         outer_product = j_vet * one_vet
         log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
         normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
@@ -155,13 +157,15 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     Columns of the matrices are Jx, Jy and Jxy respectively.
     :return: negative_log_likelihood
     """
+    parameter_mat = tf.cast(parameter_mat, tf.float32)
+
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
     x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
     x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y], axis = 1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
-    normalizing_constant = tf.constant(0., dtype=tf.float32)
+    normalizing_constant = tf.constant(0., dtype = tf.float32)
     for i in tf.range(tf.shape(parameter_mat)[0]):
         parameter_vet = parameter_mat[i, :]
         one_mat = tf.constant([
@@ -190,7 +194,7 @@ def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
     true_parameter_mat = ising_network(z_mat)
     if null_boolean:
         p_equal_1_mat = pmf_null(1, true_parameter_mat)
-        x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(sample_size, 2)).astype("float32") * 2 - 1
+        x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(sample_size, 2)).astype(np.float32) * 2 - 1
         return x_y_mat
     else:
         p_mat = pmf_collection(true_parameter_mat)
@@ -209,16 +213,18 @@ def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
 
         return x_y_mat
 
-def generate_alt_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim):
+def data_generate_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim):
     """
     The function will generate an Ising Network under the alternative.
     :param dim_z: An interger. The dimension of the random_variables we condition on.
     :param hidden_1_out_dim: A integer which is the output dimension of the hidden layer.
     :return:
+    null_network_generate: An instance of the IsingNetwork class.
     alt_network_generate: An instance of the IsingNetwork class.
     weights_list: A list containing weights of each layers.
     """
-    alt_network_generate = gt.IsingNetwork(dim_z, hidden_1_out_dim, 3)
+    # Create the alternative network.
+    alt_network_generate = IsingNetwork(dim_z, hidden_1_out_dim, 3)
     alt_network_generate.dummy_run()
 
     linear_1_weight_array = tf.random.normal(shape=(dim_z, hidden_1_out_dim), mean=0, stddev=1)
@@ -231,9 +237,17 @@ def generate_alt_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_di
                                       linear_2_weight_array, linear_2_bias_array]
     alt_network_generate.set_weights(weights_list)
 
+    # Create the null network.
+    null_network_generate = IsingNetwork(dim_z, hidden_1_out_dim, 2)
+    null_network_generate.dummy_run()
 
+    null_linear_2_weight_array = linear_2_weight_array[:, :2]
+    null_linear_2_bias_array = linear_2_bias_array[: 2]
 
-    return alt_network_generate, weights_list
+    null_network_generate.set_weights([linear_1_weight_array, linear_1_bias_array,
+                                       null_linear_2_weight_array, null_linear_2_bias_array])
+
+    return null_network_generate, alt_network_generate, weights_list
 
 #########################################
 # Class for the simulation and training #
@@ -341,7 +355,8 @@ class IsingSimulation:
 
 class IsingTrainingPool:
     # Still need debugging.
-    def __init__(self, z_mat,  hidden_1_out_dim, learning_rate, buffer_size, batch_size, epoch):
+    def __init__(self, z_mat,  hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, epoch=hp.epoch):
         """
         Create a class which can generate data and train a network.
         :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.

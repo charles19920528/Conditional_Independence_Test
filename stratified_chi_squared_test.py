@@ -38,7 +38,7 @@ def stratified_chi_squared_test(x_y_mat_vet):
     return sum(chi_square_statistic_vet)
 
 
-def simulation_wrapper_stratified(simulation_index, scenario, sample_size, z_mat, cluster_number= 2):
+def simulation_wrapper_stratified(simulation_index, scenario, sample_size, cluster_number= 2):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
@@ -53,6 +53,7 @@ def simulation_wrapper_stratified(simulation_index, scenario, sample_size, z_mat
     :return: A tuple (simulation_index, result_vet). result_vet is the return of the chi_squared_test function.
     """
     x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{simulation_index}.txt")
+    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{simulation_index}.txt", dtype=np.float32)
 
     x_y_mat_vet = stratify_x_y_mat(x_y_mat = x_y_mat, z_mat = z_mat, cluster_number = cluster_number)
     test_statistic = stratified_chi_squared_test(x_y_mat_vet)
@@ -68,9 +69,8 @@ for sample_size in hp.sample_size_vet:
 
     pool = mp.Pool(processes = hp.process_number)
     simulation_index_vet = range(hp.simulation_times)
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
-    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "null",
-                                       z_mat = z_mat), simulation_index_vet)
+    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "null"),
+                               simulation_index_vet)
 
     stratified_chisq_result_null_dict[sample_size] = dict(pool_result_vet)
 
@@ -86,9 +86,9 @@ with open("./results/stratified_chisq_result_null_dict.p", "wb") as fp:
 stratified_chisq_result_alt_dict = dict()
 for sample_size in hp.sample_size_vet:
 
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt")
-    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "alt",
-                                       z_mat = z_mat), simulation_index_vet)
+    simulation_index_vet = range(hp.simulation_times)
+    pool_result_vet = pool.map(partial(simulation_wrapper_stratified, sample_size = sample_size, scenario = "alt"),
+                               simulation_index_vet)
 
     stratified_chisq_result_alt_dict[sample_size] = dict(pool_result_vet)
 

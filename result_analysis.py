@@ -9,14 +9,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import hyperparameters as hp
-import data_generation as dg
-import generate_train_fucntions as gt
 
 
 
 ################################
 # Analysis the signal strength #
 ################################
+"""
 alt_network = dg.alt_network_generate
 
 kl_list = []
@@ -32,6 +31,7 @@ ax0.boxplot(kl_list)
 ax0.set_xticklabels(hp.sample_size_vet)
 fig0.savefig("./results/plots/kl_boxplot.png")
 
+"""
 
 ############################
 # Analysis the Ising model #
@@ -180,7 +180,7 @@ stratified_chisq_fpr_tpr_dict = fpr_tpr(null_result_dict = stratified_chisq_resu
                                         alt_result_dict = stratified_chisq_result_alt_dict,
                                         simulation_times = hp.simulation_times,
                                         test_statistic_one_sample = stratified_sq_statistic_one_sample)
-plot_roc(naive_chisq_fpr_tpr_dict, "Stratified_Chisq")
+plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq")
 
 
 
