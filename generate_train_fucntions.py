@@ -51,7 +51,6 @@ def pmf_collection(parameter_mat):
     # to check.
     #############################
     number_of_columns = parameter_mat.shape[1]
-
     if number_of_columns == 2:
         one_mat = tf.constant([
             [-1, -1],
@@ -256,7 +255,8 @@ class IsingSimulation:
     def __init__(self, z_mat, true_network, null_boolean, hidden_1_out_dim,learning_rate, buffer_size, batch_size,
                  epoch):
         """
-        Create a class which can generate data and train a network.
+        Create a class which can generate data and train a network. It is used to get training oracle information
+        such as training epoch.
         :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
         :param true_network: An object of IsingNetwork class. This is the true network we use to generate parameters.
         :param null_boolean: A boolean value indicating if the true model is under the null.
@@ -354,7 +354,6 @@ class IsingSimulation:
 
 
 class IsingTrainingPool:
-    # Still need debugging.
     def __init__(self, z_mat, epoch, hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
                  buffer_size=hp.buffer_size, batch_size=hp.batch_size):
         """
@@ -507,6 +506,8 @@ class IsingTraining_tf_function:
 ##################################################################
 # Helper functions to load txt data file into Tensorflow dataset #
 ##################################################################
+# Not in use!
+
 # z_dataset = tf.data.TextLineDataset("./data/z_mat/z_mat_30.txt")
 # x_y_dataset = tf.data.TextLineDataset("./data/null/x_y_mat_30_0.txt")
 
