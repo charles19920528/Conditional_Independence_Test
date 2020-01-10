@@ -9,13 +9,13 @@ import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-def ising_simulation_wrapper(simulation_index, scenario, sample_size):
+def ising_simulation_wrapper(simulation_index, scenario, sample_size, epoch):
     x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{simulation_index}.txt", dtype = np.float32)
     z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{simulation_index}.txt", dtype = np.float32)
 
     ising_training_pool_instance = gt.IsingTrainingPool(z_mat=z_mat, hidden_1_out_dim=hp.hidden_1_out_dim,
                                                         learning_rate=hp.learning_rate, buffer_size=hp.buffer_size,
-                                                        batch_size=hp.batch_size, epoch=hp.epoch)
+                                                        batch_size=hp.batch_size, epoch=epoch)
 
     predicted_parameter_mat = ising_training_pool_instance.trainning(x_y_mat = x_y_mat)
 

@@ -355,8 +355,8 @@ class IsingSimulation:
 
 class IsingTrainingPool:
     # Still need debugging.
-    def __init__(self, z_mat,  hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
-                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, epoch=hp.epoch):
+    def __init__(self, z_mat, epoch, hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size):
         """
         Create a class which can generate data and train a network.
         :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
