@@ -3,8 +3,11 @@ import tensorflow as tf
 import numpy as np
 import hyperparameters as hp
 
-
+##################################
+# Functions for data generation. #
+##################################
 class IsingNetwork(tf.keras.Model):
+    # We consider this network as the true network.
     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
         super().__init__(input_dim, hidden_1_out_dim, output_dim)
         self.input_dim = input_dim
@@ -102,9 +105,6 @@ def kl_divergence(true_parameter_mat, predicted_parameter_mat, isAverage):
         return kl_divergence_list
 
 
-#################################
-# Functions used under the null #
-#################################
 def pmf_null(x, hx):
     """
     Compute the probability P(X = x) under the null model.
@@ -120,32 +120,6 @@ def pmf_null(x, hx):
     return pmf
 
 
-def log_ising_null(x_y_mat, parameter_mat):
-    """
-    Compute - log likelihood of the Ising model under the null and use it as the loss function for model training.
-    :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
-    :param parameter_mat: a tensor of shape [n, 2]. It should be the output of an object of class IsingNetwork.
-    :return: negative_log_likelihood
-    """
-    dot_product_sum = tf.reduce_sum(x_y_mat * parameter_mat)
-
-    normalizing_constant = 0
-    for i in tf.range(parameter_mat.shape[0]):
-        # Extract the ith row of the parameter_mat and change it into a (2, 1) tensor.
-        j_vet = parameter_mat[i, :][..., None]
-        one_vet = tf.constant([1, -1], dtype=tf.float32)[None, ...]
-        outer_product = j_vet * one_vet
-        log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
-        normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
-        normalizing_constant += normalizing_constant_i
-
-    negative_log_likelihood = dot_product_sum + normalizing_constant
-    return negative_log_likelihood
-
-
-########################################
-# Functions used under the alternative #
-########################################
 def log_ising_alternative(x_y_mat, parameter_mat):
     """
     Compute average negative log likelihood of the Ising model under the alternative and use it as the loss function for
@@ -181,9 +155,6 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     return negative_log_likelihood / tf.cast(sample_size, tf.float32)
 
 
-######################################
-# Function used to generate the data #
-######################################
 def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
     """
     The function will generate the matrix of responses (x, y).
@@ -254,6 +225,45 @@ def data_generate_network(dim_z=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim):
 #########################################
 # Class for the simulation and training #
 #########################################
+class WrongIsingNetwork(tf.keras.Model):
+    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim):
+        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim)
+
+        self.input_dim = input_dim
+
+        self.linear_1 = tf.keras.layers.Dense(
+            units=hidden_1_out_dim,
+            input_shape=(input_dim,)
+        )
+
+        self.linear_2 = tf.keras.layers.Dense(
+            units=hidden_2_out_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+        self.linear_3 = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+    def call(self, input):
+        output = self.linear_1(input)
+        output = tf.keras.activations.relu(output)
+        output = self.linear_2(output)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_3(output)
+        output = tf.keras.activations.elu(output)
+        return output
+
+    def dummy_run(self):
+        """
+        This method is to let python initialize the network and weights not just the computation graph.
+        :return: None.
+        """
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
+        self(dummy_z)
+
+
 class IsingTunning:
     def __init__(self, z_mat, x_y_mat, true_parameter_mat, ising_network, learning_rate=hp.learning_rate,
                  buffer_size=hp.buffer_size, batch_size=hp.batch_size, max_epoch=250):
@@ -350,28 +360,28 @@ class IsingTunning:
 
 
 class IsingTrainingPool:
-    def __init__(self, z_mat, epoch, hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
+    def __init__(self, z_mat, x_y_mat, epoch, ising_network, learning_rate=hp.learning_rate,
                  buffer_size=hp.buffer_size, batch_size=hp.batch_size):
         """
         Create a class which can generate data and train a network.
-        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
+        :param z_mat: An n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
+        :param x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
+        :param ising_network: A tf.kears.model class. It is the nerual network to be fitted.
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
         :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
         :param epoch: A scalar indicating the number of times training process pass through the data set.
         """
         self.z_mat = z_mat
-        self.hidden_1_out_dim = hidden_1_out_dim
+        self.x_y_mat = x_y_mat
+        self.ising_network = ising_network
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.epoch = epoch
 
-        self.sample_size = z_mat.shape[0]
-        self.dim_z = z_mat.shape[1]
 
-    def trainning(self, x_y_mat):
+    def trainning(self):
         """
         Train a neural network.
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
@@ -387,25 +397,39 @@ class IsingTrainingPool:
         """
 
         # Prepare training data.
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
 
-        train_network = IsingNetwork(self.dim_z, self.hidden_1_out_dim, 3)
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
         for i in range(self.epoch):
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
-                    batch_predicted_parameter_mat = train_network(z_batch)
+                    batch_predicted_parameter_mat = self.ising_network(z_batch)
                     loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
-                grads = tape.gradient(loss, train_network.variables)
-                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+                grads = tape.gradient(loss, self.ising_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
 
-        predicted_parameter_mat = train_network.predict(self.z_mat)
+        predicted_parameter_mat = self.ising_network.predict(self.z_mat)
 
         return predicted_parameter_mat
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############################################## Freeze indefinitely.
 class IsingTraining_tf_function:
     # Still need debugging.
     def __init__(self, z_dataset, x_y_dataset, z_dim, hidden_1_out_dim, sample_size,
@@ -545,3 +569,71 @@ def tf_load_x_y_dataset_alt(sample_size_tensor, simulation_times_tensor):
 
 # x_y_dataset = tf_load_x_y_dataset_alt(tf.constant(30), tf.constant(1))
 # print(list(x_y_dataset.take(1)))
+
+
+
+
+
+
+
+######################### Recycle
+"""
+
+
+class IsingTrainingPool:
+    def __init__(self, z_mat, epoch, hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size):
+        
+        Create a class which can generate data and train a network.
+        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
+        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
+        :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
+        :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
+        :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
+        :param epoch: A scalar indicating the number of times training process pass through the data set.
+        
+        self.z_mat = z_mat
+        self.hidden_1_out_dim = hidden_1_out_dim
+        self.learning_rate = learning_rate
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.epoch = epoch
+
+        self.sample_size = z_mat.shape[0]
+        self.dim_z = z_mat.shape[1]
+
+    def trainning(self, x_y_mat):
+        
+        Train a neural network.
+        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
+        :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
+        result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
+        second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
+        of parameters in the full Ising Model.
+        
+        
+        # Prepare training data.
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        
+
+        # Prepare training data.
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+
+        train_network = IsingNetwork(self.dim_z, self.hidden_1_out_dim, 3)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+
+        for i in range(self.epoch):
+            for z_batch, x_y_batch in train_ds:
+                with tf.GradientTape() as tape:
+                    batch_predicted_parameter_mat = train_network(z_batch)
+                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                grads = tape.gradient(loss, train_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+
+        predicted_parameter_mat = train_network.predict(self.z_mat)
+
+        return predicted_parameter_mat
+
+"""

@@ -28,6 +28,13 @@ batch_size = 30
 # learning rate for gradient descent.
 learning_rate = 0.005
 
+###############################
+# Misspecified neural network #
+###############################
+epoch_vet_misspecified = [120, 100, 70, 50]
+hidden_1_out_dim_misspecified = 2
+hidden_2_out_dim_misspecified = 2
+
 ################
 # Multiprocess #
 ################
