@@ -3,13 +3,11 @@ import tensorflow as tf
 import numpy as np
 import hyperparameters as hp
 
+
 class IsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
         super().__init__(input_dim, hidden_1_out_dim, output_dim)
-
         self.input_dim = input_dim
-        self.hidden_1_out_dim = hidden_1_out_dim
-        self.output_dim = hidden_1_out_dim
 
         self.linear_1 = tf.keras.layers.Dense(
             units=hidden_1_out_dim,
@@ -31,7 +29,7 @@ class IsingNetwork(tf.keras.Model):
         This method is to let python initialize the network and weights not just the computation graph.
         :return: None.
         """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype = tf.float32)
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
         self(dummy_z)
 
 
@@ -57,7 +55,7 @@ def pmf_collection(parameter_mat):
             [-1, 1],
             [1, -1],
             [1, 1]
-        ], dtype = tf.float64)
+        ], dtype=tf.float64)
 
     elif number_of_columns == 3:
         one_mat = tf.constant([
@@ -65,7 +63,7 @@ def pmf_collection(parameter_mat):
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype = tf.float64)
+        ], dtype=tf.float64)
 
     else:
         raise Exception("The shape of the parameter_mat doesn't satisfy the requirement")
@@ -100,8 +98,9 @@ def kl_divergence(true_parameter_mat, predicted_parameter_mat, isAverage):
         kl_divergence_scalar = tf.reduce_sum(kl_divergence_mat) / true_parameter_mat.shape[0]
         return kl_divergence_scalar
     else:
-        kl_divergence_list = tf.reduce_sum(kl_divergence_mat, axis = 1)
+        kl_divergence_list = tf.reduce_sum(kl_divergence_mat, axis=1)
         return kl_divergence_list
+
 
 #################################
 # Functions used under the null #
@@ -134,7 +133,7 @@ def log_ising_null(x_y_mat, parameter_mat):
     for i in tf.range(parameter_mat.shape[0]):
         # Extract the ith row of the parameter_mat and change it into a (2, 1) tensor.
         j_vet = parameter_mat[i, :][..., None]
-        one_vet = tf.constant([1, -1], dtype = tf.float32)[None, ...]
+        one_vet = tf.constant([1, -1], dtype=tf.float32)[None, ...]
         outer_product = j_vet * one_vet
         log_sum_exp_vet = tf.reduce_logsumexp(outer_product, 1)
         normalizing_constant_i = tf.reduce_sum(log_sum_exp_vet)
@@ -149,36 +148,38 @@ def log_ising_null(x_y_mat, parameter_mat):
 ########################################
 def log_ising_alternative(x_y_mat, parameter_mat):
     """
-    Compute - log likelihood of the Ising model under the alternative and use it as the loss function for
+    Compute average negative log likelihood of the Ising model under the alternative and use it as the loss function for
     model training.
     :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
     :param parameter_mat: a tensor of shape [n, 3]. It should be the output of an object of class IsingNetwork.
     Columns of the matrices are Jx, Jy and Jxy respectively.
-    :return: negative_log_likelihood
+    :return: negative_log_likelihood / n
     """
+    sample_size = tf.shape(parameter_mat)[0]
     parameter_mat = tf.cast(parameter_mat, tf.float32)
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
     x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
-    x_y_xy_mat = tf.concat(values = [x_y_mat, x_times_y], axis = 1)
+    x_y_xy_mat = tf.concat(values=[x_y_mat, x_times_y], axis=1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
-    normalizing_constant = tf.constant(0., dtype = tf.float32)
-    for i in tf.range(tf.shape(parameter_mat)[0]):
+    normalizing_constant = tf.constant(0., dtype=tf.float32)
+    for i in tf.range(sample_size):
         parameter_vet = parameter_mat[i, :]
         one_mat = tf.constant([
             [-1., -1., -1.],
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype = tf.float32)
+        ], dtype=tf.float32)
         exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
         normalizing_constant += log_sum_exp
 
     negative_log_likelihood = dot_product_sum + normalizing_constant
-    return negative_log_likelihood
+    return negative_log_likelihood / tf.cast(sample_size, tf.float32)
+
 
 ######################################
 # Function used to generate the data #
@@ -212,7 +213,8 @@ def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
 
         return x_y_mat
 
-def data_generate_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim):
+
+def data_generate_network(dim_z=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim):
     """
     The function will generate an Ising Network under the alternative.
     :param dim_z: An interger. The dimension of the random_variables we condition on.
@@ -233,7 +235,7 @@ def data_generate_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_d
     linear_2_bias_array = tf.zeros(shape=(3,))
 
     weights_list = [linear_1_weight_array, linear_1_bias_array,
-                                      linear_2_weight_array, linear_2_bias_array]
+                    linear_2_weight_array, linear_2_bias_array]
     alt_network_generate.set_weights(weights_list)
 
     # Create the null network.
@@ -248,65 +250,52 @@ def data_generate_network(dim_z = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_d
 
     return null_network_generate, alt_network_generate, weights_list
 
+
 #########################################
 # Class for the simulation and training #
 #########################################
-class IsingSimulation:
-    def __init__(self, z_mat, true_network, null_boolean, hidden_1_out_dim,learning_rate, buffer_size, batch_size,
-                 epoch):
+class IsingTunning:
+    def __init__(self, z_mat, x_y_mat, true_parameter_mat, ising_network, learning_rate=hp.learning_rate,
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, max_epoch=250):
         """
         Create a class which can generate data and train a network. It is used to get training oracle information
         such as training epoch.
         :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-        :param true_network: An object of IsingNetwork class. This is the true network we use to generate parameters.
-        :param null_boolean: A boolean value indicating if the true model is under the null.
-        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
+
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
         :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
         :param epoch: A scalar indicating the number of times training process pass through the data set.
         """
         self.z_mat = z_mat
+        self.x_y_mat = x_y_mat
         self.sample_size = z_mat.shape[0]
-        self.true_network = true_network
-        self.null_boolean = null_boolean
-        self.hidden_1_out_dim = hidden_1_out_dim
+        self.true_parameter_mat = true_parameter_mat
+        self.ising_network = ising_network
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.epoch = epoch
+        self.max_epoch = max_epoch
 
-        self.true_parameter_mat = true_network(z_mat)
-
-    def generate_x_y_mat(self):
+    def train_test_split(self, test_percentage):
         """
-        The function will generate the matrix of responses (x, y).
-        :param null_boolean: A boolean value indicating if we are simulating under the the independence assumption.
-        :return: x_y_mat
+        Create and split the full data into the training data and the test data. test_percentage of the data are used
+        for the test data.
+        :param test_percentage: A scalar between 0 and 1.
+        :return:
+        train_ds: A Tensorflow dataset which is used as the training data.
+        test_ds: A Tensorflow dataset which is used as the test data.
         """
-        true_parameter_mat = self.true_network(self.z_mat)
-        if self.null_boolean:
-            p_equal_1_mat = pmf_null(1, true_parameter_mat)
-            x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(self.sample_size, 2)).astype("float32") * 2 - 1
-            return x_y_mat
-        else:
-            p_mat = pmf_collection(true_parameter_mat)
-            # Recall that the column of p_mat corresponds to P(X = 1, Y = 1),
-            # P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
-            raw_sample_mat = np.zeros((self.sample_size, 4))
-            for i in np.arange(self.sample_size):
-                p_vet = p_mat[i, :]
-                raw_sample = np.random.multinomial(1, p_vet)
-                raw_sample_mat[i, :] = raw_sample
-            conversion_mat = np.array([
-                [1, 1], [1, -1], [-1, 1], [-1, -1]
-            ])
-            x_y_mat = raw_sample_mat.dot(conversion_mat)
+        full_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
+        full_ds = full_ds.shuffle(self.buffer_size)
 
-            return x_y_mat
+        test_size = tf.cast(self.sample_size * test_percentage, tf.int32).numpy()
+        test_ds = full_ds.take(test_size).batch(test_size)
+        train_ds = full_ds.skip(test_size).batch(self.batch_size)
 
+        return train_ds, test_ds
 
-    def trainning(self, x_y_mat, print_loss_boolean):
+    def trainning(self, print_loss_boolean, test_percentage=0.1):
         """
         Train a neural network.
         :param x_y_mat: An n x 2 numpy array. Each row is the response of the ith observation.
@@ -318,34 +307,41 @@ class IsingSimulation:
         of parameters in the full Ising Model.
         """
         # Prepare training data.
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        train_ds, test_ds = self.train_test_split(test_percentage = test_percentage)
 
         # Prepare storage for results.
-        loss_kl_array = np.zeros((2, self.epoch))
+        loss_kl_array = np.zeros((3, self.max_epoch))
         result_dict = dict()
 
-        train_network = IsingNetwork(self.z_mat.shape[1], self.hidden_1_out_dim, 3)
         optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
 
-        for i in range(self.epoch):
+        iteration = 0
+        while iteration < self.max_epoch:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
-                    batch_predicted_parameter_mat = train_network(z_batch)
+                    batch_predicted_parameter_mat = self.ising_network(z_batch)
                     loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
-                grads = tape.gradient(loss, train_network.variables)
-                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
+                grads = tape.gradient(loss, self.ising_network.variables)
+                optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
 
-                predicted_parameter_mat = train_network(self.z_mat)
+                predicted_parameter_mat = self.ising_network(self.z_mat)
                 batch_kl = kl_divergence(self.true_parameter_mat, predicted_parameter_mat, True)
 
-            if i % 5 == 0 and print_loss_boolean:
-                print("Sample size %d, Epoch %d" % (self.sample_size, i))
-                print("The loss is %f " % loss)
-                print("The KL divergence is %f" % batch_kl)
+            for z_batch_test, x_y_batch_test in test_ds:
+                predicted_parameter_mat_test = self.ising_network(z_batch_test)
+                kl_test = log_ising_alternative(x_y_batch_test, predicted_parameter_mat_test)
 
-            loss_kl_array[0, i] = loss.numpy()
-            loss_kl_array[1, i] = batch_kl
+            if iteration % 10 == 0 and print_loss_boolean:
+                print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
+                print("The loss is %f " % loss)
+                print("The batch KL divergence is %f" % batch_kl)
+                print("The test loss is %f" % kl_test)
+
+            loss_kl_array[0, iteration] = loss.numpy()
+            loss_kl_array[1, iteration] = batch_kl
+            loss_kl_array[2, iteration] = kl_test
+
+            iteration += 1
 
         result_dict["loss_array"] = loss_kl_array
         result_dict["ising_parameters"] = predicted_parameter_mat
@@ -375,7 +371,6 @@ class IsingTrainingPool:
         self.sample_size = z_mat.shape[0]
         self.dim_z = z_mat.shape[1]
 
-
     def trainning(self, x_y_mat):
         """
         Train a neural network.
@@ -396,7 +391,7 @@ class IsingTrainingPool:
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
 
         train_network = IsingNetwork(self.dim_z, self.hidden_1_out_dim, 3)
-        optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
         for i in range(self.epoch):
             for z_batch, x_y_batch in train_ds:
@@ -409,8 +404,6 @@ class IsingTrainingPool:
         predicted_parameter_mat = train_network.predict(self.z_mat)
 
         return predicted_parameter_mat
-
-
 
 
 class IsingTraining_tf_function:
@@ -444,7 +437,7 @@ class IsingTraining_tf_function:
             for z, x_y in zip(self.z_dataset, self.x_y_dataset):
                 yield (z.numpy(), x_y.numpy())
 
-        merged_dataset = tf.data.Dataset.from_generator(dt_iterator, output_types = (tf.float32, tf.float32),
+        merged_dataset = tf.data.Dataset.from_generator(dt_iterator, output_types=(tf.float32, tf.float32),
                                                         output_shapes=(tf.TensorShape(3), tf.TensorShape(2)))
 
         return merged_dataset
@@ -468,10 +461,10 @@ class IsingTraining_tf_function:
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
 
         train_network = IsingNetwork(self.z_dim, self.hidden_1_out_dim, 3)
-        optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        batch_predicted_parameter_mat = tf.Variable(tf.zeros((self.batch_size, 3), dtype=tf.float32), trainable = True)
-        loss = tf.Variable(0, dtype=tf.float32, trainable = True)
+        batch_predicted_parameter_mat = tf.Variable(tf.zeros((self.batch_size, 3), dtype=tf.float32), trainable=True)
+        loss = tf.Variable(0, dtype=tf.float32, trainable=True)
         predicted_parameter_mat = tf.Variable(tf.zeros((self.sample_size, 3), dtype=tf.float32))
 
         for i in range(self.epoch):
@@ -481,7 +474,6 @@ class IsingTraining_tf_function:
                     loss.assign(log_ising_alternative(x_y_batch, batch_predicted_parameter_mat))
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
-
 
         """
         for i in range(self.epoch):
@@ -498,10 +490,10 @@ class IsingTraining_tf_function:
         for z_mat in self.z_dataset.batch(self.sample_size):
             predicted_parameter_mat.assign(train_network(z_mat))
 
-
-        #predicted_parameter_mat = train_network.predict(self.z_dataset.batch(self.batch_size))
+        # predicted_parameter_mat = train_network.predict(self.z_dataset.batch(self.batch_size))
 
         return predicted_parameter_mat
+
 
 ##################################################################
 # Helper functions to load txt data file into Tensorflow dataset #
@@ -515,6 +507,8 @@ class IsingTraining_tf_function:
 def parse_fnc(line):
     string_vals = tf.strings.split([line]).values
     return tf.strings.to_number(string_vals, tf.float32)
+
+
 # z_dataset = z_dataset.map(parse_fnc)
 # x_y_dataset = x_y_dataset.map(parse_fnc)
 
@@ -525,23 +519,25 @@ def tf_load_z_dataset(sample_size_tensor):
 
     return z_dataset
 
+
 # z_dataset = tf_load_z_dataset(tf.constant(30))
 # print(list(z_mat.take(1)))
 
 def tf_load_x_y_dataset_null(sample_size_tensor, simulation_times_tensor):
     x_y_file_format = tf.strings.format("./data/null/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
-                                                                               simulation_times_tensor))
+                                                                                 simulation_times_tensor))
     x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
     x_y_dataset = x_y_dataset.map(parse_fnc)
 
     return x_y_dataset
+
 
 # x_y_dataset = tf_load_x_y_dataset_null(tf.constant(30), tf.constant(1))
 # print(list(x_y_dataset.take(1)))
 
 def tf_load_x_y_dataset_alt(sample_size_tensor, simulation_times_tensor):
     x_y_file_format = tf.strings.format("./data/alt/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
-                                                                               simulation_times_tensor))
+                                                                                simulation_times_tensor))
     x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
     x_y_dataset = x_y_dataset.map(parse_fnc)
 

@@ -250,3 +250,5 @@ def ccit_wrapper(trail_index, scenario, sample_size, **kwargs):
     print(f"{scenario}: Sample size {sample_size} simulation {trail_index} is done.")
 
     return (trail_index, p_value)
+
+#  Misspecified Ising Model

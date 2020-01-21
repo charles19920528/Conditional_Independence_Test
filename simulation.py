@@ -32,3 +32,6 @@ sf.simulation_loop(simulation_wrapper = sf.ccit_wrapper, scenario = "alt", resul
 
 print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))
 
+
+# Misspecified Ising Model simulation
+
