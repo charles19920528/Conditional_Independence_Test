@@ -43,6 +43,8 @@ print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time)
 
 
 # Misspecified Ising Model simulation
+start_time = time.time()
+
 sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
                    result_dict_name = "misspecified_ising", ising_network_class = gt.WrongIsingNetwork,
                    input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
@@ -52,3 +54,4 @@ sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = 
                    input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
                    hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 3)
 
+print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
