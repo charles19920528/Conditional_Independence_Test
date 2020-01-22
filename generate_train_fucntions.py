@@ -122,12 +122,14 @@ def pmf_null(x, hx):
 
 def log_ising_alternative(x_y_mat, parameter_mat):
     """
-    Compute average negative log likelihood of the Ising model under the alternative and use it as the loss function for
+    Compute negative log likelihood of the Ising model under the alternative and use it as the loss function for
     model training.
+
     :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
     :param parameter_mat: a tensor of shape [n, 3]. It should be the output of an object of class IsingNetwork.
     Columns of the matrices are Jx, Jy and Jxy respectively.
-    :return: negative_log_likelihood / n
+
+    :return: negative_log_likelihood
     """
     sample_size = tf.shape(parameter_mat)[0]
     parameter_mat = tf.cast(parameter_mat, tf.float32)
@@ -152,7 +154,7 @@ def log_ising_alternative(x_y_mat, parameter_mat):
         normalizing_constant += log_sum_exp
 
     negative_log_likelihood = dot_product_sum + normalizing_constant
-    return negative_log_likelihood / tf.cast(sample_size, tf.float32)
+    return negative_log_likelihood
 
 
 def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):

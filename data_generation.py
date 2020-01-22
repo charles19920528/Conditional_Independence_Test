@@ -27,13 +27,16 @@ for sample_size in hp.sample_size_vet:
         x_y_mat_alt = gt.generate_x_y_mat(ising_network=alt_network_generate, z_mat=z_mat, null_boolean=False,
                                           sample_size=sample_size)
 
-        np.savetxt(f"./data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
-        np.savetxt(f"./data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
+        np.savetxt(f"./data/ising_data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
+        np.savetxt(f"./data/ising_data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
 
     weights_dict[sample_size] = sample_size_weight_dict
 
-with open("./data/weights_dict.p", "wb") as fp:
+with open("data/ising_data/weights_dict.p", "wb") as fp:
     pickle.dump(weights_dict, fp, protocol = pickle.HIGHEST_PROTOCOL)
 
 
-
+###################
+# Use mixed model #
+###################
+w_vet = np.random.randint(0, 3, size = 10)

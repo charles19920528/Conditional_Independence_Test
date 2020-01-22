@@ -164,7 +164,7 @@ def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_
 
     return fpr_tpr_dict
 
-def plot_roc(fpr_tpr_dict, model_for_main_title):
+def plot_roc(fpr_tpr_dict, model_for_main_title, result_directory_name):
     """
     Assuming there are only four sample size we are simulating. We plot the RoC curve and save the plot under
     ./results/plots/{model_for_main_title}.png.
@@ -172,6 +172,7 @@ def plot_roc(fpr_tpr_dict, model_for_main_title):
     :param fpr_tpr_dict: A dictionary which is the output of the fpr_tpr function.
     :param model_for_main_title: A string ('str' class) which we use to name the graph to save as 
     {model_for_main_title}.png.
+    :param result_directory_name: A string ('str' class) which is the name of the directory to store the plot.
     
     :return:
     None
@@ -199,4 +200,4 @@ def plot_roc(fpr_tpr_dict, model_for_main_title):
 
     fig.suptitle(f"RoC Curves of {model_for_main_title}")
     fig.show()
-    fig.savefig(f"./results/plots/{model_for_main_title}.png")
+    fig.savefig(f"./results/plots/{result_directory_name}/{model_for_main_title}.png")

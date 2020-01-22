@@ -11,17 +11,17 @@ import hyperparameters as hp
 
 
 
-with open('./data/weights_dict.p', 'rb') as fp:
+with open('data/ising_data/weights_dict.p', 'rb') as fp:
     weights_dict = pickle.load(fp)
 
 scenario = "alt"
 trails_vet = np.arange(4)
 experiment_result_dict = dict()
-for sample_size, epoch in zip(hp.sample_size_vet, hp.epoch_vet):
+for sample_size, epoch in zip(hp.sample_size_vet, hp.epoch_vet_misspecified):
     sample_size_result_dict = dict()
     for trail in trails_vet:
-        x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{trail}.txt", dtype=np.float32)
-        z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{trail}.txt", dtype=np.float32)
+        x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail}.txt", dtype=np.float32)
+        z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail}.txt", dtype=np.float32)
 
         weights = weights_dict[sample_size][trail]
         true_network = gt.IsingNetwork(3, 3, 3)
@@ -59,31 +59,33 @@ def plot_loss_kl(experiment_result_dict, sample_size, start_epoch = 0,plot_loss 
     None
     """
     epoch_vet = np.arange(experiment_result_dict[sample_size][0]["loss_array"][0, :].shape[0])[start_epoch:]
-    fig, ax = plt.subplots(4, 2)
+    fig, ax = plt.subplots(4, 3)
 
     if not plot_kl and not plot_loss and not plot_test_loss:
         print("Nothing to print")
         return
 
-    if plot_loss:
-        ax[0, 0].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][0, start_epoch:], label = "loss")
-        ax[1, 0].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][0, start_epoch:])
-        ax[2, 0].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][0, start_epoch:])
-        ax[3, 0].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][0, start_epoch:])
 
-    if plot_kl:
-        ax[0, 1].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][1, start_epoch:])
-        ax[1, 1].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][1, start_epoch:])
-        ax[2, 1].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][1, start_epoch:])
-        ax[3, 1].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][1, start_epoch:])
+    ax[0, 0].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][0, start_epoch:])
+    ax[0, 0].set_title("Training Loss")
+    ax[1, 0].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][0, start_epoch:])
+    ax[2, 0].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][0, start_epoch:])
+    ax[3, 0].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][0, start_epoch:])
 
-    if plot_test_loss:
-        ax[0, 0].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][2, start_epoch:], label = "test")
-        ax[1, 0].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][2, start_epoch:])
-        ax[2, 0].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][2, start_epoch:])
-        ax[3, 0].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][2, start_epoch:])
 
-    ax[0, 0].legend()
+    ax[0, 1].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][1, start_epoch:])
+    ax[0, 1].set_title("Training KL")
+    ax[1, 1].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][1, start_epoch:])
+    ax[2, 1].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][1, start_epoch:])
+    ax[3, 1].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][1, start_epoch:])
+
+
+    ax[0, 2].plot(epoch_vet, experiment_result_dict[sample_size][0]["loss_array"][2, start_epoch:])
+    ax[0, 2].set_title("Test Loss")
+    ax[1, 2].plot(epoch_vet, experiment_result_dict[sample_size][1]["loss_array"][2, start_epoch:])
+    ax[2, 2].plot(epoch_vet, experiment_result_dict[sample_size][2]["loss_array"][2, start_epoch:])
+    ax[3, 2].plot(epoch_vet, experiment_result_dict[sample_size][3]["loss_array"][2, start_epoch:])
+
 
     fig.suptitle(f"Sample size {sample_size}")
     fig.show()
@@ -93,6 +95,6 @@ def plot_loss_kl(experiment_result_dict, sample_size, start_epoch = 0,plot_loss 
 with open(f"./tunning/experiment_result_dict.p", "rb") as fp:
     experiment_result_dict = pickle.load(fp)
 for sample_size in hp.sample_size_vet:
-    plot_loss_kl(experiment_result_dict, sample_size, plot_loss=False)
+    plot_loss_kl(experiment_result_dict, sample_size, plot_loss=False, start_epoch=0)
 
 

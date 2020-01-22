@@ -18,17 +18,20 @@ import hyperparameters as hp
 ####################
 # Simulation loops #
 ####################
-def simulation_loop(simulation_wrapper, scenario, result_dict_name,
+def simulation_loop(simulation_wrapper, scenario, result_dict_name, result_directory_name,
                     sample_size_vet=hp.sample_size_vet, number_of_trails=hp.number_of_trails,
                     epoch_vet=hp.epoch_vet, process_number=hp.process_number, **kwargs):
     """
     A wrap up function for the simulation loop using the multiprocessing Pool function. The function will
     save the result dictionary in a pickle file under ./results/{result_dict_name}_result_{scenario}_dict.p.
+
     :param simulation_wrapper: A function which should one of the wrapper function defined below.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param result_dict_name:  A string ('str' class) which we use to name the result dictionary as
     {result_dict_name}_result_{scenario}_dict.
+    :param result_directory_name: A string ('str' class). The result dictionary is stored under the directory. Usually,
+    it should correspond to the data generating mechanism.
     :param sample_size_vet: A python list of integers. It contains all the sample size we simulated.
     :param number_of_trails: An integer which is the number of trails we simulate for each sample size
     :param epoch_vet: A python list of integers. It provides the training epoch, if simulation wrapper is the
@@ -54,7 +57,7 @@ def simulation_loop(simulation_wrapper, scenario, result_dict_name,
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-        with open(f"./results/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+        with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
             pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")

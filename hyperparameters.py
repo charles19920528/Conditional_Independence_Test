@@ -7,6 +7,9 @@ number_of_trails = 1000
 # Sample size we simulate.
 sample_size_vet = [30, 100, 500, 1000]
 
+# Number of latent groups within samples.
+latent_group_number = 4
+
 ##################
 # Nerual network #
 ##################
@@ -31,7 +34,7 @@ learning_rate = 0.005
 ###############################
 # Misspecified neural network #
 ###############################
-epoch_vet_misspecified = [120, 100, 70, 50]
+epoch_vet_misspecified = [250, 250, 70, 70]
 hidden_1_out_dim_misspecified = 2
 hidden_2_out_dim_misspecified = 2
 
