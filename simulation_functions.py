@@ -18,7 +18,7 @@ import hyperparameters as hp
 ####################
 # Simulation loops #
 ####################
-def simulation_loop(simulation_wrapper, scenario, result_dict_name, result_directory_name,
+def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dict_name, result_directory_name,
                     sample_size_vet=hp.sample_size_vet, number_of_trails=hp.number_of_trails,
                     epoch_vet=hp.epoch_vet, process_number=hp.process_number, **kwargs):
     """
@@ -28,6 +28,7 @@ def simulation_loop(simulation_wrapper, scenario, result_dict_name, result_direc
     :param simulation_wrapper: A function which should one of the wrapper function defined below.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param result_dict_name:  A string ('str' class) which we use to name the result dictionary as
     {result_dict_name}_result_{scenario}_dict.
     :param result_directory_name: A string ('str' class). The result dictionary is stored under the directory. Usually,
@@ -49,15 +50,17 @@ def simulation_loop(simulation_wrapper, scenario, result_dict_name, result_direc
 
         if simulation_wrapper == ising_simulation_wrapper:
             pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                               epoch=epoch, **kwargs), trail_index_vet)
+                                               data_directory_name=data_directory_name, epoch=epoch, **kwargs),
+                                       trail_index_vet)
 
         else:
-            pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario),
-                                       trail_index_vet)
+            pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                               data_directory_name=data_directory_name), trail_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-        with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+        with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") \
+                as fp:
             pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
@@ -67,7 +70,8 @@ def simulation_loop(simulation_wrapper, scenario, result_dict_name, result_direc
 # Wrapper functions #
 #####################
 # Ising simulation
-def ising_simulation_wrapper(trail_index, scenario, sample_size, epoch, ising_network_class, **kwargs):
+def ising_simulation_wrapper(trail_index, scenario, data_directory_name, sample_size, epoch, ising_network_class,
+                             **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
@@ -78,6 +82,7 @@ def ising_simulation_wrapper(trail_index, scenario, sample_size, epoch, ising_ne
     :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param sample_size: An integer.
     :param epoch: An integer indicating the number of training epoch when training the neural network.
     :param ising_network_class: A class object which is one of the Ising neural network.
@@ -86,8 +91,9 @@ def ising_simulation_wrapper(trail_index, scenario, sample_size, epoch, ising_ne
     :return:
     A tuple (trail_index, result_vet). result_vet is the return of the gt.IsingTrainingPool function.
     """
-    x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+                         dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     ising_network = ising_network_class(**kwargs)
     ising_training_pool_instance = gt.IsingTrainingPool(z_mat=z_mat, x_y_mat=x_y_mat,epoch=epoch,
@@ -117,7 +123,7 @@ def chi_squared_test(x_y_mat):
     return result_vet
 
 
-def naive_chisq_wrapper(trail_index, scenario, sample_size):
+def naive_chisq_wrapper(trail_index, scenario, data_directory_name, sample_size):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
@@ -128,12 +134,13 @@ def naive_chisq_wrapper(trail_index, scenario, sample_size):
     :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param sample_size: An integer.
 
     :return:
     A tuple (trail_index, result_vet). result_vet is the return of the chi_squared_test function.
     """
-    x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
     result_vet = chi_squared_test(x_y_mat)
     return (trail_index, result_vet)
 
@@ -174,7 +181,7 @@ def stratified_chi_squared_test(x_y_mat_vet):
     return sum(chi_square_statistic_vet)
 
 
-def stratified_chisq_wrapper(trail_index, scenario, sample_size, cluster_number=2):
+def stratified_chisq_wrapper(trail_index, scenario, data_directory_name, sample_size, cluster_number=2):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
@@ -186,12 +193,13 @@ def stratified_chisq_wrapper(trail_index, scenario, sample_size, cluster_number=
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param sample_size: An integer.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
 
     :return:
     A tuple (trail_index, result_vet). result_vet is the return of the stratified_chi_squared_test function.
     """
-    x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     x_y_mat_vet = stratify_x_y_mat(x_y_mat=x_y_mat, z_mat=z_mat, cluster_number=cluster_number)
     test_statistic = stratified_chi_squared_test(x_y_mat_vet)
@@ -216,7 +224,7 @@ def process_x_y_mat(x_y_mat):
     return x, y
 
 
-def ccit_wrapper(trail_index, scenario, sample_size, **kwargs):
+def ccit_wrapper(trail_index, scenario, data_directory_name, sample_size, **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
@@ -227,15 +235,16 @@ def ccit_wrapper(trail_index, scenario, sample_size, **kwargs):
     :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param sample_size: An integer.
     :param kwargs: Arguments for the CCIT.CCIT functions.
 
     :return:
     A tuple (trail_index, result_vet). result_vet is the return of the CCIT.CCIT function.
     """
-    x_y_mat = np.loadtxt(f"./data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
     x_array, y_array = process_x_y_mat(x_y_mat)
-    z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     p_value = CCIT.CCIT(x_array, y_array, z_mat, **kwargs)
 

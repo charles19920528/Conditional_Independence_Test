@@ -180,22 +180,22 @@ def plot_roc(fpr_tpr_dict, model_for_main_title, result_directory_name):
     fig, ax = plt.subplots(2, 2)
     sample_size = 30
     ax[0, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
-    # ax.axvline(x = 0.05)
+    ax[0, 0].axvline(x = 0.05, color = "red")
     ax[0, 0].set_title(f"Sample size {sample_size}")
 
     sample_size = 100
     ax[0, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
-    # ax.axvline(x = 0.05)
+    ax[0, 1].axvline(x = 0.05, color = "red")
     ax[0, 1].set_title(f"Sample size {sample_size}")
 
     sample_size = 500
     ax[1, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
-    # ax.axvline(x = 0.05)
+    ax[1, 0].axvline(x = 0.05, color = "red")
     ax[1, 0].set_title(f"Sample size {sample_size}")
 
     sample_size = 1000
     ax[1, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
-    # ax.axvline(x = 0.05)
+    ax[1, 1].axvline(x = 0.05, color = "red")
     ax[1, 1].set_title(f"Sample size {sample_size}")
 
     fig.suptitle(f"RoC Curves of {model_for_main_title}")

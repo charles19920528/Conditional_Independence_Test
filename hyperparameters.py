@@ -42,6 +42,6 @@ hidden_2_out_dim_misspecified = 2
 # Multiprocess #
 ################
 # Number of process Pool function will run in parallel.
-process_number = 20
+process_number = 22
 
 
