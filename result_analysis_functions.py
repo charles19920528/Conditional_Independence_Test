@@ -8,6 +8,7 @@ import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
 
+import generate_train_fucntions as gt
 import hyperparameters as hp
 
 #####################################
@@ -64,6 +65,7 @@ def stratified_sq_statistic_one_trail(trail_index, one_sample_size_result_dict):
     test_statisitc = one_sample_size_result_dict[trail_index]
     return test_statisitc
 
+
 def ccit_one_trail(trail_index, one_sample_size_result_dict):
     """
     Obatin the sum of the test statistic of the CCIT test.
@@ -79,19 +81,57 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
     test_statisitc = 1 - one_sample_size_result_dict[trail_index]
     return test_statisitc
 
-def ising_residual_statistic_one_trail(trail_index, one_sample_size_result_dict,):
+
+def ising_marginal_pmf(pmf_mat):
     """
-        Obatin the residual test statistic of the Ising model for one trail.
+    Compute the marginal expectation of both x and y
+    :param pmf_mat:
+    :return:
+    """
+    marginalize_x_mat = np.array([[1, 0], [1, 0], [0, 1], [0, 1]])
+    marginalize_y_mat = np.array([[1, 0], [0, 1], [1, 0], [0, 1]])
 
-        :param trail_index: An integer indicating the index of the simulation trail of which we extract the test
-        statistic.
-        :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model
-        for a particular sample size.
+    marginal_pmf_x_mat = np.matmul(pmf_mat, marginalize_x_mat)
+    marginal_pmf_y_mat = np.matmul(pmf_mat, marginalize_y_mat)
 
-        :return:
-        test_statisitc: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
-        classified.
-        """
+    expectation_x_vet = marginal_pmf_x_mat[:, 0] - marginal_pmf_x_mat[:, 1]
+    expectation_y_vet = marginal_pmf_y_mat[:, 0] - marginal_pmf_y_mat[:, 1]
+
+    return expectation_x_vet, expectation_y_vet
+
+
+
+
+def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_directory_name,
+                                       one_sample_size_result_dict):
+    """
+    Obatin the residual test statistic of the Ising model for one trail.
+
+    :param: sample_size:
+    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test
+    statistic.
+    :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model
+    for a particular sample size.
+
+    :return:
+    test_statisitc: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
+    classified.
+    """
+    parameter_mat = one_sample_size_result_dict[trail_index]
+    pmf_mat = gt.pmf_collection(parameter_mat)
+    expectation_x_vet, expectation_y_vet = ising_marginal_pmf(pmf_mat)
+
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+                         dtype=np.float32)
+    centered_x_vet = x_y_mat[:, 0] - expectation_x_vet
+    centered_y_vet = x_y_mat[:, 1] - expectation_y_vet
+    r_vet = centered_x_vet * centered_y_vet
+
+    test_statistic_numerator = np.sqrt(sample_size) * np.mean(r_vet)
+    test_statistic_denominator = np.std(r_vet)
+    test_statistic = np.abs(test_statistic_numerator / test_statistic_denominator)
+
+    return test_statistic
 
 
 ################################################################
