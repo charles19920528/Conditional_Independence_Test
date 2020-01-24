@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 
 import hyperparameters as hp
 
-
+#####################################
+# Get test statistic for one trail. #
+#####################################
 # Method specific functions to bbtain test statistic for one trial.
 def ising_test_statistic_one_trial(trail_index, one_sample_size_result_dict):
     """
@@ -77,7 +79,24 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
     test_statisitc = 1 - one_sample_size_result_dict[trail_index]
     return test_statisitc
 
+def ising_residual_statistic_one_trail(trail_index, one_sample_size_result_dict,):
+    """
+        Obatin the residual test statistic of the Ising model for one trail.
 
+        :param trail_index: An integer indicating the index of the simulation trail of which we extract the test
+        statistic.
+        :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model
+        for a particular sample size.
+
+        :return:
+        test_statisitc: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
+        classified.
+        """
+
+
+################################################################
+# Get test statistic for all trails with the same sample size. #
+################################################################
 # Shared functions to obtain fpr, tpr.
 def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_size_alt_result_dict, number_of_trails,
                                    test_statistic_one_trail, **kwargs):
@@ -108,11 +127,10 @@ def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_
 
     return (null_test_statistic_vet_one_sample, alt_test_statistic_vet_one_sample)
 
-# test_statistic_one_sample_size_tuple =  ising_test_statistic_one_sample_size(null_result_sample_size_dict,
-#                                                                   alt_result_dict_sample_size_dict,
-#                                                                   hp.number_of_trails)
 
-
+#######################
+# Compute fpr and tpr #
+#######################
 def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails):
     """
     A wrap up function is used in the fpr_tpr function which usess the multiprocessing Pool function.
@@ -163,6 +181,7 @@ def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_
         fpr_tpr_dict[sample_size] = [fpr, tpr]
 
     return fpr_tpr_dict
+
 
 def plot_roc(fpr_tpr_dict, model_for_main_title, result_directory_name):
     """
