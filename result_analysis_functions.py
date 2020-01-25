@@ -100,8 +100,6 @@ def ising_marginal_pmf(pmf_mat):
     return expectation_x_vet, expectation_y_vet
 
 
-
-
 def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_directory_name,
                                        one_sample_size_result_dict):
     """
@@ -206,8 +204,7 @@ def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trai
     """
     A wrap up function is used in the fpr_tpr function which usess the multiprocessing Pool function.
 
-    :param test_statistic_one_sample_size_tuple: A function which extract test statistic given a sample size. It should
-    be one of the function defined above.
+    :param test_statistic_one_sample_size_tuple: 
     :param number_of_trails: An integer which is the number of trails we simulate for each sample size
 
     :return:
