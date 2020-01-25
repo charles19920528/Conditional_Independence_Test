@@ -39,6 +39,23 @@ sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = 
 print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
 
 
+# Ising simulation using residual statistic
+start_time = time.time()
+
+sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
+                   data_directory_name = "ising_data", result_dict_name = "ising_residual",
+                   result_directory_name = "ising_data",
+                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
+                   output_dim = 2)
+
+sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt",
+                   data_directory_name = "ising_data", result_dict_name = "ising_residual",
+                   result_directory_name = "ising_data",
+                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
+                   output_dim = 2)
+
+print("Ising (residuals) simulation takes %s seconds to finish." % (time.time() - start_time))
+
 # CCIT simulation
 process_number_ccit = 3
 start_time = time.time()

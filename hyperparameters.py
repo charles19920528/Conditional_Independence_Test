@@ -38,6 +38,7 @@ epoch_vet_misspecified = [250, 250, 70, 70]
 hidden_1_out_dim_misspecified = 2
 hidden_2_out_dim_misspecified = 2
 
+
 ################
 # Multiprocess #
 ################

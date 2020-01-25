@@ -120,7 +120,7 @@ def pmf_null(x, hx):
     return pmf
 
 
-def log_ising_alternative(x_y_mat, parameter_mat):
+def log_ising_pmf(x_y_mat, parameter_mat):
     """
     Compute negative log likelihood of the Ising model under the alternative and use it as the loss function for
     model training.
@@ -133,6 +133,10 @@ def log_ising_alternative(x_y_mat, parameter_mat):
     """
     sample_size = tf.shape(parameter_mat)[0]
     parameter_mat = tf.cast(parameter_mat, tf.float32)
+    if parameter_mat.shape[1] == 2:
+        zero_tensor = tf.zeros((parameter_mat.shape[0], 1))
+        parameter_mat = tf.concat(values = [parameter_mat, zero_tensor], axis = 1)
+
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
     x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
@@ -332,7 +336,7 @@ class IsingTunning:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
-                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
 
@@ -341,7 +345,7 @@ class IsingTunning:
 
             for z_batch_test, x_y_batch_test in test_ds:
                 predicted_parameter_mat_test = self.ising_network(z_batch_test)
-                kl_test = log_ising_alternative(x_y_batch_test, predicted_parameter_mat_test)
+                kl_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
@@ -408,7 +412,7 @@ class IsingTrainingPool:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
-                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
 
@@ -497,7 +501,7 @@ class IsingTraining_tf_function:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat.assign(train_network(z_batch))
-                    loss.assign(log_ising_alternative(x_y_batch, batch_predicted_parameter_mat))
+                    loss.assign(log_ising_pmf(x_y_batch, batch_predicted_parameter_mat))
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
@@ -506,7 +510,7 @@ class IsingTraining_tf_function:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = train_network(z_batch)
-                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 
@@ -630,7 +634,7 @@ class IsingTrainingPool:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = train_network(z_batch)
-                    loss = log_ising_alternative(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, train_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
 

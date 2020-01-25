@@ -118,8 +118,10 @@ def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_
     classified.
     """
     parameter_mat = one_sample_size_result_dict[trail_index]
-    pmf_mat = gt.pmf_collection(parameter_mat)
-    expectation_x_vet, expectation_y_vet = ising_marginal_pmf(pmf_mat)
+    pmf_mat = gt.pmf_null(x = 1, hx = parameter_mat)
+    expectation_mat = pmf_mat - (1 - pmf_mat)
+    expectation_x_vet = expectation_mat[:, 0]
+    expectation_y_vet = expectation_mat[:, 1]
 
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
                          dtype=np.float32)
@@ -152,6 +154,36 @@ def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_
     :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
     functions defnied above. 
     :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function. 
+
+    :return:
+    """
+    pool = mp.Pool(hp.process_number)
+    trail_index_vet = range(number_of_trails)
+
+    null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+                                                          one_sample_size_result_dict =
+                                                          one_sample_size_null_result_dict, **kwargs), trail_index_vet)
+    alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+                                                         one_sample_size_result_dict = one_sample_size_alt_result_dict,
+                                                         **kwargs), trail_index_vet)
+
+    return (null_test_statistic_vet_one_sample, alt_test_statistic_vet_one_sample)
+
+
+def residual_test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_size_alt_result_dict, number_of_trails,
+                                   test_statistic_one_trail, **kwargs):
+    """
+    Apply test_statistic_one_trail function to each result dictionary of a particular sample size to obtain test
+    statistics for all trails.
+
+    :param one_sample_size_null_result_dict: A dictionary containing the raw outputs simulated under the null
+    given a particular sample size.
+    :param one_sample_size_alt_result_dict: A dictionary containing the raw outputs simulated under the
+    alternative given a particular sample size.
+    :param number_of_trails:
+    :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
+    functions defnied above.
+    :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function.
 
     :return:
     """
@@ -210,11 +242,11 @@ def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_
 
         test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(one_sample_size_null_result_dict =
                                                                               one_sample_size_null_result_dict,
-                                                                         one_sample_size_alt_result_dict =
-                                                                         one_sample_size_alt_result_dict,
-                                                                         number_of_trails = number_of_trails,
-                                                                         test_statistic_one_trail =
-                                                                         test_statistic_one_trail, **kwargs)
+                                                                              one_sample_size_alt_result_dict =
+                                                                              one_sample_size_alt_result_dict,
+                                                                              number_of_trails = number_of_trails,
+                                                                              test_statistic_one_trail =
+                                                                              test_statistic_one_trail, **kwargs)
 
         fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails)
 

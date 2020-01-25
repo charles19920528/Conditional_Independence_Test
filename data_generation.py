@@ -39,4 +39,13 @@ with open("data/ising_data/weights_dict.p", "wb") as fp:
 ###################
 # Use mixed model #
 ###################
-w_vet = np.random.randint(0, 3, size = 10)
+tf.random.set_seed(seed_index)
+np.random.seed(seed_index)
+
+for sample_size in hp.sample_size_vet:
+    for i in range(hp.simulation_times):
+        z_mat, label_vet = make_blobs(n_samples=sample_size, centers=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        permutation_vet = np.random.permutation(len(label_vet))
+        z_mat = z_mat[permutation_vet]
+        label_vet = label_vet[permutation_vet]
+
