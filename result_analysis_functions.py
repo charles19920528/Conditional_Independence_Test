@@ -135,7 +135,6 @@ def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_
 
     return test_statistic
 
-
 ################################################################
 # Get test statistic for all trails with the same sample size. #
 ################################################################

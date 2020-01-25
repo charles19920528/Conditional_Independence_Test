@@ -112,7 +112,7 @@ def pmf_null(x, hx):
     :param hx: The parameter corresponds to x.
     :return: pmf: P(X = x).
     """
-    hx = tf.cast(hx, tf.float64)
+    hx = tf.cast(hx, tf.float32)
     numerator = tf.exp(- x * hx)
     denominator = tf.exp(- x * hx) + tf.exp(x * hx)
     pmf = numerator / denominator
