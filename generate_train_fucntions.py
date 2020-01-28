@@ -1,5 +1,5 @@
 import tensorflow as tf
-# Numpy is for the generate_x_y_mat method and trainning method in the IsingSimulation class.
+# Numpy is for the generate_x_y_mat_ising method and trainning method in the IsingSimulation class.
 import numpy as np
 import hyperparameters as hp
 
@@ -161,12 +161,36 @@ def log_ising_pmf(x_y_mat, parameter_mat):
     return negative_log_likelihood
 
 
-def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
+def generate_x_y_mat(sample_size, p_mat):
+    """
+    Generate an x_y_mat according to the p_mat.
+    :param sample_size: An integer.
+    :param p_mat: An sample_size x 4 matrix. The columns correspond to P(X = 1, Y = 1), P(X = 1, Y = -1),
+    P(X = -1, Y = 1) and P(X = -1, Y = -1).
+    :return:
+    x_y_mat: x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
+    """
+    raw_sample_mat = np.zeros((sample_size, 4))
+    for i in np.arange(sample_size):
+        p_vet = p_mat[i, :]
+        raw_sample = np.random.multinomial(1, p_vet)
+        raw_sample_mat[i, :] = raw_sample
+
+    conversion_mat = np.array([
+        [1, 1], [1, -1], [-1, 1], [-1, -1]
+    ])
+    x_y_mat = raw_sample_mat.dot(conversion_mat)
+
+    return x_y_mat
+
+
+def generate_x_y_mat_ising(ising_network, z_mat, null_boolean, sample_size):
     """
     The function will generate the matrix of responses (x, y).
     :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
     Usually, it is the output of the generate_z_mat method.
-    :return: x_y_mat
+    :return:
+    x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
     """
     true_parameter_mat = ising_network(z_mat)
     if null_boolean:
@@ -177,19 +201,42 @@ def generate_x_y_mat(ising_network, z_mat, null_boolean, sample_size):
         p_mat = pmf_collection(true_parameter_mat)
         # Recall that the column of p_mat corresponds to P(X = 1, Y = 1),
         # P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
-        raw_sample_mat = np.zeros((sample_size, 4))
-        for i in np.arange(sample_size):
-            p_vet = p_mat[i, :]
-            raw_sample = np.random.multinomial(1, p_vet)
-            raw_sample_mat[i, :] = raw_sample
-
-        conversion_mat = np.array([
-            [1, 1], [1, -1], [-1, 1], [-1, -1]
-        ])
-        x_y_mat = raw_sample_mat.dot(conversion_mat)
+        x_y_mat = generate_x_y_mat(sample_size, p_mat)
 
         return x_y_mat
 
+def mixture_model_x_y_mat(label_vet):
+    """
+
+    :param label_vet:
+    :return:
+    """
+    def distribute_probability(probability_sum_vet):
+        probability_vet = np.random.uniform(low=0.0, high=probability_sum_vet)
+        remaining_probability_vet = probability_sum_vet - probability_vet
+        p_mat = np.vstack((probability_vet, remaining_probability_vet))
+        p_mat = np.transpose(p_mat)
+
+        return p_mat
+
+    sample_size = label_vet.shape[0]
+    group_0_length = np.sum(label_vet == 0)
+    remaining_group_length = sample_size - group_0_length
+
+    x_y_mat = np.zeros((sample_size, 2))
+    x_y_mat[label_vet != 0, :] = 2 * np.random.binomial(n=1, p=0.5, size=(remaining_group_length, 2)) - 1
+
+    p_mat = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
+    probability_equal_vet = np.random.uniform(low=0.25, high=0.9, size=group_0_length)
+    probability_not_equal_vet = 1 - probability_equal_vet
+
+    group_0_index = np.argwhere(label_vet == 0)
+    p_mat[group_0_index, (0, 3)] = distribute_probability(probability_equal_vet)
+    p_mat[group_0_index, (1, 2)] = distribute_probability(probability_not_equal_vet)
+
+    x_y_mat[label_vet == 0, :] = generate_x_y_mat(sample_size=group_0_length, p_mat=p_mat[group_0_index, :].squeeze())
+
+    return x_y_mat, p_mat
 
 def data_generate_network(dim_z=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim):
     """
