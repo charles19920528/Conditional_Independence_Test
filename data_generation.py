@@ -12,7 +12,7 @@ np.random.seed(seed_index)
 weights_dict = dict()
 for sample_size in hp.sample_size_vet:
     sample_size_weight_dict = dict()
-    for i in range(hp.simulation_times):
+    for i in range(hp.number_of_trails):
         # Generate z_mat
         centers = [np.repeat(0.5, 3), np.repeat(-0.5, 3)]
         z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
@@ -42,10 +42,17 @@ with open("data/ising_data/weights_dict.p", "wb") as fp:
 tf.random.set_seed(seed_index)
 np.random.seed(seed_index)
 
+def mixture_model_x_y_mat(z_mat, label_vet):
+
+
 for sample_size in hp.sample_size_vet:
-    for i in range(hp.simulation_times):
+    for i in range(hp.number_of_trails):
+        x_y_mat_null = 2 * np.random.binomial(n=1, p=0.5, size=(sample_size, 2)) - 1
+
         z_mat, label_vet = make_blobs(n_samples=sample_size, centers=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         permutation_vet = np.random.permutation(len(label_vet))
         z_mat = z_mat[permutation_vet]
         label_vet = label_vet[permutation_vet]
 
+
+        x_y_mat_alt =

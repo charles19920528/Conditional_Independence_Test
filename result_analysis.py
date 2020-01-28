@@ -1,10 +1,10 @@
 import pickle
 import result_analysis_functions as ra
+import hyperparameters as hp
 
 ###########################
 # Analyze the Ising model #
 ###########################
-"""
 with open('results/result_dict/ising_data/ising_result_null_dict.p', 'rb') as fp:
     ising_result_null_dict = pickle.load(fp)
 with open('results/result_dict/ising_data/ising_result_alt_dict.p', 'rb') as fp:
@@ -14,7 +14,7 @@ ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ising_result_null_dict, alt_r
                              test_statistic_one_trail = ra.ising_test_statistic_one_trial)
 
 ra.plot_roc(ising_fpr_tpr_dict, "Ising_Model", "ising_data")
-"""
+
 
 
 # Use residual statistic
@@ -25,8 +25,10 @@ with open('results/result_dict/ising_data/ising_residual_result_alt_dict.p', 'rb
 ising_residual_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ising_residual_result_null_dict,
                                          alt_result_dict = ising_residual_result_alt_dict,
                                          test_statistic_one_trail = ra.ising_residual_statistic_one_trail,
-                                         data_directory_name = "ising_data")
+                                         number_of_trails=hp.number_of_trails,
+                                         data_directory_name="ising_data")
 
+ra.plot_roc(ising_residual_fpr_tpr_dict, "Ising_Residuals", "ising_data")
 
 ##################################
 # Analayze the Naive Chi Squared #
@@ -86,7 +88,18 @@ misspecified_ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = misspecified_isi
 
 ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified_Ising_Model", "ising_data")
 
+# Use residual statistic
+with open('results/result_dict/ising_data/misspecified_ising_residual_result_null_dict.p', 'rb') as fp:
+    misspecified_ising_residual_result_null_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/misspecified_ising_residual_result_alt_dict.p', 'rb') as fp:
+    misspecified_ising_residual_result_alt_dict = pickle.load(fp)
+ising_residual_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = misspecified_ising_residual_result_null_dict,
+                                         alt_result_dict = misspecified_ising_residual_result_alt_dict,
+                                         test_statistic_one_trail = ra.ising_residual_statistic_one_trail,
+                                         number_of_trails=hp.number_of_trails,
+                                         data_directory_name="ising_data")
 
+ra.plot_roc(ising_residual_fpr_tpr_dict, "Misspecified_Ising_Residuals", "ising_data")
 
 
 ################################

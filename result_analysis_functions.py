@@ -82,25 +82,7 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
     return test_statisitc
 
 
-def ising_marginal_pmf(pmf_mat):
-    """
-    Compute the marginal expectation of both x and y
-    :param pmf_mat:
-    :return:
-    """
-    marginalize_x_mat = np.array([[1, 0], [1, 0], [0, 1], [0, 1]])
-    marginalize_y_mat = np.array([[1, 0], [0, 1], [1, 0], [0, 1]])
-
-    marginal_pmf_x_mat = np.matmul(pmf_mat, marginalize_x_mat)
-    marginal_pmf_y_mat = np.matmul(pmf_mat, marginalize_y_mat)
-
-    expectation_x_vet = marginal_pmf_x_mat[:, 0] - marginal_pmf_x_mat[:, 1]
-    expectation_y_vet = marginal_pmf_y_mat[:, 0] - marginal_pmf_y_mat[:, 1]
-
-    return expectation_x_vet, expectation_y_vet
-
-
-def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_directory_name,
+def ising_residual_statistic_one_trail(trail_index, sample_size,  scenario, data_directory_name,
                                        one_sample_size_result_dict):
     """
     Obatin the residual test statistic of the Ising model for one trail.
@@ -133,6 +115,7 @@ def ising_residual_statistic_one_trail(sample_size, trail_index, scenario, data_
 
     return test_statistic
 
+
 ################################################################
 # Get test statistic for all trails with the same sample size. #
 ################################################################
@@ -157,42 +140,24 @@ def test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_
     pool = mp.Pool(hp.process_number)
     trail_index_vet = range(number_of_trails)
 
-    null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
-                                                          one_sample_size_result_dict =
-                                                          one_sample_size_null_result_dict, **kwargs), trail_index_vet)
-    alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
-                                                         one_sample_size_result_dict = one_sample_size_alt_result_dict,
-                                                         **kwargs), trail_index_vet)
-
-    return (null_test_statistic_vet_one_sample, alt_test_statistic_vet_one_sample)
-
-
-def residual_test_statistic_one_sample_size(one_sample_size_null_result_dict, one_sample_size_alt_result_dict, number_of_trails,
-                                   test_statistic_one_trail, **kwargs):
-    """
-    Apply test_statistic_one_trail function to each result dictionary of a particular sample size to obtain test
-    statistics for all trails.
-
-    :param one_sample_size_null_result_dict: A dictionary containing the raw outputs simulated under the null
-    given a particular sample size.
-    :param one_sample_size_alt_result_dict: A dictionary containing the raw outputs simulated under the
-    alternative given a particular sample size.
-    :param number_of_trails:
-    :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
-    functions defnied above.
-    :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function.
-
-    :return:
-    """
-    pool = mp.Pool(hp.process_number)
-    trail_index_vet = range(number_of_trails)
-
-    null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
-                                                          one_sample_size_result_dict =
-                                                          one_sample_size_null_result_dict, **kwargs), trail_index_vet)
-    alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
-                                                         one_sample_size_result_dict = one_sample_size_alt_result_dict,
-                                                         **kwargs), trail_index_vet)
+    if test_statistic_one_trail == ising_residual_statistic_one_trail:
+        null_test_statistic_vet_one_sample = pool.map(partial(ising_residual_statistic_one_trail,
+                                                              one_sample_size_result_dict=
+                                                              one_sample_size_null_result_dict, scenario = "null",
+                                                              **kwargs), trail_index_vet)
+        alt_test_statistic_vet_one_sample = pool.map(partial(ising_residual_statistic_one_trail,
+                                                             one_sample_size_result_dict=
+                                                             one_sample_size_alt_result_dict, scenario = "alt",
+                                                             **kwargs), trail_index_vet)
+    else:
+        null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+                                                              one_sample_size_result_dict=
+                                                              one_sample_size_null_result_dict, **kwargs),
+                                                      trail_index_vet)
+        alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+                                                             one_sample_size_result_dict=
+                                                             one_sample_size_alt_result_dict, **kwargs,),
+                                                     trail_index_vet)
 
     return (null_test_statistic_vet_one_sample, alt_test_statistic_vet_one_sample)
 
@@ -236,13 +201,23 @@ def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_
         one_sample_size_null_result_dict = null_result_dict[sample_size]
         one_sample_size_alt_result_dict = alt_result_dict[sample_size]
 
-        test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(one_sample_size_null_result_dict =
-                                                                              one_sample_size_null_result_dict,
-                                                                              one_sample_size_alt_result_dict =
-                                                                              one_sample_size_alt_result_dict,
-                                                                              number_of_trails = number_of_trails,
-                                                                              test_statistic_one_trail =
-                                                                              test_statistic_one_trail, **kwargs)
+        if test_statistic_one_trail == ising_residual_statistic_one_trail:
+            test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(one_sample_size_null_result_dict=
+                                                                                  one_sample_size_null_result_dict,
+                                                                                  one_sample_size_alt_result_dict=
+                                                                                  one_sample_size_alt_result_dict,
+                                                                                  number_of_trails=number_of_trails,
+                                                                                  test_statistic_one_trail=
+                                                                                  test_statistic_one_trail,
+            sample_size = sample_size,**kwargs)
+        else:
+            test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(one_sample_size_null_result_dict=
+                                                                                  one_sample_size_null_result_dict,
+                                                                                  one_sample_size_alt_result_dict=
+                                                                                  one_sample_size_alt_result_dict,
+                                                                                  number_of_trails=number_of_trails,
+                                                                                  test_statistic_one_trail=
+                                                                                  test_statistic_one_trail, **kwargs)
 
         fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails)
 
@@ -251,6 +226,9 @@ def fpr_tpr(null_result_dict, alt_result_dict, test_statistic_one_trail, number_
     return fpr_tpr_dict
 
 
+#############
+# PLot Roce #
+#############
 def plot_roc(fpr_tpr_dict, model_for_main_title, result_directory_name):
     """
     Assuming there are only four sample size we are simulating. We plot the RoC curve and save the plot under
