@@ -111,3 +111,38 @@ sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = 
                    hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 2)
 
 print("Ising (residuals) simulation takes %s seconds to finish." % (time.time() - start_time))
+
+
+################
+# Mixture data #
+################
+# Naive Chisq simulation
+sf.simulation_loop(simulation_wrapper = sf.naive_chisq_wrapper,  scenario = "null", data_directory_name="mixture_data",
+                   result_dict_name = "naive_chisq", result_directory_name = "mixture_data")
+
+sf.simulation_loop(simulation_wrapper = sf.naive_chisq_wrapper,  scenario = "alt", data_directory_name="mixture_data",
+                   result_dict_name = "naive_chisq", result_directory_name = "mixture_data")
+
+
+# Stratified Chisq simulation
+sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "null",
+                   data_directory_name="mixture_data", result_dict_name = "stratified_chisq",
+                   result_directory_name = "mixture_data", cluster_number=2)
+
+sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt",
+                   data_directory_name="mixture_data",
+                   result_dict_name = "stratified_chisq", result_directory_name = "mixture_data", cluster_number=3)
+
+# CCIT
+process_number_ccit = 3
+start_time = time.time()
+
+sf.simulation_loop(simulation_wrapper = sf.ccit_wrapper, scenario = "null", data_directory_name="mixture_data",
+                   result_dict_name = "ccit", result_directory_name = "mixture_data",
+                   process_number = process_number_ccit)
+
+sf.simulation_loop(simulation_wrapper = sf.ccit_wrapper, scenario = "alt", data_directory_name="mixture_data",
+                   result_dict_name = "ccit", result_directory_name = "mixture_data",
+                   process_number = process_number_ccit)
+
+print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))

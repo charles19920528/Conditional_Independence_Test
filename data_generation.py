@@ -10,9 +10,9 @@ tf.random.set_seed(seed_index)
 np.random.seed(seed_index)
 
 
-###################
-# Use mixed model #
-###################
+##########################
+# Use the mixture model. #
+##########################
 tf.random.set_seed(seed_index)
 np.random.seed(seed_index)
 
@@ -30,9 +30,11 @@ for sample_size in hp.sample_size_vet:
 
 
 
-
-
-
+########################
+# Use the Ising model. #
+########################
+tf.random.set_seed(seed_index)
+np.random.seed(seed_index)
 weights_dict = dict()
 for sample_size in hp.sample_size_vet:
     sample_size_weight_dict = dict()
