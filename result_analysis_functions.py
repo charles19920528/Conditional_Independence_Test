@@ -204,7 +204,7 @@ def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trai
     """
     A wrap up function is used in the fpr_tpr function which usess the multiprocessing Pool function.
 
-    :param test_statistic_one_sample_size_tuple: 
+    :param test_statistic_one_sample_size_tuple:
     :param number_of_trails: An integer which is the number of trails we simulate for each sample size
 
     :return:

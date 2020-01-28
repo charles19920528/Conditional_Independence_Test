@@ -105,6 +105,7 @@ sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = 
 sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt",
                    data_directory_name = "ising_data", result_dict_name = "misspecified_ising_residual",
                    result_directory_name = "ising_data",
+                   ising_network_class = gt.WrongIsingNetwork,
                    epoch_vet = hp.epoch_vet_misspecified, input_dim = hp.dim_z,
                    hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
                    hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 2)
