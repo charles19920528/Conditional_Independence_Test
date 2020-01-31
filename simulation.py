@@ -130,8 +130,8 @@ sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = 
                    result_directory_name = "mixture_data", cluster_number=2)
 
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt",
-                   data_directory_name="mixture_data",
-                   result_dict_name = "stratified_chisq", result_directory_name = "mixture_data", cluster_number=3)
+                   data_directory_name="mixture_data", result_dict_name = "stratified_chisq",
+                   result_directory_name = "mixture_data", cluster_number=3)
 
 # CCIT
 process_number_ccit = 3

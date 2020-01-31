@@ -109,6 +109,8 @@ ccit_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ccit_result_null_dict, alt_res
                                         test_statistic_one_trail = ra.ccit_one_trail)
 
 ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")
+
+
 ########################################
 # Analyze the misspecified Ising model #
 ########################################
@@ -147,7 +149,7 @@ kl_list = []
 for i, sample_size in enumerate(hp.sample_size_vet):
     z_mat = np.loadtxt(f"./data/z_mat/z_mat_{sample_size}.txt", dtype = np.float32)
     alt_parameter_mat = alt_network(z_mat)
-    kl_list.append( gt.kl_divergence(true_parameter_mat = alt_parameter_mat,
+    kl_list.append( gt.kl_divergence_ising(true_parameter_mat = alt_parameter_mat,
                                   predicted_parameter_mat = alt_parameter_mat[:, :2], isAverage = False) )
 
 fig0, ax0 = plt.subplots()

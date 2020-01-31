@@ -6,9 +6,6 @@ from sklearn.datasets.samples_generator import make_blobs
 import hyperparameters as hp
 
 seed_index = 1
-tf.random.set_seed(seed_index)
-np.random.seed(seed_index)
-
 
 ##########################
 # Use the mixture model. #
@@ -21,7 +18,7 @@ for sample_size in hp.sample_size_vet:
         x_y_mat_null = 2 * np.random.binomial(n=1, p=0.5, size=(sample_size, 2)) - 1
 
         z_mat, label_vet = make_blobs(n_samples=sample_size, centers=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        x_y_mat_alt, p_mat_alt = gt.mixture_model_x_y_mat(label_vet=label_vet)
+        x_y_mat_alt, p_mat_alt = gt.mixture_model_x_y_mat(label_vet=label_vet, p_x_equal_y=0.6)
 
         np.savetxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{i}.txt", z_mat)
         np.savetxt(f"./data/mixture_data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
