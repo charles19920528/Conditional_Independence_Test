@@ -387,23 +387,23 @@ class IsingTunning:
 
             for z_batch_test, x_y_batch_test in test_ds:
                 predicted_parameter_mat_test = self.ising_network(z_batch_test)
-                likelihood_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
+                likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
                 print("The loss is %f " % loss)
-                print("The test loss is %f" % likelihood_test)
+                print("The test loss is %f" % likelihood_on_test)
 
             predicted_parameter_mat = self.ising_network(self.z_mat)
             if p_mat_true is not None:
                 p_mat_predicted = pmf_collection(predicted_parameter_mat)
-                kl = kl_divergence(p_mat_true, p_mat_predicted, True)
+                kl_on_full_data = kl_divergence(p_mat_true, p_mat_predicted, True)
             else:
-                kl = kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, True)
+                kl_on_full_data = kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, True)
 
             loss_kl_array[0, iteration] = loss.numpy()
-            loss_kl_array[1, iteration] = likelihood_test
-            loss_kl_array[2, iteration] = kl
+            loss_kl_array[1, iteration] = likelihood_on_test
+            loss_kl_array[2, iteration] = kl_on_full_data
 
             iteration += 1
 

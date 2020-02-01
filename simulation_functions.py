@@ -59,11 +59,10 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-        with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") \
-                as fp:
-            pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
-
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
+
+    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 #####################

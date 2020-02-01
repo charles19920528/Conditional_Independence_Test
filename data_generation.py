@@ -23,7 +23,7 @@ for sample_size in hp.sample_size_vet:
         np.savetxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{i}.txt", z_mat)
         np.savetxt(f"./data/mixture_data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
         np.savetxt(f"./data/mixture_data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
-        np.savetxt(f"./data/mixture_data/alt/p_mat_alt_{sample_size}_{i}.txt", p_mat_alt)
+        np.savetxt(f"./data/mixture_data/alt/p_mat/p_mat_alt_{sample_size}_{i}.txt", p_mat_alt)
 
 
 
