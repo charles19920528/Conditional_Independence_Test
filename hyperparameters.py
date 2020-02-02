@@ -1,3 +1,5 @@
+import numpy as np
+
 ###################
 # Data generation #
 ###################
@@ -5,7 +7,7 @@
 number_of_trails = 1000
 
 # Sample size we simulate.
-sample_size_vet = [30, 100, 500, 1000]
+sample_size_vet = np.array([30, 100, 500, 1000])
 
 # Number of latent groups within samples.
 latent_group_number = 4
@@ -20,7 +22,7 @@ hidden_1_out_dim = 3
 dim_z = 3
 
 # Training epochs for samples sizes in the sample_size_vet
-epoch_vet = [250, 250, 100, 90]
+epoch_vet = np.array([250, 250, 100, 90])
 
 # buffer size for Tensorflow dataset.
 buffer_size = 1024
@@ -34,11 +36,19 @@ learning_rate = 0.005
 ###############################
 # Misspecified neural network #
 ###############################
-epoch_vet_misspecified = [250, 250, 70, 70]
+epoch_vet_misspecified = np.array([250, 250, 70, 70])
 hidden_1_out_dim_misspecified = 2
 hidden_2_out_dim_misspecified = 2
 
 
+####################################
+# Architecture on the mixture data #
+####################################
+hidden_1_out_dim_vet = np.array([3, 4, 6, 8])
+hidden_2_out_dim_vet=np.array([3, 4, 6, 8])
+
+epoch_vet_mixture_alt = np.array([18, 18, 1, 1])
+epoch_vet_mixture_null = np.array([20, 10, 4, 1])
 ################
 # Multiprocess #
 ################

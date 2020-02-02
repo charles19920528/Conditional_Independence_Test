@@ -58,7 +58,7 @@ def pmf_collection(parameter_mat):
             [-1, 1],
             [1, -1],
             [1, 1]
-        ], dtype=tf.float64)
+        ], dtype=tf.float32)
 
     elif number_of_columns == 3:
         one_mat = tf.constant([
@@ -66,17 +66,19 @@ def pmf_collection(parameter_mat):
             [-1, 1, 1],
             [1, -1, 1],
             [1, 1, -1]
-        ], dtype=tf.float64)
+        ], dtype=tf.float32)
 
     else:
         raise Exception("The shape of the parameter_mat doesn't satisfy the requirement")
 
-    parameter_mat = tf.cast(parameter_mat, tf.float64)
+    parameter_mat = tf.cast(parameter_mat, tf.float32)
     kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b=True)
     exp_kernel_mat = tf.exp(kernel_mat)
-    prob_mat = tf.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
+    # tf.transpose has a weird bug when running the ising_tuning script at sample size 1000.
+    # prob_mat = tf.transpose(exp_kernel_mat, perm=[1, 0]) / tf.reduce_sum(exp_kernel_mat, axis=1)
+    prob_mat = np.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
 
-    return tf.transpose(prob_mat)
+    return np.transpose(prob_mat)
 
 def pmf_null(x, hx):
     """
@@ -268,12 +270,12 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     """
     assert(p_mat_true.shape == p_mat_predicted.shape)
 
-    kl_divergence_mat = p_mat_true * tf.math.log(p_mat_true / p_mat_predicted)
+    kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
     if isAverage:
-        kl_divergence_scalar = tf.reduce_sum(kl_divergence_mat) / p_mat_true.shape[0]
+        kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
         return kl_divergence_scalar
     else:
-        kl_divergence_list = tf.reduce_sum(kl_divergence_mat, axis=1)
+        kl_divergence_list = np.sum(kl_divergence_mat, axis=1)
         return kl_divergence_list
 
 
@@ -295,8 +297,9 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
     """
     p_mat_true = pmf_collection(true_parameter_mat)
     p_mat_predicted = pmf_collection(predicted_parameter_mat)
+    kl_divergence_scalr = kl_divergence(p_mat_true, p_mat_predicted, isAverage)
 
-    kl_divergence(p_mat_true, p_mat_predicted, isAverage)
+    return kl_divergence_scalr
 
 
 #########################################
@@ -384,7 +387,7 @@ class IsingTunning:
                     loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
-
+            print(f"Finished training{iteration} ")
             for z_batch_test, x_y_batch_test in test_ds:
                 predicted_parameter_mat_test = self.ising_network(z_batch_test)
                 likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
@@ -397,7 +400,9 @@ class IsingTunning:
             predicted_parameter_mat = self.ising_network(self.z_mat)
             if p_mat_true is not None:
                 p_mat_predicted = pmf_collection(predicted_parameter_mat)
+                print(f"{self.sample_size} Finished pmf collection {iteration}")
                 kl_on_full_data = kl_divergence(p_mat_true, p_mat_predicted, True)
+                print(f"{self.sample_size} Finished kl {iteration}")
             else:
                 kl_on_full_data = kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, True)
 
@@ -406,6 +411,7 @@ class IsingTunning:
             loss_kl_array[2, iteration] = kl_on_full_data
 
             iteration += 1
+
 
         result_dict["loss_array"] = loss_kl_array
         predicted_parameter_mat = self.ising_network(self.z_mat)
@@ -508,6 +514,42 @@ class WrongIsingNetwork(tf.keras.Model):
         self(dummy_z)
 
 
+class MixutureIsingNetwork(tf.keras.Model):
+    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim):
+        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim)
+
+        self.input_dim = input_dim
+
+        self.linear_1 = tf.keras.layers.Dense(
+            units=hidden_1_out_dim,
+            input_shape=(input_dim,)
+        )
+
+        self.linear_2 = tf.keras.layers.Dense(
+            units=hidden_2_out_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+        self.linear_3 = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+    def call(self, input):
+        output = self.linear_1(input)
+        output = tf.keras.activations.relu(output)
+        output = self.linear_2(output)
+        output = tf.keras.activations.tanh(output)
+        output = self.linear_3(output)
+        return output
+
+    def dummy_run(self):
+        """
+        This method is to let python initialize the network and weights not just the computation graph.
+        :return: None.
+        """
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
+        self(dummy_z)
 
 
 

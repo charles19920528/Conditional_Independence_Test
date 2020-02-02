@@ -44,8 +44,10 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
     None
     """
     result_dict = dict()
+    pool = mp.Pool(processes=process_number)
+
     for sample_size, epoch in zip(sample_size_vet, epoch_vet):
-        pool = mp.Pool(processes=process_number)
+
         trail_index_vet = range(number_of_trails)
 
         if simulation_wrapper == ising_simulation_wrapper:
@@ -60,6 +62,42 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
         result_dict[sample_size] = dict(pool_result_vet)
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
+
+    pool.close()
+    pool.join()
+
+    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name,
+                                  result_directory_name, epoch_vet, hidden_1_out_dim_vet, hidden_2_out_dim_vet,
+                                  sample_size_vet=hp.sample_size_vet, input_dim=3, output_dim=3,
+                                  number_of_trails=hp.number_of_trails,
+                                  process_number=hp.process_number):
+
+    result_dict = dict()
+    pool = mp.Pool(processes=process_number)
+
+    for sample_size, epoch, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, epoch_vet, hidden_1_out_dim_vet,
+                                                                      hidden_2_out_dim_vet):
+
+        trail_index_vet = range(number_of_trails)
+
+        pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                           data_directory_name=data_directory_name, epoch=epoch,
+                                           hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
+                                           ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
+                                           output_dim=output_dim),
+                                   trail_index_vet)
+
+
+        result_dict[sample_size] = dict(pool_result_vet)
+
+        print(f"{result_dict_name}, {scenario}, {sample_size} finished")
+
+    pool.close()
+    pool.join()
 
     with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
