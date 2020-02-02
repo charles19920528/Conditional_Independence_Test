@@ -17,7 +17,7 @@ sf.simulation_loop(simulation_wrapper = sf.naive_chisq_wrapper,  scenario = "alt
 
 # Stratified Chisq simulation
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "null",
-data_directory_name="ising_data", result_dict_name = "stratified_chisq",
+                   data_directory_name="ising_data", result_dict_name="stratified_chisq",
                    result_directory_name = "ising_data")
 
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt", data_directory_name="ising_data",

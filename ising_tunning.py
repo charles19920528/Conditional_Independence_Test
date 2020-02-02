@@ -106,11 +106,16 @@ epoch_vet_mixture_alt = np.array([50, 20, 10, 10])
 epoch_vet_mixture_null = np.array([50, 20, 10, 10])
 tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
             trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
-            np.array([3, 4, 6, 8]), hidden_2_out_dim_vet=np.array([3, 4, 6, 8]), process_number=4)
+            np.array([6, 6, 6, 6]), hidden_2_out_dim_vet=np.array([6, 6, 6, 6]), process_number=4)
 
 tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="null", epoch_vet=epoch_vet_mixture_null,
             trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
-            np.array([3, 4, 6, 8]), hidden_2_out_dim_vet=np.array([3, 4, 6, 8]), process_number=4)
+            np.array([6, 6, 6, 6]), hidden_2_out_dim_vet=np.array([6, 6, 6, 6]), process_number=4)
+
+# Fit null model
+tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
+            trail_index_vet=trail_index_vet, result_dict_name="mixture_data_null_model", hidden_1_out_dim_vet=
+            np.array([2, 4, 6, 6]), hidden_2_out_dim_vet=np.array([2, 4, 6, 6]), output_dim=2,process_number=4)
 
 
 ###################

@@ -44,11 +44,12 @@ hidden_2_out_dim_misspecified = 2
 ####################################
 # Architecture on the mixture data #
 ####################################
-hidden_1_out_dim_vet = np.array([3, 4, 6, 8])
-hidden_2_out_dim_vet=np.array([3, 4, 6, 8])
+# 500 is correct
+hidden_1_out_dim_vet = np.array([6, 6, 6, 6])
+hidden_2_out_dim_vet=np.array([6, 6, 6, 6])
 
-epoch_vet_mixture_alt = np.array([18, 18, 1, 1])
-epoch_vet_mixture_null = np.array([20, 10, 4, 1])
+epoch_vet_mixture_alt = np.array([1, 1, 1, 1])
+epoch_vet_mixture_null = np.array([1, 1, 4, 1])
 ################
 # Multiprocess #
 ################
