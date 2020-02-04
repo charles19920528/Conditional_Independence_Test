@@ -71,25 +71,28 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
 
 
 def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name,
-                                  result_directory_name, epoch_vet, hidden_1_out_dim_vet, hidden_2_out_dim_vet,
+                                  result_directory_name,  hidden_1_out_dim_vet, hidden_2_out_dim_vet,
                                   sample_size_vet=hp.sample_size_vet, input_dim=3, output_dim=3,
                                   number_of_trails=hp.number_of_trails,
                                   process_number=hp.process_number):
 
     result_dict = dict()
+    with open(f"tunning/mixture_full_model_epoch_kl_{scenario}_dict.p", "rb") as fp:
+        epoch_kl_dict = pickle.load(fp)
+
     pool = mp.Pool(processes=process_number)
 
-    for sample_size, epoch, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, epoch_vet, hidden_1_out_dim_vet,
+    for sample_size, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, hidden_1_out_dim_vet,
                                                                       hidden_2_out_dim_vet):
 
         trail_index_vet = range(number_of_trails)
+        epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
 
-        pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                           data_directory_name=data_directory_name, epoch=epoch,
-                                           hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
-                                           ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
-                                           output_dim=output_dim),
-                                   trail_index_vet)
+        pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                       data_directory_name=data_directory_name,
+                                       hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
+                                       ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
+                                       output_dim=output_dim), zip(trail_index_vet, epoch_vet))
 
 
         result_dict[sample_size] = dict(pool_result_vet)
@@ -107,7 +110,7 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
 # Wrapper functions #
 #####################
 # Ising simulation
-def ising_simulation_wrapper(trail_index, scenario, data_directory_name, sample_size, epoch, ising_network_class,
+def ising_simulation_wrapper(trail_index, epoch, scenario, data_directory_name, sample_size,  ising_network_class,
                              **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.

@@ -139,10 +139,10 @@ start_time = time.time()
 
 sf.simulation_loop_ising_mixture(scenario = "alt", data_directory_name = "mixture_data", result_dict_name = "ising",
                                  result_directory_name = "mixture_data", hidden_1_out_dim_vet=hp.hidden_1_out_dim_vet,
-                                 hidden_2_out_dim_vet = hp.hidden_2_out_dim_vet, epoch_vet=hp.epoch_vet_mixture_alt)
+                                 hidden_2_out_dim_vet = hp.hidden_2_out_dim_vet)
 sf.simulation_loop_ising_mixture(scenario = "null", data_directory_name = "mixture_data", result_dict_name = "ising",
                                  result_directory_name = "mixture_data", hidden_1_out_dim_vet=hp.hidden_1_out_dim_vet,
-                                 hidden_2_out_dim_vet = hp.hidden_2_out_dim_vet, epoch_vet=hp.epoch_vet_mixture_null)
+                                 hidden_2_out_dim_vet = hp.hidden_2_out_dim_vet)
 
 print("Ising (residuals) simulation takes %s seconds to finish." % (time.time() - start_time))
 
