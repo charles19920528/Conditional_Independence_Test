@@ -29,7 +29,7 @@ def tuning_pool_wrapper_ising(trail_index, scenario, sample_size, epoch, weights
                                              ising_network=wrong_ising_network, batch_size=100,
                                              max_epoch=int(epoch))
 
-    result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, true_parameter_mat=true_parameter_mat)
+    result_mat = ising_tunning_instance.tuning(print_loss_boolean=False, true_parameter_mat=true_parameter_mat)
 
     return (trail_index, result_mat)
 
@@ -91,26 +91,36 @@ def tuning_loop(tunning_pool_wrapper, scenario, epoch_vet, trail_index_vet, resu
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-epoch_vet_ising =np.int32(hp.epoch_vet_misspecified * 1.3)
-trail_index_vet = np.array([25, 26, 48, 210])
-# Ising data_tuning
+# epoch_vet_ising = [200, 150]
+# trail_index_vet = np.array([25, 26, 48, 210])
+# # Ising data_tuning
 # with open('data/ising_data/weights_dict.p', 'rb') as fp:
 #     weights_dict = pickle.load(fp)
-
+#
 # tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_ising, scenario="alt", epoch_vet=epoch_vet_ising,
-#             trail_index_vet=np.arange(4), result_dict_name="ising_data", weights_dict=weights_dict)
+#             trail_index_vet=np.arange(4), result_dict_name="ising_data_to_delete", weights_dict=weights_dict,
+#             sample_size_vet=[500, 1000],hidden_1_out_dim_vet=np.repeat(2, 2),
+#             hidden_2_out_dim_vet=np.repeat(2, 2))
 # tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_ising, scenario="null", epoch_vet=epoch_vet_ising,
 #             trail_index_vet=np.arange(4), result_dict_name="ising_data", weights_dict=weights_dict)
 
-epoch_vet_mixture_alt = np.array([50, 20, 10, 10])
-epoch_vet_mixture_null = np.array([50, 20, 10, 10])
-tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
-            trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
-            np.array([3, 4, 6, 6]), hidden_2_out_dim_vet=np.array([2, 3, 6, 4]), process_number=4)
+sample_size_vet=[100,500,1000]
+epoch_vet_mixture_alt = [200, 200, 150]
+epoch_vet_mixture_null = [200, 200, 150]
+trail_index_vet = np.array([25, 26, 48, 210])
 
-tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="null", epoch_vet=epoch_vet_mixture_null,
+hidden_1_out_dim_vet = [3, 3, 3]
+hidden_2_out_dim_vet = [3, 3, 3]
+
+# tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
+#             trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
+#             hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet, process_number=4,
+#             sample_size_vet=sample_size_vet)
+
+tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="null", epoch_vet=epoch_vet_mixture_alt,
             trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
-            np.array([3, 4, 6, 6]), hidden_2_out_dim_vet=np.array([2, 3, 6, 4]), process_number=4)
+            hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet, process_number=4,
+            sample_size_vet=sample_size_vet)
 
 # Fit null model
 # tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
@@ -156,25 +166,25 @@ def plot_loss_kl(experiment_result_dict, sample_size, end_epoch, start_epoch=0, 
 
 #    fig.savefig(f"./tunning/plots/{sample_size}_loss_{plot_loss}_kl_{plot_kl}_test_{plot_test_loss}.png")
 
-
-# with open(f"tunning/ising_data_result_alt_dict.p", "rb") as fp:
+#
+# with open(f"tunning/ising_data_to_delete_result_alt_dict.p", "rb") as fp:
 #     ising_data_result_alt_dict = pickle.load(fp)
 #
-# for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_ising):
-#     plot_loss_kl(ising_data_result_alt_dict, sample_size, end_epoch=epoch)
+# for sample_size, epoch in zip([500, 100], epoch_vet_ising):
+#     plot_loss_kl(ising_data_result_alt_dict, sample_size, end_epoch=epoch, start_epoch=100)
 
 # Mixture data
 # Alt
 with open(f"tunning/mixture_data_result_alt_dict.p", "rb") as fp:
     mixture_data_result_alt_dict = pickle.load(fp)
 
-for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_alt):
+for sample_size, epoch in zip([100, 500, 1000], epoch_vet_mixture_alt):
     plot_loss_kl(mixture_data_result_alt_dict, sample_size, end_epoch=epoch)
 
 # Null
 with open(f"tunning/mixture_data_result_null_dict.p", "rb") as fp:
     mixture_data_result_null_dict = pickle.load(fp)
 
-for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_null):
+for sample_size, epoch in zip([100, 500, 1000], epoch_vet_mixture_null):
     plot_loss_kl(mixture_data_result_null_dict, sample_size, end_epoch=epoch)
 

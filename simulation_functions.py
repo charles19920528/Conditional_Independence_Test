@@ -77,8 +77,8 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
                                   process_number=hp.process_number):
 
     result_dict = dict()
-    with open(f"tunning/mixture_full_model_epoch_kl_{scenario}_dict.p", "rb") as fp:
-        epoch_kl_dict = pickle.load(fp)
+    # with open(f"tunning/mixture_full_model_epoch_kl_{scenario}_dict.p", "rb") as fp:
+    #     epoch_kl_dict = pickle.load(fp)
 
     pool = mp.Pool(processes=process_number)
 
@@ -86,13 +86,20 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
                                                                       hidden_2_out_dim_vet):
 
         trail_index_vet = range(number_of_trails)
-        epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
+        # epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
+        #
+        # pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+        #                                data_directory_name=data_directory_name,
+        #                                hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
+        #                                ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
+        #                                output_dim=output_dim), zip(trail_index_vet, epoch_vet))
 
-        pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+
+        pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
                                        data_directory_name=data_directory_name,
                                        hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
                                        ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
-                                       output_dim=output_dim), zip(trail_index_vet, epoch_vet))
+                                       output_dim=output_dim, epoch = 200), trail_index_vet)
 
 
         result_dict[sample_size] = dict(pool_result_vet)

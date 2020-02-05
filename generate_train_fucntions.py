@@ -1,5 +1,6 @@
 import tensorflow as tf
 # Numpy is for the generate_x_y_mat_ising method and trainning method in the IsingSimulation class.
+# Numpy is to solve process hung issue.
 import numpy as np
 import hyperparameters as hp
 
@@ -174,8 +175,8 @@ def generate_x_y_mat_ising(ising_network, z_mat, null_boolean, sample_size):
         return x_y_mat
     else:
         p_mat = pmf_collection(true_parameter_mat)
-        # Recall that the column of p_mat corresponds to P(X = 1, Y = 1),
-        # P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
+        # Recall that the column of p_mat corresponds to P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and
+        # P(X = -1, Y = -1).
         x_y_mat = generate_x_y_mat(sample_size, p_mat)
 
         return x_y_mat
@@ -269,8 +270,11 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     or kl_divergence_list: a list
     """
     assert(p_mat_true.shape == p_mat_predicted.shape)
+    if len(p_mat_true.shape) == 1:
+        p_mat_true = p_mat_true.reshape(1, -1)
+        p_mat_predicted = p_mat_predicted.reshape(1, -1)
 
-    kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
+    kl_divergence_mat = p_mat_true * np.log2(p_mat_true / p_mat_predicted)
     if isAverage:
         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
         return kl_divergence_scalar
@@ -297,9 +301,9 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
     """
     p_mat_true = pmf_collection(true_parameter_mat)
     p_mat_predicted = pmf_collection(predicted_parameter_mat)
-    kl_divergence_scalr = kl_divergence(p_mat_true, p_mat_predicted, isAverage)
+    kl_divergence_scalar = kl_divergence(p_mat_true, p_mat_predicted, isAverage)
 
-    return kl_divergence_scalr
+    return kl_divergence_scalar
 
 
 #########################################
@@ -388,9 +392,11 @@ class IsingTunning:
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
             print(f"Finished training{iteration} ")
-            for z_batch_test, x_y_batch_test in test_ds:
-                predicted_parameter_mat_test = self.ising_network(z_batch_test)
-                likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
+            # for z_batch_test, x_y_batch_test in test_ds:
+            #     predicted_parameter_mat_test = self.ising_network(z_batch_test)
+            #     likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
+            predicted_parameter_mat_test = self.ising_network(self.z_mat)
+            likelihood_on_test = log_ising_pmf(self.x_y_mat, predicted_parameter_mat_test)
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
