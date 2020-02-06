@@ -4,13 +4,10 @@ import ising_tuning_functions as it
 import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-import matplotlib.pyplot as plt
 
 import pickle
 import hyperparameters as hp
 
-import multiprocessing as mp
-from functools import partial
 
 # Test code
 # trail_index = 3
@@ -29,7 +26,7 @@ from functools import partial
 
 
 # epoch_vet_ising = np.int32(hp.epoch_vet_misspecified * 1.3)
-trail_index_vet = np.array([25, 26, 48, 210])
+trail_index_vet = np.array([100, 105, 106, 200])
 
 # Ising data_tuning
 # with open('data/ising_data/weights_dict.p', 'rb') as fp:
@@ -44,8 +41,8 @@ trail_index_vet = np.array([25, 26, 48, 210])
 #                hidden_1_out_dim_vet=np.repeat(2, 4), hidden_2_out_dim_vet=np.repeat(2, 4), output_dim=3)
 
 # Mixture data tunning
-epoch_vet_mixture_alt = np.array([50, 20, 10, 10])
-epoch_vet_mixture_null = np.array([50, 20, 10, 10])
+epoch_vet_mixture_alt = np.array([50, 40, 20, 15])
+epoch_vet_mixture_null = np.array([50, 40, 20, 15])
 hidden_1_out_dim_vet = np.array([3, 3, 3, 3])
 hidden_2_out_dim_vet = np.array([3, 3, 3, 3])
 
