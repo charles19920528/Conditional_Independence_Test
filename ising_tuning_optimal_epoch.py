@@ -48,6 +48,13 @@ mixture_full_model_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(
     trail_index_vet=trail_index_vet)
 
 
+with open(f"tunning/mixture_full_model_epoch_kl_alt_dict.p", "wb") as fp:
+    pickle.dump(mixture_full_model_epoch_kl_alt_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+with open(f"tunning/mixture_full_model_epoch_kl_null_dict.p", "wb") as fp:
+    pickle.dump(mixture_full_model_epoch_kl_null_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 
 
