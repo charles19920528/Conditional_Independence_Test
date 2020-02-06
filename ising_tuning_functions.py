@@ -34,8 +34,8 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, in
 
 def tuning_pool_wrapper_mixture_data(trail_index, scenario, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim,
                                      sample_size, epoch):
-    x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
-    z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    x_y_mat = np.loadtxt(f"./data/mixture_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     if scenario == "null":
         p_mat_true = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
@@ -141,13 +141,6 @@ def process_plot_epoch_kl_raw_dict(path_epoch_kl_dict, sample_size_vet, trail_in
     plot_optimal_epoch_kl(epoch_kl_mat_dict)
 
     return epoch_kl_mat_dict
-
-
-
-
-
-
-
 
 
 def plot_loss_kl(experiment_result_dict, sample_size, end_epoch, start_epoch=0, plot_loss=True, plot_kl=True,
