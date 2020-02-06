@@ -274,7 +274,7 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
         p_mat_true = p_mat_true.reshape(1, -1)
         p_mat_predicted = p_mat_predicted.reshape(1, -1)
 
-    kl_divergence_mat = p_mat_true * np.log2(p_mat_true / p_mat_predicted)
+    kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
     if isAverage:
         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
         return kl_divergence_scalar

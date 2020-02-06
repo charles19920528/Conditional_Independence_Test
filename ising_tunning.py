@@ -109,8 +109,8 @@ epoch_vet_mixture_alt = [200, 200, 150]
 epoch_vet_mixture_null = [200, 200, 150]
 trail_index_vet = np.array([25, 26, 48, 210])
 
-hidden_1_out_dim_vet = [3, 3, 3]
-hidden_2_out_dim_vet = [3, 3, 3]
+hidden_1_out_dim_vet = [10, 20, 20]
+hidden_2_out_dim_vet = [10, 20, 20]
 
 # tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
 #             trail_index_vet=trail_index_vet, result_dict_name="mixture_data", hidden_1_out_dim_vet=
