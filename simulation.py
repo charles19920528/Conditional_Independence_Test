@@ -128,7 +128,7 @@ sf.simulation_loop(simulation_wrapper = sf.naive_chisq_wrapper,  scenario = "alt
 # Stratified Chisq simulation
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "null",
                    data_directory_name="mixture_data", result_dict_name = "stratified_chisq",
-                   result_directory_name = "mixture_data", cluster_number=2)
+                   result_directory_name = "mixture_data", cluster_number=3)
 
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt",
                    data_directory_name="mixture_data", result_dict_name = "stratified_chisq",
