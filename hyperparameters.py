@@ -28,7 +28,7 @@ epoch_vet = np.array([250, 250, 100, 90])
 buffer_size = 1024
 
 # batch size for training.
-batch_size = 30
+batch_size = 100
 
 # learning rate for gradient descent.
 learning_rate = 0.005
@@ -45,15 +45,15 @@ hidden_2_out_dim_misspecified = 2
 # Architecture on the mixture data #
 ####################################
 # 500 is correct
-hidden_1_out_dim_vet = np.array([6, 6, 6, 6])
-hidden_2_out_dim_vet=np.array([6, 6, 6, 6])
+hidden_1_out_dim_vet = np.array([6, 3, 3, 6])
+hidden_2_out_dim_vet = np.array([6, 6, 6, 6])
 
-epoch_vet_mixture_alt = np.array([20, 1, 1, 1])
-epoch_vet_mixture_null = np.array([1, 1, 4, 1])
+epoch_vet_mixture_alt = np.array([40, 40, 15, 13])
+epoch_vet_mixture_null = np.array([40, 40, 15, 13])
 ################
 # Multiprocess #
 ################
 # Number of process Pool function will run in parallel.
-process_number = 22
+process_number = 24
 
 

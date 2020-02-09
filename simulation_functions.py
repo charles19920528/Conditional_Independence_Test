@@ -71,8 +71,8 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
 
 
 def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name,
-                                  result_directory_name,  hidden_1_out_dim_vet, hidden_2_out_dim_vet,
-                                  sample_size_vet=hp.sample_size_vet, input_dim=3, output_dim=3,
+                                  result_directory_name,  hidden_1_out_dim_vet, hidden_2_out_dim_vet, epoch_vet,
+                                  sample_size_vet=hp.sample_size_vet,input_dim=3, output_dim=3,
                                   number_of_trails=hp.number_of_trails,
                                   process_number=hp.process_number):
 
@@ -82,8 +82,8 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
 
     pool = mp.Pool(processes=process_number)
 
-    for sample_size, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, hidden_1_out_dim_vet,
-                                                                      hidden_2_out_dim_vet):
+    for sample_size, epoch,hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, epoch_vet,
+                                                                         hidden_1_out_dim_vet, hidden_2_out_dim_vet):
 
         trail_index_vet = range(number_of_trails)
         # epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
@@ -91,15 +91,14 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
         # pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
         #                                data_directory_name=data_directory_name,
         #                                hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
-        #                                ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
+        #                                ising_network_class=gt.TwoLayerIsingNetwork, input_dim=input_dim,
         #                                output_dim=output_dim), zip(trail_index_vet, epoch_vet))
 
-
         pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                       data_directory_name=data_directory_name,
-                                       hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
-                                       ising_network_class=gt.WrongIsingNetwork, input_dim=input_dim,
-                                       output_dim=output_dim, epoch = 200), trail_index_vet)
+                                   data_directory_name=data_directory_name,
+                                   hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
+                                   ising_network_class=gt.TwoLayerIsingNetwork, input_dim=input_dim,
+                                   output_dim=output_dim, epoch=epoch), trail_index_vet)
 
 
         result_dict[sample_size] = dict(pool_result_vet)
@@ -111,6 +110,41 @@ def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name
 
     with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def simulation_loop_ising_mixture_optimal_epoch(scenario, data_directory_name, result_dict_name, result_directory_name,
+                                                input_dim, hidden_1_out_dim_vet, hidden_2_out_dim_vet, output_dim,
+                                                epoch_kl_dict_name,
+                                                sample_size_vet=hp.sample_size_vet,
+                                                number_of_trails=hp.number_of_trails, process_number=hp.process_number):
+
+    with open(f"tunning/{epoch_kl_dict_name}_epoch_kl_{scenario}_dict.p", "rb") as fp:
+        epoch_kl_dict = pickle.load(fp)
+    result_dict = dict()
+    pool = mp.Pool(processes=process_number)
+
+    for sample_size, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, hidden_1_out_dim_vet,
+                                                               hidden_2_out_dim_vet):
+        trail_index_vet = range(number_of_trails)
+        epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
+
+        pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                       data_directory_name=data_directory_name,
+                                       hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
+                                       ising_network_class=gt.TwoLayerIsingNetwork, input_dim=input_dim,
+                                       output_dim=output_dim), zip(trail_index_vet, epoch_vet))
+
+        result_dict[sample_size] = dict(pool_result_vet)
+
+        print(f"{result_dict_name}, {scenario}, {sample_size} finished")
+
+    pool.close()
+    pool.join()
+
+    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 
 
 #####################

@@ -43,19 +43,28 @@ trail_index_vet = np.array([100, 105, 106, 200])
 # Mixture data tunning
 epoch_vet_mixture_alt = np.array([50, 40, 20, 15])
 epoch_vet_mixture_null = np.array([50, 40, 20, 15])
-hidden_1_out_dim_vet = np.array([3, 3, 3, 3])
-hidden_2_out_dim_vet = np.array([3, 3, 3, 3])
+hidden_1_out_dim_vet = np.array([6, 6, 6, 6]) / 2
+hidden_2_out_dim_vet = np.array([6, 6, 6, 6]) / 2
+
+# it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="alt",
+#                epoch_vet=epoch_vet_mixture_alt, trail_index_vet=trail_index_vet, result_dict_name="mixture_data_loss",
+#                input_dim=3, hidden_1_out_dim_vet=hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet,
+#                output_dim=3, process_number=4)
+#
+# it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="null",
+#                epoch_vet=epoch_vet_mixture_null, trail_index_vet=trail_index_vet, result_dict_name="mixture_data_loss",
+#                input_dim=3, hidden_1_out_dim_vet=hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet,
+#                output_dim=3, process_number=4)
 
 it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="alt",
-               epoch_vet=epoch_vet_mixture_alt, trail_index_vet=trail_index_vet, result_dict_name="mixture_data",
+               epoch_vet=epoch_vet_mixture_alt, trail_index_vet=trail_index_vet, result_dict_name="mixture_data_loss_3",
                input_dim=3, hidden_1_out_dim_vet=hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet,
-               output_dim=3, process_number=4)
+               output_dim=3, process_number=4, two_layer_boolean=False)
 
 it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="null",
-               epoch_vet=epoch_vet_mixture_null, trail_index_vet=trail_index_vet, result_dict_name="mixture_data",
+               epoch_vet=epoch_vet_mixture_alt, trail_index_vet=trail_index_vet, result_dict_name="mixture_data_loss_3",
                input_dim=3, hidden_1_out_dim_vet=hidden_1_out_dim_vet, hidden_2_out_dim_vet=hidden_2_out_dim_vet,
-               output_dim=3, process_number=4)
-
+               output_dim=3, process_number=4, two_layer_boolean=False)
 
 # Fit null model
 # tuning_loop(tunning_pool_wrapper=tuning_pool_wrapper_mixture, scenario="alt", epoch_vet=epoch_vet_mixture_alt,
@@ -74,15 +83,30 @@ it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenari
 
 # Mixture data
 # Alt
-with open(f"tunning/mixture_data_result_alt_dict.p", "rb") as fp:
-    mixture_data_result_alt_dict = pickle.load(fp)
+with open(f"tunning/mixture_data_loss_result_alt_dict.p", "rb") as fp:
+    mixture_data_loss_result_alt_dict = pickle.load(fp)
 
 for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_alt):
-    it.plot_loss_kl(mixture_data_result_alt_dict, sample_size, end_epoch=epoch)
+    it.plot_loss_kl(mixture_data_loss_result_alt_dict, sample_size, end_epoch=epoch, start_epoch=10)
 
 # Null
-with open(f"tunning/mixture_data_result_null_dict.p", "rb") as fp:
-    mixture_data_result_null_dict = pickle.load(fp)
+with open(f"tunning/mixture_data_loss_result_null_dict.p", "rb") as fp:
+    mixture_data_loss_result_null_dict = pickle.load(fp)
 
 for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_null):
-    it.plot_loss_kl(mixture_data_result_null_dict, sample_size, end_epoch=epoch)
+    it.plot_loss_kl(mixture_data_loss_result_null_dict, sample_size, end_epoch=epoch)
+
+# 3 layer
+# alt
+with open(f"tunning/mixture_data_loss_3_result_alt_dict.p", "rb") as fp:
+    mixture_data_loss_3_result_alt_dict = pickle.load(fp)
+
+for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_alt):
+    it.plot_loss_kl(mixture_data_loss_3_result_alt_dict, sample_size, end_epoch=epoch, start_epoch=10)
+
+# null
+with open(f"tunning/mixture_data_loss_3_result_null_dict.p", "rb") as fp:
+    mixture_data_loss_3_result_null_dict = pickle.load(fp)
+
+for sample_size, epoch in zip(hp.sample_size_vet, epoch_vet_mixture_alt):
+    it.plot_loss_kl(mixture_data_loss_3_result_null_dict, sample_size, end_epoch=epoch, start_epoch=0)

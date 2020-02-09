@@ -10,8 +10,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, input_dim,  hidden_1_out_dim,
-                                   hidden_2_out_dim, output_dim, weights_dict):
+def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, weights_dict, **kwargs):
     x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
@@ -21,19 +20,17 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, in
     true_network.set_weights(weights)
     true_parameter_mat = true_network(z_mat)
 
-    wrong_ising_network = gt.WrongIsingNetwork(input_dim=input_dim, hidden_1_out_dim=hidden_1_out_dim,
-                                               hidden_2_out_dim=hidden_2_out_dim, output_dim=output_dim)
-    ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat,
-                                             ising_network=wrong_ising_network, batch_size=100,
-                                             max_epoch=int(epoch))
+    wrong_ising_network = gt.TwoLayerIsingNetwork(**kwargs)
+    ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=wrong_ising_network,
+                                             batch_size=hp.batch_size, max_epoch=int(epoch))
 
     result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, true_parameter_mat=true_parameter_mat)
 
     return (trail_index, result_mat)
 
 
-def tuning_pool_wrapper_mixture_data(trail_index, scenario, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim,
-                                     sample_size, epoch):
+def tuning_pool_wrapper_mixture_data(trail_index, scenario, ising_network, sample_size, epoch, **kwargs):
+
     x_y_mat = np.loadtxt(f"./data/mixture_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
@@ -42,35 +39,28 @@ def tuning_pool_wrapper_mixture_data(trail_index, scenario, input_dim, hidden_1_
     else:
         p_mat_true = np.loadtxt(f"data/mixture_data/alt/p_mat/p_mat_alt_{sample_size}_{trail_index}.txt")
 
-    mixture_ising_network = gt.MixutureIsingNetwork(input_dim=input_dim, hidden_1_out_dim=hidden_1_out_dim,
-                                                    hidden_2_out_dim=hidden_2_out_dim, output_dim=output_dim)
-    ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat,
-                                             ising_network=mixture_ising_network, batch_size=100,
-                                             max_epoch=int(epoch))
+    ising_network_instance = ising_network(**kwargs)
+    ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
+                                             batch_size=hp.batch_size, max_epoch=int(epoch))
 
     result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, p_mat_true=p_mat_true)
 
     return (trail_index, result_mat)
 
 
-def tuning_loop(tunning_pool_wrapper, scenario, input_dim, hidden_1_out_dim_vet, hidden_2_out_dim_vet, output_dim,
+def tuning_loop(tunning_pool_wrapper, scenario,
                 epoch_vet, trail_index_vet, result_dict_name, weights_dict=None, sample_size_vet=hp.sample_size_vet,
-                process_number=hp.process_number):
-    result_dict = dict()
+                process_number=hp.process_number, **kwargs):
 
-    for sample_size, epoch, hidden_1_out_dim, hidden_2_out_dim in zip(sample_size_vet, epoch_vet, hidden_1_out_dim_vet,
-                                                                      hidden_2_out_dim_vet):
+    result_dict = dict()
+    for sample_size, epoch in zip(sample_size_vet, epoch_vet):
         pool = mp.Pool(processes=process_number)
         if tunning_pool_wrapper == tuning_pool_wrapper_mixture_data:
             pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-                                               epoch=epoch, input_dim=input_dim, hidden_1_out_dim=hidden_1_out_dim,
-                                               hidden_2_out_dim=hidden_2_out_dim, output_dim=output_dim),
-                                       trail_index_vet)
+                                               epoch=epoch, **kwargs), trail_index_vet)
         else:
             pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-                                               input_dim=input_dim, hidden_1_out_dim=hidden_1_out_dim,
-                                               hidden_2_out_dim=hidden_2_out_dim, output_dim=output_dim,
-                                               epoch=epoch, weights_dict=weights_dict), trail_index_vet)
+                                               epoch=epoch, weights_dict=weights_dict, **kwargs), trail_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
@@ -87,7 +77,7 @@ def tuning_loop(tunning_pool_wrapper, scenario, input_dim, hidden_1_out_dim_vet,
 def optimal_epoch_kl_one_trail(trail_result_dict):
     trail_kl_array = trail_result_dict["loss_array"][2, :]
 
-    return [np.argmin(trail_kl_array), np.min(trail_kl_array)]
+    return [np.argmin(trail_kl_array) + 1, np.min(trail_kl_array)]
 
 
 def optimal_epoch_kl_one_sample_size(sample_size, trail_index_vet, tuning_result_dict):
@@ -123,12 +113,11 @@ def plot_optimal_epoch_kl(epoch_kl_dict):
     ax[1].boxplot(kl_vet, labels=sample_size_vet)
     ax[1].set_title("KL")
 
-    # for i, sample_size in enumerate(epoch_kl_dict.keys()):
-        # ax[0].scatter(x=np.repeat(sample_size, number_of_trails), y=epoch_kl_dict[sample_size][:, 1], c=color_vet[i])
-        # ax[0].set_title("Epoch")
-        #
-        # ax[1].scatter(x=np.repeat(sample_size, number_of_trails), y=epoch_kl_dict[sample_size][:, 2], c=color_vet[i])
-        # ax[1].set_title("KL")
+    mean_kl_vet = np.array([np.mean(kl_array) for kl_array in kl_vet])
+    sd_kl_vet = np.array([np.std(kl_array) for kl_array in kl_vet])
+
+    print(f"Mean kls are {mean_kl_vet}")
+    print(f"Std of kls are {sd_kl_vet}")
 
 
 def process_plot_epoch_kl_raw_dict(path_epoch_kl_dict, sample_size_vet, trail_index_vet):

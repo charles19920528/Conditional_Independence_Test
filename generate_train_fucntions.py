@@ -381,10 +381,12 @@ class IsingTunning:
 
         iteration = 0
         while iteration < self.max_epoch:
+            print(f"start {iteration}")
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
                     loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
+                    print(f"finish compute log pmf {iteration}")
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
             print(f"Finished training{iteration} ")
@@ -478,7 +480,7 @@ class IsingTrainingPool:
         return predicted_parameter_mat
 
 
-class WrongIsingNetwork(tf.keras.Model):
+class TwoLayerIsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim):
         super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim)
 
@@ -499,52 +501,16 @@ class WrongIsingNetwork(tf.keras.Model):
             input_shape=(hidden_2_out_dim,)
         )
 
+
     def call(self, input):
         output = self.linear_1(input)
-        output = tf.keras.activations.relu(output)
-        output = self.linear_2(output)
         output = tf.keras.activations.elu(output)
-        output = self.linear_3(output)
-        return output
-
-    def dummy_run(self):
-        """
-        This method is to let python initialize the network and weights not just the computation graph.
-        :return: None.
-        """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-        self(dummy_z)
-
-
-class MixutureIsingNetwork(tf.keras.Model):
-    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim):
-        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim)
-
-        self.input_dim = input_dim
-
-        self.linear_1 = tf.keras.layers.Dense(
-            units=hidden_1_out_dim,
-            input_shape=(input_dim,)
-        )
-
-        self.linear_2 = tf.keras.layers.Dense(
-            units=hidden_2_out_dim,
-            input_shape=(hidden_1_out_dim,)
-        )
-
-        self.linear_3 = tf.keras.layers.Dense(
-            units=output_dim,
-            input_shape=(hidden_2_out_dim,)
-        )
-
-    def call(self, input):
-        output = self.linear_1(input)
-        output = tf.keras.activations.relu(output)
         output = self.linear_2(output)
         output = tf.keras.activations.tanh(output)
         output = self.linear_3(output)
         return output
 
+
     def dummy_run(self):
         """
         This method is to let python initialize the network and weights not just the computation graph.
@@ -554,39 +520,102 @@ class MixutureIsingNetwork(tf.keras.Model):
         self(dummy_z)
 
 
-# class MixutureIsingNetworkOneLayer(tf.keras.Model):
-#     def __init__(self, input_dim, hidden_1_out_dim, output_dim):
-#         super().__init__(input_dim, hidden_1_out_dim, output_dim)
-#
-#         self.input_dim = input_dim
-#
-#         self.linear_1 = tf.keras.layers.Dense(
-#             units=hidden_1_out_dim,
-#             input_shape=(input_dim,)
-#         )
-#
-#         self.linear_2 = tf.keras.layers.Dense(
-#             units=output_dim,
-#             input_shape=(hidden_1_out_dim,)
-#         )
-#
-#
-#     def call(self, input):
-#         output = self.linear_1(input)
-#         output = tf.keras.activations.tanh(output)
-#         output = self.linear_2(output)
-#         return output
-#
-#     def dummy_run(self):
-#         """
-#         This method is to let python initialize the network and weights not just the computation graph.
-#         :return: None.
-#         """
-#         dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-#         self(dummy_z)
+class ThreeLayerIsingNetwork(tf.keras.Model):
+    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim):
+        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim)
+
+        self.input_dim = input_dim
+
+        self.linear_1 = tf.keras.layers.Dense(
+            units=hidden_1_out_dim,
+            input_shape=(input_dim,)
+        )
+
+        self.linear_2 = tf.keras.layers.Dense(
+            units=hidden_2_out_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+        self.linear_3 = tf.keras.layers.Dense(
+            units=hidden_3_out_dim,
+            input_shape=(hidden_2_out_dim,)
+        )
+
+        self.linear_4 = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_3_out_dim, )
+        )
+
+    def call(self, input):
+        output = self.linear_1(input)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_2(output)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_3(output)
+        output = tf.keras.activations.tanh(output)
+        output = self.linear_4(output)
+        return output
+
+    def dummy_run(self):
+        """
+        This method is to let python initialize the network and weights not just the computation graph.
+        :return: None.
+        """
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
+        self(dummy_z)
 
 
+class FourLayerIsingNetwork(tf.keras.Model):
+    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, hidden_4_out_dim, output_dim):
+        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, hidden_4_out_dim, output_dim)
 
+        self.input_dim = input_dim
+
+        self.linear_1 = tf.keras.layers.Dense(
+            units=hidden_1_out_dim,
+            input_shape=(input_dim,)
+        )
+
+        self.linear_2 = tf.keras.layers.Dense(
+            units=hidden_2_out_dim,
+            input_shape=(hidden_1_out_dim,)
+        )
+
+        self.linear_3 = tf.keras.layers.Dense(
+            units=hidden_3_out_dim,
+            input_shape=(hidden_2_out_dim,)
+        )
+
+        self.linear_4 = tf.keras.layers.Dense(
+            units=hidden_4_out_dim,
+            input_shape=(hidden_3_out_dim, )
+        )
+
+        self.linear_5 = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_4_out_dim, )
+        )
+
+
+    def call(self, input):
+        output = self.linear_1(input)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_2(output)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_3(output)
+        output = tf.keras.activations.elu(output)
+        output = self.linear_4(output)
+        output = tf.keras.activations.tanh(output)
+        output = self.linear_5(output)
+        return output
+
+    def dummy_run(self):
+        """
+        This method is to let python initialize the network and weights not just the computation graph.
+        :return: None.
+        """
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
+        self(dummy_z)
 
 
 
