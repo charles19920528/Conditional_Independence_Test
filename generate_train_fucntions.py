@@ -519,6 +519,24 @@ class TwoLayerIsingNetwork(tf.keras.Model):
         dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
         self(dummy_z)
 
+class ForwardEluLayer(tf.keras.layers.Layer):
+    def __init__(self, input_dim, hidden_dim)
+        super(ForwardEluLayer, self).__init__(input_dim, hidden_dim)
+
+        self.linear = tf.keras.layers.Dense(
+            units=hidden_dim,
+            input_shape=(input_dim, )
+        )
+
+    def call(self, inputs):
+        output = self.linear(inputs)
+        output = tf.keras.activations.elu(output)
+
+        return output
+
+class FullyConnectedNetwork(tf.keras.Model):
+    def __init__(self):
+        pass
 
 class ThreeLayerIsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim):

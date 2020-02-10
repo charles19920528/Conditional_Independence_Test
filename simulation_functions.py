@@ -131,7 +131,7 @@ def simulation_loop_ising_mixture_optimal_epoch(scenario, data_directory_name, r
         pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
                                        data_directory_name=data_directory_name,
                                        hidden_1_out_dim=hidden_1_out_dim, hidden_2_out_dim=hidden_2_out_dim,
-                                       ising_network_class=gt.TwoLayerIsingNetwork, input_dim=input_dim,
+                                       ising_network_class=gt.ThreeLayerIsingNetwork, input_dim=input_dim,
                                        output_dim=output_dim), zip(trail_index_vet, epoch_vet))
 
         result_dict[sample_size] = dict(pool_result_vet)
