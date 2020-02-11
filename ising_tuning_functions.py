@@ -10,7 +10,8 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, weights_dict, **kwargs):
+def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, weights_dict, number_forward_elu_layers,
+                                   input_dim, hidden_dim, output_dim):
     x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
@@ -20,7 +21,8 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, we
     true_network.set_weights(weights)
     true_parameter_mat = true_network(z_mat)
 
-    wrong_ising_network = gt.TwoLayerIsingNetwork(**kwargs)
+    wrong_ising_network = gt.FullyConnectedNetwork(number_forward_elu_layers=number_forward_elu_layers,
+                                                   input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim)
     ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=wrong_ising_network,
                                              batch_size=hp.batch_size, max_epoch=int(epoch))
 
@@ -29,7 +31,8 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, we
     return (trail_index, result_mat)
 
 
-def tuning_pool_wrapper_mixture_data(trail_index, scenario, ising_network, sample_size, epoch, **kwargs):
+def tuning_pool_wrapper_mixture_data(trail_index, scenario, sample_size, epoch,
+                                     number_forward_elu_layers, input_dim, hidden_dim, output_dim):
 
     x_y_mat = np.loadtxt(f"./data/mixture_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
@@ -39,7 +42,8 @@ def tuning_pool_wrapper_mixture_data(trail_index, scenario, ising_network, sampl
     else:
         p_mat_true = np.loadtxt(f"data/mixture_data/alt/p_mat/p_mat_alt_{sample_size}_{trail_index}.txt")
 
-    ising_network_instance = ising_network(**kwargs)
+    ising_network_instance = gt.FullyConnectedNetwork(number_forward_elu_layers=number_forward_elu_layers,
+                                                      input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim)
     ising_tunning_instance = gt.IsingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
                                              batch_size=hp.batch_size, max_epoch=int(epoch))
 
@@ -48,19 +52,22 @@ def tuning_pool_wrapper_mixture_data(trail_index, scenario, ising_network, sampl
     return (trail_index, result_mat)
 
 
-def tuning_loop(tunning_pool_wrapper, scenario,
+def tuning_loop(tunning_pool_wrapper, scenario, number_forward_elu_layers, input_dim, hidden_dim, output_dim,
                 epoch_vet, trail_index_vet, result_dict_name, weights_dict=None, sample_size_vet=hp.sample_size_vet,
-                process_number=hp.process_number, **kwargs):
+                process_number=hp.process_number):
 
     result_dict = dict()
     for sample_size, epoch in zip(sample_size_vet, epoch_vet):
         pool = mp.Pool(processes=process_number)
         if tunning_pool_wrapper == tuning_pool_wrapper_mixture_data:
             pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-                                               epoch=epoch, **kwargs), trail_index_vet)
+                                               epoch=epoch, number_forward_elu_layers=number_forward_elu_layers,
+                                                   input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim),
+                                       trail_index_vet)
         else:
             pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-                                               epoch=epoch, weights_dict=weights_dict, **kwargs), trail_index_vet)
+                                               epoch=epoch, weights_dict=weights_dict, number_forward_elu_layers=number_forward_elu_layers,
+                                                   input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim), trail_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 

@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import hyperparameters as hp
 
+
 ##################################
 # Functions for data generation. #
 ##################################
@@ -80,6 +81,7 @@ def pmf_collection(parameter_mat):
 
     return np.transpose(prob_mat)
 
+
 def pmf_null(x, hx):
     """
     Compute the probability P(X = x) under the null model.
@@ -110,8 +112,7 @@ def log_ising_pmf(x_y_mat, parameter_mat):
     parameter_mat = tf.cast(parameter_mat, tf.float32)
     if parameter_mat.shape[1] == 2:
         zero_tensor = tf.zeros((parameter_mat.shape[0], 1))
-        parameter_mat = tf.concat(values = [parameter_mat, zero_tensor], axis = 1)
-
+        parameter_mat = tf.concat(values=[parameter_mat, zero_tensor], axis=1)
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
     x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
@@ -268,7 +269,7 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     kl_divergence_scalr: a scalar
     or kl_divergence_list: a list
     """
-    assert(p_mat_true.shape == p_mat_predicted.shape)
+    assert (p_mat_true.shape == p_mat_predicted.shape)
 
     kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
     if isAverage:
@@ -367,17 +368,17 @@ class IsingTunning:
         result_dict["ising_parameters"] stores a tensor which is
         the fitted value of parameters in the full Ising Model.
         """
-        assert(true_parameter_mat is None or p_mat_true is None)
-        assert(not(true_parameter_mat is None and p_mat_true is None))
+        assert (true_parameter_mat is None or p_mat_true is None)
+        assert (not (true_parameter_mat is None and p_mat_true is None))
 
         # Prepare training data.
-        train_ds, test_ds = self.train_test_split(test_percentage = test_percentage)
+        train_ds, test_ds = self.train_test_split(test_percentage=test_percentage)
 
         # Prepare storage for results.
         loss_kl_array = np.zeros((3, self.max_epoch))
         result_dict = dict()
 
-        optimizer = tf.keras.optimizers.Adam(learning_rate = self.learning_rate)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
         iteration = 0
         while iteration < self.max_epoch:
@@ -388,13 +389,11 @@ class IsingTunning:
                     loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
                     print(f"finish compute log pmf {iteration}")
                 grads = tape.gradient(loss, self.ising_network.variables)
-                optimizer.apply_gradients(grads_and_vars = zip(grads, self.ising_network.variables))
+                optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
             print(f"Finished training{iteration} ")
             for z_batch_test, x_y_batch_test in test_ds:
                 predicted_parameter_mat_test = self.ising_network(z_batch_test)
                 likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
-
-
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
@@ -415,7 +414,6 @@ class IsingTunning:
             loss_kl_array[2, iteration] = kl_on_full_data
 
             iteration += 1
-
 
         result_dict["loss_array"] = loss_kl_array
         predicted_parameter_mat = self.ising_network(self.z_mat)
@@ -444,7 +442,6 @@ class IsingTrainingPool:
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.epoch = epoch
-
 
     def trainning(self):
         """
@@ -501,15 +498,13 @@ class TwoLayerIsingNetwork(tf.keras.Model):
             input_shape=(hidden_2_out_dim,)
         )
 
-
     def call(self, input):
         output = self.linear_1(input)
         output = tf.keras.activations.elu(output)
         output = self.linear_2(output)
-        output = tf.keras.activations.tanh(output)
+        output = tf.keras.activations.elu(output)
         output = self.linear_3(output)
         return output
-
 
     def dummy_run(self):
         """
@@ -519,24 +514,60 @@ class TwoLayerIsingNetwork(tf.keras.Model):
         dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
         self(dummy_z)
 
+
 class ForwardEluLayer(tf.keras.layers.Layer):
-    def __init__(self, input_dim, hidden_dim)
-        super(ForwardEluLayer, self).__init__(input_dim, hidden_dim)
+    def __init__(self, input_dim, hidden_dim):
+        super(ForwardEluLayer, self).__init__()
 
         self.linear = tf.keras.layers.Dense(
             units=hidden_dim,
-            input_shape=(input_dim, )
+            input_shape=(input_dim,)
         )
 
-    def call(self, inputs):
+    def call(self, inputs, **kwargs):
         output = self.linear(inputs)
         output = tf.keras.activations.elu(output)
 
         return output
 
+
 class FullyConnectedNetwork(tf.keras.Model):
-    def __init__(self):
-        pass
+    def __init__(self, number_forward_elu_layers, input_dim, hidden_dim, output_dim):
+        super(FullyConnectedNetwork, self).__init__()
+
+        self.input_dim = input_dim
+        self.number_forward_elu_layers = number_forward_elu_layers
+
+        self.initial_block = ForwardEluLayer(input_dim=input_dim, hidden_dim=hidden_dim)
+
+        if number_forward_elu_layers > 1:
+            self.feed_forward_rest_vet = [ForwardEluLayer(input_dim=hidden_dim, hidden_dim=hidden_dim) for _ in
+                                          np.arange(number_forward_elu_layers - 1)]
+
+        self.final_linear = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_dim,)
+        )
+
+    def call(self, inputs):
+        output = self.initial_block(inputs)
+        if self.number_forward_elu_layers == 1:
+            output = self.final_linear(output)
+        else:
+            for i in np.arange(self.number_forward_elu_layers - 1):
+                output = self.feed_forward_rest_vet[i](output)
+            output = self.final_linear(output)
+
+        return output
+
+    def dummy_run(self):
+        """
+        This method is to let python initialize the network and weights not just the computation graph.
+        :return: None.
+        """
+        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
+        self(dummy_z)
+
 
 class ThreeLayerIsingNetwork(tf.keras.Model):
     def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim):
@@ -561,7 +592,7 @@ class ThreeLayerIsingNetwork(tf.keras.Model):
 
         self.linear_4 = tf.keras.layers.Dense(
             units=output_dim,
-            input_shape=(hidden_3_out_dim, )
+            input_shape=(hidden_3_out_dim,)
         )
 
     def call(self, input):
@@ -581,62 +612,6 @@ class ThreeLayerIsingNetwork(tf.keras.Model):
         """
         dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
         self(dummy_z)
-
-
-class FourLayerIsingNetwork(tf.keras.Model):
-    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, hidden_4_out_dim, output_dim):
-        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, hidden_4_out_dim, output_dim)
-
-        self.input_dim = input_dim
-
-        self.linear_1 = tf.keras.layers.Dense(
-            units=hidden_1_out_dim,
-            input_shape=(input_dim,)
-        )
-
-        self.linear_2 = tf.keras.layers.Dense(
-            units=hidden_2_out_dim,
-            input_shape=(hidden_1_out_dim,)
-        )
-
-        self.linear_3 = tf.keras.layers.Dense(
-            units=hidden_3_out_dim,
-            input_shape=(hidden_2_out_dim,)
-        )
-
-        self.linear_4 = tf.keras.layers.Dense(
-            units=hidden_4_out_dim,
-            input_shape=(hidden_3_out_dim, )
-        )
-
-        self.linear_5 = tf.keras.layers.Dense(
-            units=output_dim,
-            input_shape=(hidden_4_out_dim, )
-        )
-
-
-    def call(self, input):
-        output = self.linear_1(input)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_2(output)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_3(output)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_4(output)
-        output = tf.keras.activations.tanh(output)
-        output = self.linear_5(output)
-        return output
-
-    def dummy_run(self):
-        """
-        This method is to let python initialize the network and weights not just the computation graph.
-        :return: None.
-        """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-        self(dummy_z)
-
-
-
 
 
 
@@ -806,13 +781,9 @@ def tf_load_x_y_dataset_alt(sample_size_tensor, simulation_times_tensor):
 
     return x_y_dataset
 
+
 # x_y_dataset = tf_load_x_y_dataset_alt(tf.constant(30), tf.constant(1))
 # print(list(x_y_dataset.take(1)))
-
-
-
-
-
 
 
 ######################### Recycle

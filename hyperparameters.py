@@ -44,9 +44,7 @@ hidden_2_out_dim_misspecified = 2
 ####################################
 # Architecture on the mixture data #
 ####################################
-# 500 is correct
-hidden_1_out_dim_vet = np.array([3, 3, 3, 3])
-hidden_2_out_dim_vet = np.array([3, 3, 3, 3])
+mixture_hidden_dim_vet = np.array([3, 3, 3, 3])
 
 epoch_vet_mixture_alt = np.array([40, 40, 15, 13])
 epoch_vet_mixture_null = np.array([40, 40, 15, 13])
