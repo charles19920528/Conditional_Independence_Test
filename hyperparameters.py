@@ -46,7 +46,7 @@ hidden_2_out_dim_misspecified = 2
 ####################################
 mixture_hidden_dim_vet = np.array([3, 3, 3, 3])
 
-epoch_vet_mixture_alt = np.array([40, 40, 15, 13])
+epoch_vet_mixture_alt = np.array([20, 45, 25, 22])
 epoch_vet_mixture_null = np.array([40, 40, 15, 13])
 ################
 # Multiprocess #
@@ -58,6 +58,6 @@ process_number = 24
 #########################
 # Tuning Ising network. #
 #########################
-epoch_mixture_vet = np.array([120, 120, 60, 50])
+
 
 

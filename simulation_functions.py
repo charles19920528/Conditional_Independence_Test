@@ -71,8 +71,8 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
 
 
 def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name,
-                                  result_directory_name, number_forward_elu_layers, hidden_dim_vet, epoch_vet,
-                                  sample_size_vet=hp.sample_size_vet,input_dim=3, output_dim=3,
+                                  result_directory_name, number_forward_elu_layers, input_dim, hidden_dim_vet, output_dim, epoch_vet,
+                                  sample_size_vet=hp.sample_size_vet,
                                   number_of_trails=hp.number_of_trails,
                                   process_number=hp.process_number):
 
