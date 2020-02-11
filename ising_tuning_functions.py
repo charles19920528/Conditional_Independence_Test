@@ -139,20 +139,20 @@ def process_plot_epoch_kl_raw_dict(path_epoch_kl_dict, sample_size_vet, trail_in
     return epoch_kl_mat_dict
 
 
-def plot_loss_kl(experiment_result_dict, sample_size, end_epoch, start_epoch=0, plot_loss=True, plot_kl=True,
-                 plot_test_loss=True):
+def plot_loss_kl(experiment_result_dict, trail_index_vet, sample_size, end_epoch, start_epoch=0, plot_loss=True,
+                 plot_kl=True, plot_test_loss=True):
     """
-    Assuming there are only four sample size we are simulating. We plot the RoC curve and save the plot under
-    ./results/plots/{model_for_main_title}.png.
 
-    :param experiment_result_dict: A dictionary which is the output of the fpr_tpr function.
-    :param model_for_main_title: A string ('str' class) which we use to name the graph to save as
-    {model_for_main_title}.png.
-
+    :param experiment_result_dict:
+    :param trail_index_to_plot_vet:
+    :param sample_size:
+    :param end_epoch:
+    :param start_epoch:
+    :param plot_loss:
+    :param plot_kl:
+    :param plot_test_loss:
     :return:
-    None
     """
-    trail_index_vet = experiment_result_dict[sample_size].keys()
     epoch_vet = np.arange(end_epoch)[start_epoch:]
     fig, ax = plt.subplots(4, 3)
 

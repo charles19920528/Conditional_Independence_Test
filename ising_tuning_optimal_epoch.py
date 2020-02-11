@@ -18,7 +18,7 @@ number_forward_elu_layers = 3
 hidden_dim = 3
 result_dict_name = f"mixture_full_model{number_forward_elu_layers}{hidden_dim}"
 
-epoch_mixture_vet = np.array([120, 120, 60, 50])
+epoch_mixture_vet = hp.epoch_mixture_vet
 
 if len(trail_index_vet) < hp.process_number:
     process_number = len(trail_index_vet)
@@ -55,4 +55,23 @@ epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(
 #
 # with open(f"tunning/{result_dict_name}_epoch_kl_null_dict.p", "wb") as fp:
 #     pickle.dump(epoch_kl_null_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+# Plot the loss
+# alt
+with open(f"tunning/mixture_full_model33_result_alt_dict.p", "rb") as fp:
+    mixture_full_model33_result_alt_dict = pickle.load(fp)
+
+trail_index_to_plot_vet = np.array([10, 505, 206, 100])
+for sample_size, epoch in zip(hp.sample_size_vet, epoch_mixture_vet):
+    it.plot_loss_kl(mixture_full_model33_result_alt_dict, trail_index_vet=trail_index_to_plot_vet, sample_size=sample_size,
+                    end_epoch=epoch, start_epoch=0)
+
+# Null
+with open(f"tunning/mixture_full_model33_result_null_dict.p", "rb") as fp:
+    mixture_full_model33_result_null_dict = pickle.load(fp)
+
+trail_index_to_plot_vet = np.array([10, 505, 206, 100])
+for sample_size, epoch in zip(hp.sample_size_vet, epoch_mixture_vet):
+    it.plot_loss_kl(mixture_full_model33_result_null_dict, trail_index_vet=trail_index_to_plot_vet, sample_size=sample_size,
+                    end_epoch=10, start_epoch=0)
 

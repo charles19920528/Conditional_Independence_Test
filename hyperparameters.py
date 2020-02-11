@@ -55,3 +55,9 @@ epoch_vet_mixture_null = np.array([40, 40, 15, 13])
 process_number = 24
 
 
+#########################
+# Tuning Ising network. #
+#########################
+epoch_mixture_vet = np.array([120, 120, 60, 50])
+
+
