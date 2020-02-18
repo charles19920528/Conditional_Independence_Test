@@ -250,6 +250,39 @@ def data_generate_network(dim_z=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim):
     return null_network_generate, alt_network_generate, weights_list
 
 
+########################
+# pmf for mixture data #
+########################
+def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
+    """
+    Compute the conditoinal pmf for the mixture data.
+
+    :param z_mat: An n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
+    :param is_null_boolean: A boolean value to indicate if we compute the pmf under the independence assumption (H0)._
+    :param cut_off_radius: A positive scalar which we use to divide sample into two groups based on the norm of z.
+
+    :return:
+    p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and
+    P(X = -1, Y = -1).
+    """
+    less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < \
+                                     cut_off_radius
+    nrow = z_mat.shape[0]
+    if is_null_boolean:
+        p_mat = np.repeat(0.25, nrow * 4).reshape(nrow, 4)
+        helper_pmf_vet = np.array([0, 0, 0, 1]).reshape(1, 4)
+        p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
+
+        return p_mat
+
+    else:
+        p_mat = np.tile([0, 0.5, 0.5, 0], nrow).reshape(nrow, 4)
+        helper_pmf_vet = np.array([0.5, 0, 0, 0.5])
+        p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
+
+        return p_mat
+
+
 ##################################
 # Functions for parameter tuning #
 ##################################
@@ -303,6 +336,7 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
     return kl_divergence_scalr
 
 
+
 #########################################
 # Class for the simulation and training #
 #########################################
@@ -327,6 +361,7 @@ class IsingTunning:
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.max_epoch = max_epoch
+
 
     def train_test_split(self, test_percentage):
         """
@@ -443,6 +478,113 @@ class IsingTrainingPool:
         self.batch_size = batch_size
         self.epoch = epoch
 
+
+    def train_test_split(self, test_percentage):
+        """
+        Create and split the full data into the training data and the test data. test_percentage of the data are used
+        for the test data.
+        :param test_percentage: A scalar between 0 and 1.
+        :return:
+        train_ds: A Tensorflow dataset which is used as the training data.
+        test_ds: A Tensorflow dataset which is used as the test data.
+        """
+        full_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
+        full_ds = full_ds.shuffle(self.buffer_size)
+
+        test_size = tf.cast(self.sample_size * test_percentage, tf.int32).numpy()
+        test_ds = full_ds.take(test_size).batch(test_size)
+        train_ds = full_ds.skip(test_size).batch(self.batch_size)
+
+        return train_ds, test_ds
+
+
+    def tuning(self, print_loss_boolean, test_percentage=0.1, true_parameter_mat=None, p_mat_true=None):
+        """
+        Train and tune a neural network on Ising data.
+
+        :param true_parameter_mat: An n by p tensor storing parameters for the true distribution. Each row contains a
+        parameter for a one sample. If p = 2, we assume the sample is under the null model. If p = 3, we assume the
+        sample is under the full model.
+        :param p_mat_true: An n x p numpy array / tensor. n is the sample size and p is the number of values in the
+        support. This is the matrix containing the pmf of the true distribution.
+        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
+
+        :param p_mat_true: An n x p numpy array / tensor. n is the sample size and p is the number of values in the
+        support. This is the matrix containing the pmf of the true distribution.
+
+        :return:
+        result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
+        result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood), the
+        second row stores the (- 2 * LogLikelihood) on the test set; and the third row stores the kl divergence on the
+        full data set.
+        result_dict["ising_parameters"] stores a tensor which is
+        the fitted value of parameters in the full Ising Model.
+        """
+        assert (true_parameter_mat is None or p_mat_true is None)
+        assert (not (true_parameter_mat is None and p_mat_true is None))
+
+        # Prepare training data.
+        train_ds, test_ds = self.train_test_split(test_percentage=test_percentage)
+
+        # Prepare storage for results.
+        loss_kl_array = np.zeros((3, self.epoch))
+        result_dict = dict()
+
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+
+        iteration = 0
+        while iteration < self.epoch:
+
+#            print(f"start {iteration}")
+
+            for z_batch, x_y_batch in train_ds:
+                with tf.GradientTape() as tape:
+                    batch_predicted_parameter_mat = self.ising_network(z_batch)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
+
+#                    print(f"finish compute log pmf {iteration}")
+
+                grads = tape.gradient(loss, self.ising_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
+
+#            print(f"Finished training{iteration} ")
+
+            for z_batch_test, x_y_batch_test in test_ds:
+                predicted_parameter_mat_test = self.ising_network(z_batch_test)
+                likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
+
+            if iteration % 10 == 0 and print_loss_boolean:
+                print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
+                print("The loss is %f " % loss)
+                print("The test loss is %f" % likelihood_on_test)
+
+            predicted_parameter_mat = self.ising_network(self.z_mat)
+            if p_mat_true is not None:
+                p_mat_predicted = pmf_collection(predicted_parameter_mat)
+
+#                print(f"{self.sample_size} Finished pmf collection {iteration}")
+
+                kl_on_full_data = kl_divergence(p_mat_true, p_mat_predicted, True)
+
+#                print(f"{self.sample_size} Finished kl {iteration}")
+
+            else:
+                kl_on_full_data = kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, True)
+
+            loss_kl_array[0, iteration] = loss.numpy()
+            loss_kl_array[1, iteration] = likelihood_on_test
+            loss_kl_array[2, iteration] = kl_on_full_data
+
+            iteration += 1
+
+        result_dict["loss_array"] = loss_kl_array
+        predicted_parameter_mat = self.ising_network(self.z_mat)
+        result_dict["ising_parameters"] = predicted_parameter_mat
+
+        return result_dict
+
+
+
     def trainning(self):
         """
         Train a neural network.
@@ -475,44 +617,6 @@ class IsingTrainingPool:
         predicted_parameter_mat = self.ising_network.predict(self.z_mat)
 
         return predicted_parameter_mat
-
-
-class TwoLayerIsingNetwork(tf.keras.Model):
-    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim):
-        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, output_dim)
-
-        self.input_dim = input_dim
-
-        self.linear_1 = tf.keras.layers.Dense(
-            units=hidden_1_out_dim,
-            input_shape=(input_dim,)
-        )
-
-        self.linear_2 = tf.keras.layers.Dense(
-            units=hidden_2_out_dim,
-            input_shape=(hidden_1_out_dim,)
-        )
-
-        self.linear_3 = tf.keras.layers.Dense(
-            units=output_dim,
-            input_shape=(hidden_2_out_dim,)
-        )
-
-    def call(self, input):
-        output = self.linear_1(input)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_2(output)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_3(output)
-        return output
-
-    def dummy_run(self):
-        """
-        This method is to let python initialize the network and weights not just the computation graph.
-        :return: None.
-        """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-        self(dummy_z)
 
 
 class ForwardEluLayer(tf.keras.layers.Layer):
@@ -567,58 +671,6 @@ class FullyConnectedNetwork(tf.keras.Model):
         """
         dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
         self(dummy_z)
-
-
-class ThreeLayerIsingNetwork(tf.keras.Model):
-    def __init__(self, input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim):
-        super().__init__(input_dim, hidden_1_out_dim, hidden_2_out_dim, hidden_3_out_dim, output_dim)
-
-        self.input_dim = input_dim
-
-        self.linear_1 = tf.keras.layers.Dense(
-            units=hidden_1_out_dim,
-            input_shape=(input_dim,)
-        )
-
-        self.linear_2 = tf.keras.layers.Dense(
-            units=hidden_2_out_dim,
-            input_shape=(hidden_1_out_dim,)
-        )
-
-        self.linear_3 = tf.keras.layers.Dense(
-            units=hidden_3_out_dim,
-            input_shape=(hidden_2_out_dim,)
-        )
-
-        self.linear_4 = tf.keras.layers.Dense(
-            units=output_dim,
-            input_shape=(hidden_3_out_dim,)
-        )
-
-    def call(self, input):
-        output = self.linear_1(input)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_2(output)
-        output = tf.keras.activations.elu(output)
-        output = self.linear_3(output)
-        output = tf.keras.activations.tanh(output)
-        output = self.linear_4(output)
-        return output
-
-    def dummy_run(self):
-        """
-        This method is to let python initialize the network and weights not just the computation graph.
-        :return: None.
-        """
-        dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-        self(dummy_z)
-
-
-
-
-
-
-
 
 
 

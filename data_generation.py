@@ -13,8 +13,8 @@ seed_index = 1
 tf.random.set_seed(seed_index)
 np.random.seed(seed_index)
 
-null_cut_off_radius = 1
-alt_cut_off_radius = 1.539
+null_cut_off_radius = hp.null_cut_off_radius
+alt_cut_off_radius = hp.alt_cut_off_radius
 
 for sample_size in hp.sample_size_vet:
     for trail_index in np.arange(hp.number_of_trails):

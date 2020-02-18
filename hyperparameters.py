@@ -12,6 +12,10 @@ sample_size_vet = np.array([30, 100, 500, 1000])
 # Number of latent groups within samples.
 latent_group_number = 4
 
+# The radius we use for dividing z in to two groups under the mixture data scenario.
+null_cut_off_radius = 1
+alt_cut_off_radius = 1.539
+
 ##################
 # Nerual network #
 ##################
