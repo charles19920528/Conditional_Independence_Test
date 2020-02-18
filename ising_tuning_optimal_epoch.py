@@ -16,8 +16,6 @@ trail_index_vet = np.arange(hp.number_of_trails)
 sample_size_vet = hp.sample_size_vet
 
 
-epoch_mixture_vet = hp.epoch_mixture_vet
-
 if len(trail_index_vet) < hp.process_number:
     process_number = len(trail_index_vet)
 else:
@@ -27,7 +25,7 @@ else:
 # Fit the full model on the mixture data #
 ##########################################
 # 2 layer
-epoch_mixture_vet = np.array([100, 100, 30, 20])
+epoch_mixture_vet = np.array([100, 120, 60, 60])
 number_forward_elu_layers = 2
 hidden_dim = 3
 result_dict_name = f"mixture_full_model{number_forward_elu_layers}{hidden_dim}"
@@ -37,6 +35,10 @@ it.tuning_loop(tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenari
                result_dict_name=result_dict_name, number_forward_elu_layers=number_forward_elu_layers,
                process_number=process_number, input_dim=3, hidden_dim=hidden_dim, output_dim=3)
 
+np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
+epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(
+    path_epoch_kl_dict=f"tunning/{result_dict_name}_result_alt_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
 
 
 # 3 layer
