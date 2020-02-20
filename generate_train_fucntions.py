@@ -363,7 +363,7 @@ class IsingTunning:
         self.max_epoch = max_epoch
 
 
-    def train_test_split(self, test_percentage):
+    def train_test_split(self, test_percentage, ):
         """
         Create and split the full data into the training data and the test data. test_percentage of the data are used
         for the test data.
@@ -378,6 +378,9 @@ class IsingTunning:
         test_size = tf.cast(self.sample_size * test_percentage, tf.int32).numpy()
         test_ds = full_ds.take(test_size).batch(test_size)
         train_ds = full_ds.skip(test_size).batch(self.batch_size)
+
+        for z_mat, x_y_math in test_ds:
+            test_p_mat = conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=, )
 
         return train_ds, test_ds
 
