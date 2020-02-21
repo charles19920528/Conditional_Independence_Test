@@ -265,8 +265,7 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and
     P(X = -1, Y = -1).
     """
-    less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < \
-                                     cut_off_radius
+    less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
     nrow = z_mat.shape[0]
     if is_null_boolean:
         p_mat = np.repeat(0.25, nrow * 4).reshape(nrow, 4)
@@ -304,7 +303,16 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     """
     assert (p_mat_true.shape == p_mat_predicted.shape)
 
+    true_zero_mass_boolean = p_mat_true == 0
+
+    # This is to avoid creating nan.
+    p_mat_true[true_zero_mass_boolean] = 1
+
     kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
+
+    # This is to correct kl divergence.
+    p_mat_true[true_zero_mass_boolean] = kl_divergence_mat[true_zero_mass_boolean] = 0
+
     if isAverage:
         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
         return kl_divergence_scalar
@@ -399,7 +407,6 @@ class IsingTrainingTunning:
         # else:
 
 
-
     def tuning(self, print_loss_boolean, is_null_boolean, cut_off_radius, test_percentage=0.1, true_weight_array=None):
         """
         Train and tune a neural network on Ising data.
@@ -435,7 +442,7 @@ class IsingTrainingTunning:
         for test_z_mat, _ in test_ds:
             if true_weight_array == None:
                 true_test_p_mat = conditional_pmf_collection_mixture(z_mat=test_z_mat, is_null_boolean=is_null_boolean,
-                                                                cut_off_radius=cut_off_radius)
+                                                                     cut_off_radius=cut_off_radius)
             else:
                 if is_null_boolean:
                     true_network = IsingNetwork(hp.dim_z, hp.hidden_1_out_dim, 2)
@@ -474,7 +481,8 @@ class IsingTrainingTunning:
                 predicted_parameter_mat_test = self.ising_network(z_batch_test)
                 likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
                 predicted_test_p_mat = pmf_collection(parameter_mat=predicted_parameter_mat_test)
-                kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat)
+                kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat,
+                                                isAverage=True)
 
                 print(f"{self.sample_size} Finished kl {iteration}")
 
