@@ -388,12 +388,12 @@ class IsingTrainingTunning:
         test_p_mat: A matrix has four columns which contains the true pmf on the test data. test_p_mat will only
         returned if is_mixture_boolean is true.
         """
-        full_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
-        full_ds = full_ds.shuffle(self.buffer_size)
-
-        test_size = tf.cast(self.sample_size * test_percentage, tf.int32).numpy()
-        test_ds = full_ds.take(test_size).batch(test_size)
-        train_ds = full_ds.skip(test_size).batch(self.batch_size)
+        # full_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
+        # full_ds = full_ds.shuffle(self.buffer_size)
+        #
+        # test_size = tf.cast(self.sample_size * test_percentage, tf.int32).numpy()
+        # test_ds = full_ds.take(test_size).batch(test_size)
+        # train_ds = full_ds.skip(test_size).batch(self.batch_size)
 
         return train_ds, test_ds
 
