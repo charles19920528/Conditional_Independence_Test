@@ -61,9 +61,9 @@ ra.plot_roc(ising_residual_fpr_tpr_dict, "Misspecified_Ising_Residuals", "ising_
 ######################################################
 # Analyze the Ising model fitted on the mixture data #
 ######################################################
-# with open('results/result_dict/mixture_data/ising_result_null_dict.p', 'rb') as fp:
+# with open('results/result_dict/mixture_data/ising_wrong_result_null_dict.p', 'rb') as fp:
 #     ising_result_null_dict = pickle.load(fp)
-# with open('results/result_dict/mixture_data/ising_result_alt_dict.p', 'rb') as fp:
+# with open('results/result_dict/mixture_data/ising_wrong_result_alt_dict.p', 'rb') as fp:
 #     ising_result_alt_dict = pickle.load(fp)
 #
 # ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ising_result_null_dict, alt_result_dict = ising_result_alt_dict,
