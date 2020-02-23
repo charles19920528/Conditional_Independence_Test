@@ -94,34 +94,51 @@ pool = mp.Pool(processes=process_number)
 #     it.plot_loss_kl(mixture_full_model33_result_null_dict, trail_index_vet=trail_index_to_plot_vet, sample_size=sample_size,
 #                     end_epoch=10, start_epoch=0)
 
+################################
+# Tuning for true Ising model #
+###############################
+epoch_ising_vet = np.array([300, 250, 100, 100])
+trail_index_to_plot_vet = [0,290,360,402]
+with open('data/ising_data/weights_dict.p', 'rb') as fp:
+    weights_dict = pickle.load(fp)
+
+it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="null",
+               number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=1, input_dim=hp.dim_z,
+               hidden_dim=3, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
+               result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
+
+it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="alt",
+               number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=1, input_dim=hp.dim_z,
+               hidden_dim=3, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
+               result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
 
 #######################################
 # Tuning for misspecified Ising model #
 #######################################
-epoch_ising_vet = np.array([300, 250, 100, 100])
-
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
     weights_dict = pickle.load(fp)
 
 it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="null",
                number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=2, input_dim=hp.dim_z,
                hidden_dim=2, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
-               result_dict_name="ising", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
+               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
 
 it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="alt",
                number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=2, input_dim=hp.dim_z,
                hidden_dim=2, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
-               result_dict_name="ising", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
-#
-# ising_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(
-#     path_epoch_kl_dict=f"tunning/ising_result_null_dict.p", sample_size_vet=sample_size_vet,
-#     trail_index_vet=trail_index_vet)
-#
-# with open(f"tunning/ising_result_null_dict.p", "rb") as fp:
-#     ising_result_null_dict = pickle.load(fp)
-#
-# it.plot_loss_kl(experiment_result_dict=ising_result_null_dict, trail_index_vet=[0,20,30,40], sample_size=500,
-#                 end_epoch=50)
+               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
+
+ising_wrong_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(
+    path_epoch_kl_dict=f"tunning/ising_wrong_result_null_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
+
+with open(f"tunning/ising_wrong_result_null_dict.p", "rb") as fp:
+    ising_wrong_result_null_dict = pickle.load(fp)
+
+it.plot_loss_kl(experiment_result_dict=ising_wrong_result_null_dict, trail_index_vet=trail_index_to_plot_vet,
+                sample_size=500, end_epoch=50)
+
+
 # pool.close()
 # pool.join()
 
