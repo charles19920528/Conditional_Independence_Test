@@ -301,7 +301,7 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     kl_divergence_scalr: a scalar
     or kl_divergence_list: a list
     """
-    assert (p_mat_true.shape == p_mat_predicted.shape)
+    assert p_mat_true.shape == p_mat_predicted.shape
 
     true_zero_mass_boolean = p_mat_true == 0
 
@@ -339,9 +339,9 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
     """
     p_mat_true = pmf_collection(true_parameter_mat)
     p_mat_predicted = pmf_collection(predicted_parameter_mat)
-    kl_divergence_scalr = kl_divergence(p_mat_true, p_mat_predicted, isAverage)
+    kl_divergence_scalar = kl_divergence(p_mat_true, p_mat_predicted, isAverage)
 
-    return kl_divergence_scalr
+    return kl_divergence_scalar
 
 
 
@@ -374,7 +374,7 @@ class IsingTrainingTunning:
     def train_test_split(self, test_percentage):
         """
         Create and split the full data into the training data and the test data. test_percentage of the data are used
-        for the test data. Compute the true pmf on the test data.
+        for the test data.
 
         :param test_percentage: A scalar between 0 and 1.
         :param is_mixture_boolean: A boolean value. True if the data is generated under the mixture distribution.
@@ -383,11 +383,16 @@ class IsingTrainingTunning:
         :param cut_off_radius: A positive scalar which we use to divide sample into two groups based on the norm of z.
 
         :return:
-        train_ds: A Tensorflow dataset which is used as the training data.
-        test_ds: A Tensorflow dataset which is used as the test data.
-        test_p_mat: A matrix has four columns which contains the true pmf on the test data. test_p_mat will only
-        returned if is_mixture_boolean is true.
+        train_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the training data
+        test_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the test data.
         """
+        test_size = tf.cast(self.sample_size * test_percentage, tf.int8).numpy()
+        indices_vet = np.random.permutation(self.sample_size)
+        training_indices_vet, test_indices_vet = indices_vet[test_size:], indices_vet[:test_size]
+
+        train_array_tuple = (self.z_mat[training_indices_vet, :], self.x_y_mat[training_indices_vet, :])
+        test_array_tuple = (self.z_mat[test_indices_vet, :], self.x_y_mat[test_indices_vet, :])
+
         # full_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, self.x_y_mat))
         # full_ds = full_ds.shuffle(self.buffer_size)
         #
@@ -395,19 +400,11 @@ class IsingTrainingTunning:
         # test_ds = full_ds.take(test_size).batch(test_size)
         # train_ds = full_ds.skip(test_size).batch(self.batch_size)
 
-        return train_ds, test_ds
-
-        # if is_mixture_boolean:
-        #     test_p_mat = tf.zeros(shape=(test_size, 4))
-        #     for z_mat, x_y_math in test_ds:
-        #         test_p_mat = conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=is_null_boolean,
-        #                                                         cut_off_radius=cut_off_radius)
-        #
-        #     return train_ds, test_ds, test_p_mat
-        # else:
+        return train_array_tuple, test_array_tuple
 
 
-    def tuning(self, print_loss_boolean, is_null_boolean, cut_off_radius, test_percentage=0.1, true_weight_array=None):
+    def tuning(self, print_loss_boolean, is_null_boolean, test_percentage=0.1, cut_off_radius=None,
+               true_weight_array=None):
         """
         Train and tune a neural network on Ising data.
 
@@ -434,37 +431,41 @@ class IsingTrainingTunning:
         result_dict["ising_parameters"] stores a tensor which is
         the fitted value of parameters in the full Ising Model.
         """
-
-        # Prepare training data.
-        train_ds, test_ds = self.train_test_split(test_percentage=test_percentage)
+        assert cut_off_radius is None or true_weight_array is None, "Both cut_off_radius and true_weight_array are " \
+                                                                    "supplied."
+        assert cut_off_radius is not None or true_weight_array is not None, "Neither cut_off_radius nor true_weight_" \
+                                                                            "array are supplied."
+        # Prepare training and test data.
+        train_array_tuple, test_array_tuple = self.train_test_split(test_percentage=test_percentage)
+        train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        test_z_mat, test_x_y_mat = test_array_tuple
 
         # Compute true pmf on the test data.
-        for test_z_mat, _ in test_ds:
-            if true_weight_array == None:
-                true_test_p_mat = conditional_pmf_collection_mixture(z_mat=test_z_mat, is_null_boolean=is_null_boolean,
-                                                                     cut_off_radius=cut_off_radius)
-            else:
-                if is_null_boolean:
-                    true_network = IsingNetwork(hp.dim_z, hp.hidden_1_out_dim, 2)
-                else:
-                    true_network = IsingNetwork(hp.dim_z, hp.hidden_1_out_dim, 3)
+        if true_weight_array is None:
+            true_test_p_mat = conditional_pmf_collection_mixture(z_mat=test_z_mat, is_null_boolean=is_null_boolean,
+                                                                 cut_off_radius=cut_off_radius)
+        else:
+            true_network = IsingNetwork(hp.dim_z, hp.hidden_1_out_dim, 3)
+            true_network.dummy_run()
+            true_network.set_weights(true_weight_array)
 
-                true_network.dummy_run()
-                true_network.set_weights(true_weight_array)
-                true_test_parameter_mat = true_network(test_z_mat)
-                true_test_p_mat = pmf_collection(parameter_mat=true_test_parameter_mat)
+            true_test_parameter_mat = true_network(test_z_mat)
+            if is_null_boolean:
+                true_test_parameter_mat = true_test_parameter_mat[:, :2]
+
+            true_test_p_mat = pmf_collection(parameter_mat=true_test_parameter_mat)
 
         # Prepare storage for results.
         loss_kl_array = np.zeros((3, self.max_epoch))
         result_dict = dict()
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-
         iteration = 0
         while iteration < self.max_epoch:
 
-            print(f"start {iteration}")
-
+            print(f"start training epoch {iteration}")
+            # Training loop.
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
@@ -477,14 +478,14 @@ class IsingTrainingTunning:
 
             print(f"Finished training{iteration} ")
 
-            for z_batch_test, x_y_batch_test in test_ds:
-                predicted_parameter_mat_test = self.ising_network(z_batch_test)
-                likelihood_on_test = log_ising_pmf(x_y_batch_test, predicted_parameter_mat_test)
-                predicted_test_p_mat = pmf_collection(parameter_mat=predicted_parameter_mat_test)
-                kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat,
-                                                isAverage=True)
+            # Compute likelihood and  kl on test data  test_z_mat, test_x_y_mat
+            predicted_test_parameter_mat = self.ising_network(test_z_mat)
+            likelihood_on_test = log_ising_pmf(test_x_y_mat, predicted_test_parameter_mat)
+            predicted_test_p_mat = pmf_collection(parameter_mat=predicted_test_parameter_mat)
+            kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat,
+                                            isAverage=True)
 
-                print(f"{self.sample_size} Finished kl {iteration}")
+            print(f"{self.sample_size} Finished kl {iteration}")
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
@@ -504,7 +505,7 @@ class IsingTrainingTunning:
         return result_dict
 
 
-class IsingTrainingPool:
+class IsingTraining:
     def __init__(self, z_mat, x_y_mat, epoch, ising_network, learning_rate=hp.learning_rate,
                  buffer_size=hp.buffer_size, batch_size=hp.batch_size):
         """
