@@ -80,7 +80,17 @@ ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ising_optimal_epoch_result_nu
                                 alt_result_dict = ising_optimal_epoch_result_alt_dict,
                                 test_statistic_one_trail = ra.ising_test_statistic_one_trial)
 
-ra.plot_roc(ising_fpr_tpr_dict, "Ising_Model", "mixture_data")
+ra.plot_roc(ising_fpr_tpr_dict, "Ising_Model_test", "mixture_data")
+
+import numpy as np
+import generate_train_fucntions as gt
+example_parameter = ising_optimal_epoch_result_null_dict[1000][10]
+example_p_mat = gt.pmf_collection(example_parameter)
+gt.kl_divergence(np.repeat(0.25, 4*1000).reshape(1000, 4), example_p_mat, isAverage= True)
+
+
+alt_p_mat = np.loadtxt("data/mixture_data/alt/p_mat/p_mat_alt_1000_333.txt")
+gt.kl_divergence(np.repeat(0.25, 4*1000).reshape(1000, 4), alt_p_mat, isAverage= True)
 
 
 ##################################

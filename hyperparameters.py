@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 ###################
 # Data generation #
@@ -35,7 +36,7 @@ buffer_size = 1024
 batch_size = 100
 
 # learning rate for gradient descent.
-learning_rate = 0.005
+learning_rate = 0.05
 
 ###############################
 # Misspecified neural network #
@@ -56,7 +57,7 @@ epoch_vet_mixture_null = np.array([40, 40, 15, 13])
 # Multiprocess #
 ################
 # Number of process Pool function will run in parallel.
-process_number = 24
+process_number = os.cpu_count()
 
 
 #########################
