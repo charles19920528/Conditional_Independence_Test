@@ -13,6 +13,7 @@ tf.random.set_seed(1)
 
 trail_index_vet = np.arange(hp.number_of_trails)
 sample_size_vet = hp.sample_size_vet
+number_of_test_samples_vet = [5, 10, 50, 100]
 
 
 if len(trail_index_vet) < hp.process_number:
@@ -20,7 +21,7 @@ if len(trail_index_vet) < hp.process_number:
 else:
     process_number = hp.process_number
 
-# pool = mp.Pool(processes=process_number)
+pool = mp.Pool(processes=process_number)
 
 ##########################################
 # Fit the full model on the mixture data #
@@ -97,17 +98,21 @@ else:
 #######################################
 # Tuning for misspecified Ising model #
 #######################################
-trail_index_vet = [25,100,294, 506]
-sample_size_vet = [100]
-ising_epoch_vet = [200]
-
+epoch_ising_vet = np.array([200, 180, 50, 50])
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
-    weigh_dict = pickle.load(fp)
-it.tuning_pool_wrapper_ising_data(trail_index=1, scenario="null", sample_size=30, epoch=2,test_percentage=0.1,
-                                  weigh_dict=weigh_dict, number_forward_elu_layers=2, input_dim=hp.dim_z, hidden_dim=2,
-                                  output_dim=3)
+    weights_dict = pickle.load(fp)
+it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="null",
+               number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=2, input_dim=hp.dim_z,
+               hidden_dim=2, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
+               result_dict_name="ising", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
 
+it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="alt",
+               number_of_test_samples_vet=number_of_test_samples_vet, number_forward_elu_layers=2, input_dim=hp.dim_z,
+               hidden_dim=2, output_dim=3, epoch_vet=epoch_ising_vet, trail_index_vet=trail_index_vet,
+               result_dict_name="ising", sample_size_vet=sample_size_vet, weights_dict=weights_dict)
 
+pool.close()
+pool.join()
 
 
 

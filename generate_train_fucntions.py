@@ -303,15 +303,12 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     """
     assert p_mat_true.shape == p_mat_predicted.shape
 
-    true_zero_mass_boolean = p_mat_true == 0
+    none_zero_mass_boolean = p_mat_true is not 0
 
-    # This is to avoid creating nan.
-    p_mat_true[true_zero_mass_boolean] = 1
-
-    kl_divergence_mat = p_mat_true * np.log(p_mat_true / p_mat_predicted)
-
-    # This is to correct kl divergence.
-    p_mat_true[true_zero_mass_boolean] = kl_divergence_mat[true_zero_mass_boolean] = 0
+    kl_divergence_mat = np.zeros(p_mat_true.shape)
+    kl_divergence_mat[none_zero_mass_boolean] = p_mat_true[none_zero_mass_boolean] * \
+                                                np.log(p_mat_true[none_zero_mass_boolean] /
+                                                       p_mat_predicted[none_zero_mass_boolean])
 
     if isAverage:
         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
@@ -371,24 +368,21 @@ class IsingTrainingTunning:
         self.max_epoch = max_epoch
 
 
-    def train_test_split(self, test_percentage):
+    def train_test_split(self, number_of_test_samples):
         """
         Create and split the full data into the training data and the test data. test_percentage of the data are used
         for the test data.
 
-        :param test_percentage: A scalar between 0 and 1.
-        :param is_mixture_boolean: A boolean value. True if the data is generated under the mixture distribution.
-        :param is_null_boolean: A boolean value to indicate if we compute the pmf under the independence assumption
-        (H0).
-        :param cut_off_radius: A positive scalar which we use to divide sample into two groups based on the norm of z.
+        :param number_of_test_samples: An integer which is the number of data used as validation set.
 
         :return:
         train_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the training data
         test_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the test data.
         """
-        test_size = tf.cast(self.sample_size * test_percentage, tf.int8).numpy()
+ #       test_size = tf.cast(self.sample_size * test_percentage, tf.int8).numpy()
         indices_vet = np.random.permutation(self.sample_size)
-        training_indices_vet, test_indices_vet = indices_vet[test_size:], indices_vet[:test_size]
+        training_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], \
+                                                 indices_vet[:number_of_test_samples]
 
         train_array_tuple = (self.z_mat[training_indices_vet, :], self.x_y_mat[training_indices_vet, :])
         test_array_tuple = (self.z_mat[test_indices_vet, :], self.x_y_mat[test_indices_vet, :])
@@ -403,7 +397,7 @@ class IsingTrainingTunning:
         return train_array_tuple, test_array_tuple
 
 
-    def tuning(self, print_loss_boolean, is_null_boolean, test_percentage=0.1, cut_off_radius=None,
+    def tuning(self, print_loss_boolean, is_null_boolean, number_of_test_samples, cut_off_radius=None,
                true_weight_array=None):
         """
         Train and tune a neural network on Ising data.
@@ -436,7 +430,7 @@ class IsingTrainingTunning:
         assert cut_off_radius is not None or true_weight_array is not None, "Neither cut_off_radius nor true_weight_" \
                                                                             "array are supplied."
         # Prepare training and test data.
-        train_array_tuple, test_array_tuple = self.train_test_split(test_percentage=test_percentage)
+        train_array_tuple, test_array_tuple = self.train_test_split(number_of_test_samples=number_of_test_samples)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, test_x_y_mat = test_array_tuple

@@ -10,7 +10,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, test_percentage,
+def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, number_of_test_samples,
                                    weights_dict, number_forward_elu_layers, input_dim, hidden_dim, output_dim):
     x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
@@ -23,13 +23,13 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, te
                                                      max_epoch=epoch)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
+    is_null_boolean = False
     if scenario == "null":
         is_null_boolean = True
-    elif scenario == "alt":
-        is_null_boolean = False
 
     result_mat = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
-                                               test_percentage=test_percentage, true_weight_array=true_weights_array)
+                                               number_of_test_samples=number_of_test_samples,
+                                               true_weight_array=true_weights_array)
 
     return (trail_index, result_mat)
 
@@ -55,20 +55,18 @@ def tuning_pool_wrapper_mixture_data(trail_index, scenario, sample_size, epoch,
     return (trail_index, result_mat)
 
 
-def tuning_loop(pool, tunning_pool_wrapper, scenario, test_percentage, is_null_boolean, number_forward_elu_layers,
-                input_dim, hidden_dim, output_dim, epoch_vet, trail_index_vet, result_dict_name,
-                sample_size_vet=hp.sample_size_vet, process_number=hp.process_number, **kwargs):
+def tuning_loop(pool, tunning_pool_wrapper, scenario, number_of_test_samples_vet, number_forward_elu_layers, input_dim,
+                hidden_dim, output_dim, epoch_vet, trail_index_vet, result_dict_name,
+                sample_size_vet=hp.sample_size_vet, **kwargs):
 
     result_dict = dict()
-    for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet, number_of_test_samples_vet):
 #        pool = mp.Pool(processes=process_number)
         pool_result_vet = pool.map(partial(tunning_pool_wrapper, scenario=scenario, sample_size=sample_size,
-                                           epoch=epoch, test_percentage=test_percentage,
-                                           is_null_boolean=is_null_boolean,
+                                           epoch=epoch, number_of_test_samples=number_of_test_samples,
                                            number_forward_elu_layers=number_forward_elu_layers,
                                            input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim, **kwargs),
                                    trail_index_vet)
-
 
             # pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
             #                                    epoch=epoch, number_forward_elu_layers=number_forward_elu_layers,
@@ -81,8 +79,8 @@ def tuning_loop(pool, tunning_pool_wrapper, scenario, test_percentage, is_null_b
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-        pool.close()
-        pool.join()
+        # pool.close()
+        # pool.join()
 
     with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
