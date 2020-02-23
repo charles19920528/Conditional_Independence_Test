@@ -27,7 +27,7 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, nu
     if scenario == "null":
         is_null_boolean = True
 
-    result_mat = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
+    result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
                                                number_of_test_samples=number_of_test_samples,
                                                true_weight_array=true_weights_array)
 

@@ -36,7 +36,7 @@ buffer_size = 1024
 batch_size = 100
 
 # learning rate for gradient descent.
-learning_rate = 0.05
+learning_rate = 0.005
 
 ###############################
 # Misspecified neural network #

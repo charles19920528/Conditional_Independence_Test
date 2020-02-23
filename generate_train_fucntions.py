@@ -309,7 +309,7 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     kl_divergence_mat[none_zero_mass_boolean] = p_mat_true[none_zero_mass_boolean] * \
                                                 np.log(p_mat_true[none_zero_mass_boolean] /
                                                        p_mat_predicted[none_zero_mass_boolean])
-
+    np.nan_to_num(x=kl_divergence_mat, copy=False, nan=2)
     if isAverage:
         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
         return kl_divergence_scalar
@@ -458,19 +458,19 @@ class IsingTrainingTunning:
         iteration = 0
         while iteration < self.max_epoch:
 
-            print(f"start training epoch {iteration}")
+            # print(f"start training epoch {iteration}")
             # Training loop.
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
                     loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
 
-                    print(f"finish compute log pmf {iteration}")
+                    # print(f"finish compute log pmf {iteration}")
 
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
 
-            print(f"Finished training{iteration} ")
+            # print(f"Finished training{iteration} ")
 
             # Compute likelihood and  kl on test data  test_z_mat, test_x_y_mat
             predicted_test_parameter_mat = self.ising_network(test_z_mat)
@@ -479,12 +479,13 @@ class IsingTrainingTunning:
             kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat,
                                             isAverage=True)
 
-            print(f"{self.sample_size} Finished kl {iteration}")
+            # print(f"{self.sample_size} Finished kl {iteration}")
 
             if iteration % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
-                print("The loss is %f " % loss)
+                print("The training loss is %f " % loss)
                 print("The test loss is %f" % likelihood_on_test)
+                print("The kl on the test data is %f" % kl_on_test_data)
 
             loss_kl_array[0, iteration] = loss.numpy()
             loss_kl_array[1, iteration] = likelihood_on_test
