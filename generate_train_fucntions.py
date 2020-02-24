@@ -425,8 +425,7 @@ class IsingTrainingTunning:
         result_dict["ising_parameters"] stores a tensor which is
         the fitted value of parameters in the full Ising Model.
         """
-        assert cut_off_radius is None or true_weight_array is None, "Both cut_off_radius and true_weight_array are " \
-                                                                    "supplied."
+        assert cut_off_radius is None or true_weight_array is None, "Both cut_off_radius and true_weight_array are "                                                            "supplied."
         assert cut_off_radius is not None or true_weight_array is not None, "Neither cut_off_radius nor true_weight_" \
                                                                             "array are supplied."
         # Prepare training and test data.
@@ -490,6 +489,49 @@ class IsingTrainingTunning:
             loss_kl_array[0, iteration] = loss.numpy()
             loss_kl_array[1, iteration] = likelihood_on_test
             loss_kl_array[2, iteration] = kl_on_test_data
+
+            iteration += 1
+
+        result_dict["loss_array"] = loss_kl_array
+        predicted_parameter_mat = self.ising_network(self.z_mat)
+        result_dict["ising_parameters"] = predicted_parameter_mat
+
+        return result_dict
+
+
+    def train_compute_test_statistic(self, print_loss_boolean, number_of_test_samples):
+        """
+
+        :param print_loss_boolean:
+        :param number_of_test_samples:
+        :return:
+        """
+        # Prepare training and test data.
+        train_array_tuple, test_array_tuple = self.train_test_split(number_of_test_samples=number_of_test_samples)
+        train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        test_z_mat, test_x_y_mat = test_array_tuple
+
+        # Prepare storage for results.
+        loss_kl_array = np.zeros((3, self.max_epoch))
+        result_dict = dict()
+
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+        iteration = 0
+        while iteration < self.max_epoch:
+            # Training loop.
+            for z_batch, x_y_batch in train_ds:
+                with tf.GradientTape() as tape:
+                    batch_predicted_parameter_mat = self.ising_network(z_batch)
+                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
+                grads = tape.gradient(loss, self.ising_network.variables)
+                optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
+
+            # print(f"{self.sample_size} Finished kl {iteration}")
+
+            if iteration % 10 == 0 and print_loss_boolean:
+                print("Sample size %d, Epoch %d" % (self.sample_size, iteration))
+                print("The training loss is %f " % loss)
 
             iteration += 1
 

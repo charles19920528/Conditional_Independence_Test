@@ -176,6 +176,10 @@ print("Tunning misspecified Ising model takes %s seconds to finish." % (time.tim
 # Result analysis #
 ###################
 trail_index_to_plot_vet = [0,290,360,402]
+
+##############
+# Ising data #
+##############
 # True Ising model
 ising_true_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
     path_epoch_kl_dict=f"tunning/ising_true_result_null_dict.p", sample_size_vet=sample_size_vet,
@@ -204,6 +208,22 @@ for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, epoch_ising_ve
                     sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
     it.plot_loss_kl(experiment_result_dict=ising_wrong_result_alt_dict, trail_index_vet=trail_index_to_plot_vet,
                     sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
+
+
+################
+# Mixture data #
+################
+mixture_1_3_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict="tunning/mixture_1_3_result_null_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
+
+mixture_1_3_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict="tunning/mixture_1_3_result_alt_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
+
+mixture_1_12_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict="tunning/mixture_1_12_result_null_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
 
 
 # pool.close()
