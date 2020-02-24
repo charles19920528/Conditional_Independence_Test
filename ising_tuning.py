@@ -225,6 +225,9 @@ mixture_1_12_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
     path_epoch_kl_dict="tunning/mixture_1_12_result_null_dict.p", sample_size_vet=sample_size_vet,
     trail_index_vet=trail_index_vet)
 
+mixture_1_12_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict="tunning/mixture_1_12_result_alt_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
 
 # pool.close()
 # pool.join()
