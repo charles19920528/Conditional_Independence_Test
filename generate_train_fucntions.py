@@ -303,7 +303,7 @@ def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
     """
     assert p_mat_true.shape == p_mat_predicted.shape
 
-    none_zero_mass_boolean = p_mat_true is not 0
+    none_zero_mass_boolean = p_mat_true != 0
 
     kl_divergence_mat = np.zeros(p_mat_true.shape)
     kl_divergence_mat[none_zero_mass_boolean] = p_mat_true[none_zero_mass_boolean] * \
