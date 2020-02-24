@@ -14,7 +14,7 @@ sample_size_vet = hp.sample_size_vet
 number_of_test_samples_vet = [5, 10, 50, 100]
 
 epoch_ising_vet = np.array([300, 250, 100, 100])
-
+epoch_mixture_1_vet = np.array([300, 250, 100, 100])
 
 if len(trail_index_vet) < hp.process_number:
     process_number = len(trail_index_vet)
@@ -27,9 +27,8 @@ pool = mp.Pool(processes=process_number)
 # Fit the full model on the mixture data #
 ##########################################
 # 1 layer
-epoch_mixture_1_vet = np.array([100, 120, 60, 60])
 number_forward_elu_layers = 1
-hidden_dim_mixture_vet = [3, 6, 12]
+hidden_dim_mixture_vet = [3, 12]
 result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}" for hidden_dim in hidden_dim_mixture_vet]
 
 np.random.seed(1)
@@ -37,21 +36,23 @@ tf.random.set_seed(1)
 
 start_time = time.time()
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="null",
-               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
-               trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
-               result_dict_name=result_dict_name_vet[0], sample_size_vet=sample_size_vet,
-               cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
-               hidden_dim=hidden_dim_mixture_vet[0], output_dim=3)
+for i, (hidden_dim_mixture, result_dict_name) in enumerate(zip(hidden_dim_mixture_vet, result_dict_name_vet)):
+    it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="null",
+                   number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
+                   trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+                   result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
+                   cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
+                   hidden_dim=hidden_dim_mixture, output_dim=3)
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="alt",
-               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
-               trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
-               result_dict_name=result_dict_name_vet[0], sample_size_vet=sample_size_vet,
-               cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
-               hidden_dim=hidden_dim_mixture_vet[0], output_dim=3)
+    it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="alt",
+                   number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
+                   trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+                   result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
+                   cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
+                   hidden_dim=hidden_dim_mixture, output_dim=3)
 
-print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
+print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
+      f"seconds to finish.")
 
 # 2 layer
 # epoch_mixture_vet = np.array([100, 120, 60, 60])
@@ -175,6 +176,15 @@ print("Tunning misspecified Ising model takes %s seconds to finish." % (time.tim
 # Result analysis #
 ###################
 trail_index_to_plot_vet = [0,290,360,402]
+# True Ising model
+ising_true_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict=f"tunning/ising_true_result_null_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
+
+ising_true_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
+    path_epoch_kl_dict=f"tunning/ising_true_result_alt_dict.p", sample_size_vet=sample_size_vet,
+    trail_index_vet=trail_index_vet)
+
 # Misspecified Ising
 ising_wrong_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
     path_epoch_kl_dict=f"tunning/ising_wrong_result_null_dict.p", sample_size_vet=sample_size_vet,
