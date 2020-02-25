@@ -38,6 +38,8 @@ batch_size = 100
 # learning rate for gradient descent.
 learning_rate = 0.005
 
+number_of_test_samples_vet = [5, 10, 50, 100]
+
 ###############################
 # Misspecified neural network #
 ###############################
@@ -49,7 +51,7 @@ hidden_2_out_dim_misspecified = 2
 ####################################
 # Architecture on the mixture data #
 ####################################
-mixture_hidden_dim_vet = np.array([3, 3, 3, 3])
+hidden_dim_vet = np.array([12, 12, 12, 12])
 
 epoch_vet_mixture_alt = np.array([20, 45, 25, 22])
 epoch_vet_mixture_null = np.array([40, 40, 15, 13])

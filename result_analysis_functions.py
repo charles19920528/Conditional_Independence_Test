@@ -18,24 +18,28 @@ import hyperparameters as hp
 # Method specific functions to bbtain test statistic for one trial.
 def ising_test_statistic_one_trial(trail_index, one_sample_size_result_dict):
     """
-    Calculate the average of squared Jxy in one trail.
 
-    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
-    :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
-    a particular sample size.
-
+    :param trail_index:
+    :param one_sample_size_result_dict:
     :return:
-    jxy_squared_mean: An scalar which is the average of squared Jxy..
     """
+    # """
+    # Calculate the average of squared Jxy in one trail.
+    #
+    # :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    # :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
+    # a particular sample size.
+    #
+    # :return:
+    # jxy_squared_mean: An scalar which is the average of squared Jxy..
+    # """
 
-    jxy_squared_vet = np.square(one_sample_size_result_dict[trail_index][:, 2])
-    jxy_squared_mean = np.mean(jxy_squared_vet)
+    # jxy_squared_vet = np.square(one_sample_size_result_dict[trail_index][:, 2])
+    # jxy_squared_mean = np.mean(jxy_squared_vet)
 
-    # squared_par_mat = np.square(one_sample_size_result_dict[trail_index])
-    # ratio = np.square(one_sample_size_result_dict[trail_index][:, 2]) / np.sum(squared_par_mat, axis = 1)
-    # jxy_squared_mean = np.mean(ratio)
 
-    return jxy_squared_mean
+    # return jxy_squared_mean
+    return one_sample_size_result_dict[trail_index]["test_statistic"]
 
 
 def naive_sq_statistic_one_trail(trail_index, one_sample_size_result_dict, isPvalue):

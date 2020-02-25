@@ -1,8 +1,15 @@
 import time
+import multiprocessing as mp
+import numpy as np
+import tensorflow as tf
+import os
 
 import simulation_functions as sf
 import generate_train_fucntions as gt
 import hyperparameters as hp
+
+pool = mp.Pool(processes=hp.process_number)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 ##############
 # Ising data #
@@ -23,38 +30,43 @@ sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = 
 sf.simulation_loop(simulation_wrapper = sf.stratified_chisq_wrapper, scenario = "alt", data_directory_name="ising_data",
                    result_dict_name = "stratified_chisq", result_directory_name = "ising_data")
 
-# Ising simulation
+# True Ising simulation
+np.random.seed(1)
+tf.random.set_seed(1)
+
 start_time = time.time()
 
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
-                   data_directory_name="ising_data", result_dict_name = "ising", result_directory_name = "ising_data",
-                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
-                   output_dim = 3)
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_true", scenario="null",
+                                       data_directory_name="ising_data", ising_network_class=gt.IsingNetwork,
+                                       result_dict_name="ising_true", input_dim=hp.dim_z,
+                                       hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt",
-                   data_directory_name="ising_data", result_dict_name = "ising", result_directory_name = "ising_data",
-                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
-                   output_dim = 3)
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_true", scenario="alt",
+                                       data_directory_name="ising_data", ising_network_class=gt.IsingNetwork,
+                                       result_dict_name="ising_true", input_dim=hp.dim_z,
+                                       hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
 
 
-# Ising simulation using residual statistic
+# Misspecified Ising Model simulation
+np.random.seed(1)
+tf.random.set_seed(1)
+
 start_time = time.time()
 
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
-                   data_directory_name = "ising_data", result_dict_name = "ising_residual",
-                   result_directory_name = "ising_data",
-                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
-                   output_dim = 2)
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_wrong", scenario="null",
+                                       data_directory_name="ising_data", ising_network_class=gt.FullyConnectedNetwork,
+                                       result_dict_name="ising_wrong", number_forward_elu_layers=2, input_dim=hp.dim_z,
+                                       hidden_dim=2, output_dim=3)
 
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt",
-                   data_directory_name = "ising_data", result_dict_name = "ising_residual",
-                   result_directory_name = "ising_data",
-                   ising_network_class = gt.IsingNetwork, input_dim = hp.dim_z, hidden_1_out_dim = hp.hidden_1_out_dim,
-                   output_dim = 2)
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_wrong", scenario="alt",
+                                       data_directory_name="ising_data", ising_network_class=gt.FullyConnectedNetwork,
+                                       result_dict_name="ising_wrong", number_forward_elu_layers=2, input_dim=hp.dim_z,
+                                       hidden_dim=2, output_dim=3)
 
-print("Ising (residuals) simulation takes %s seconds to finish." % (time.time() - start_time))
+
+print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
 
 # CCIT simulation
 process_number_ccit = 3
@@ -69,49 +81,6 @@ sf.simulation_loop(simulation_wrapper = sf.ccit_wrapper, scenario = "alt", data_
                    process_number = process_number_ccit)
 
 print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))
-
-
-# Misspecified Ising Model simulation
-start_time = time.time()
-
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
-                   data_directory_name="ising_data", result_dict_name = "misspecified_ising",
-                   result_directory_name = "ising_data",
-                   ising_network_class = gt.TwoLayerIsingNetwork,
-                   epoch_vet = hp.epoch_vet_misspecified, input_dim = hp.dim_z,
-                   hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
-                   hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 3)
-
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt", data_directory_name="ising_data",
-                   result_dict_name = "misspecified_ising", result_directory_name = "ising_data",
-                   ising_network_class = gt.TwoLayerIsingNetwork,
-                   epoch_vet = hp.epoch_vet_misspecified, input_dim = hp.dim_z,
-                   hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
-                   hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 3)
-
-print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
-
-
-# Misspecified Ising simulation using residual statistic
-start_time = time.time()
-
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "null",
-                   data_directory_name = "ising_data", result_dict_name = "misspecified_ising_residual",
-                   result_directory_name = "ising_data",
-                   ising_network_class = gt.TwoLayerIsingNetwork,
-                   epoch_vet = hp.epoch_vet_misspecified, input_dim = hp.dim_z,
-                   hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
-                   hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 2)
-
-sf.simulation_loop(simulation_wrapper = sf.ising_simulation_wrapper, scenario = "alt",
-                   data_directory_name = "ising_data", result_dict_name = "misspecified_ising_residual",
-                   result_directory_name = "ising_data",
-                   ising_network_class = gt.TwoLayerIsingNetwork,
-                   epoch_vet = hp.epoch_vet_misspecified, input_dim = hp.dim_z,
-                   hidden_1_out_dim = hp.hidden_1_out_dim_misspecified,
-                   hidden_2_out_dim = hp.hidden_2_out_dim_misspecified, output_dim = 2)
-
-print("Ising (residuals) simulation takes %s seconds to finish." % (time.time() - start_time))
 
 
 ################

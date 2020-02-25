@@ -18,21 +18,20 @@ import hyperparameters as hp
 ####################
 # Simulation loops #
 ####################
-def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dict_name, result_directory_name,
+def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name,result_dict_name,
                     sample_size_vet=hp.sample_size_vet, number_of_trails=hp.number_of_trails,
-                    epoch_vet=hp.epoch_vet, process_number=hp.process_number, **kwargs):
+                    epoch_vet=hp.epoch_vet, **kwargs):
     """
     A wrap up function for the simulation loop using the multiprocessing Pool function. The function will
     save the result dictionary in a pickle file under ./results/{result_dict_name}_result_{scenario}_dict.p.
 
+    :param pool:
     :param simulation_wrapper: A function which should one of the wrapper function defined below.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param result_dict_name:  A string ('str' class) which we use to name the result dictionary as
     {result_dict_name}_result_{scenario}_dict.
-    :param result_directory_name: A string ('str' class). The result dictionary is stored under the directory. Usually,
-    it should correspond to the data generating mechanism.
     :param sample_size_vet: A python list of integers. It contains all the sample size we simulated.
     :param number_of_trails: An integer which is the number of trails we simulate for each sample size
     :param epoch_vet: A python list of integers. It provides the training epoch, if simulation wrapper is the
@@ -44,7 +43,6 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
     None
     """
     result_dict = dict()
-    pool = mp.Pool(processes=process_number)
 
     for sample_size, epoch in zip(sample_size_vet, epoch_vet):
 
@@ -63,75 +61,34 @@ def simulation_loop(simulation_wrapper, scenario, data_directory_name,result_dic
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
 
-    pool.close()
-    pool.join()
-
-    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def simulation_loop_ising_mixture(scenario, data_directory_name,result_dict_name,
-                                  result_directory_name, number_forward_elu_layers, input_dim, hidden_dim_vet, output_dim, epoch_vet,
-                                  sample_size_vet=hp.sample_size_vet,
-                                  number_of_trails=hp.number_of_trails,
-                                  process_number=hp.process_number):
+def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data_directory_name,
+                                        ising_network_class, result_dict_name, sample_size_vet=hp.sample_size_vet,
+                                        number_of_trails=hp.number_of_trails,
+                                        number_of_test_samples_vet=hp.number_of_test_samples_vet, **kwargs):
 
-    result_dict = dict()
-
-    pool = mp.Pool(processes=process_number)
-
-    for sample_size, epoch,hidden_dim in zip(sample_size_vet, epoch_vet, hidden_dim_vet):
-
-        trail_index_vet = range(number_of_trails)
-
-        pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                           data_directory_name=data_directory_name,
-                                           ising_network_class=gt.FullyConnectedNetwork,
-                                           number_forward_elu_layers=number_forward_elu_layers,
-                                           input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim,
-                                           epoch=epoch), trail_index_vet)
-
-
-        result_dict[sample_size] = dict(pool_result_vet)
-
-        print(f"{result_dict_name}, {scenario}, {sample_size} finished")
-
-    pool.close()
-    pool.join()
-
-    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def simulation_loop_ising_mixture_optimal_epoch(scenario, data_directory_name, result_dict_name, result_directory_name,
-                                                number_forward_elu_layers, input_dim, hidden_dim_vet, output_dim,
-                                                epoch_kl_dict_name, sample_size_vet=hp.sample_size_vet,
-                                                number_of_trails=hp.number_of_trails, process_number=hp.process_number):
-
-    with open(f"tunning/{epoch_kl_dict_name}_epoch_kl_{scenario}_dict.p", "rb") as fp:
+    with open(f"tunning/optimal_epoch/{epoch_kl_dict_name}_{scenario}_epoch_kl_mat_dict.p", "rb") as fp:
         epoch_kl_dict = pickle.load(fp)
-    result_dict = dict()
-    pool = mp.Pool(processes=process_number)
 
-    for sample_size, hidden_dim in zip(sample_size_vet, hidden_dim_vet):
+    result_dict = dict()
+    for sample_size, number_of_test_samples in zip(sample_size_vet, number_of_test_samples_vet):
         trail_index_vet = range(number_of_trails)
         epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
 
         pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
                                                data_directory_name=data_directory_name,
-                                               ising_network_class=gt.FullyConnectedNetwork,
-                                               number_forward_elu_layers=number_forward_elu_layers, input_dim=input_dim,
-                                               hidden_dim=hidden_dim, output_dim=output_dim),
+                                               ising_network_class=ising_network_class,
+                                               number_of_test_samples=number_of_test_samples, **kwargs),
                                        zip(trail_index_vet, epoch_vet))
 
         result_dict[sample_size] = dict(pool_result_vet)
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
 
-    pool.close()
-    pool.join()
-
-    with open(f"./results/result_dict/{result_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -141,8 +98,8 @@ def simulation_loop_ising_mixture_optimal_epoch(scenario, data_directory_name, r
 # Wrapper functions #
 #####################
 # Ising simulation
-def ising_simulation_wrapper(trail_index, epoch, scenario, data_directory_name, sample_size,  ising_network_class,
-                             **kwargs):
+def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_name, sample_size, ising_network_class,
+                             number_of_test_samples, **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
@@ -155,8 +112,9 @@ def ising_simulation_wrapper(trail_index, epoch, scenario, data_directory_name, 
     under the null or alternative hypothesis.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param sample_size: An integer.
-    :param epoch: An integer indicating the number of training epoch when training the neural network.
+    :param max_epoch: An integer indicating the number of training epoch when training the neural network.
     :param ising_network_class: A class object which is one of the Ising neural network.
+    :param
     :param **kwargs: Keyword rguments to be passed in to the constructor of the ising_network_class
 
     :return:
@@ -167,13 +125,15 @@ def ising_simulation_wrapper(trail_index, epoch, scenario, data_directory_name, 
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     ising_network = ising_network_class(**kwargs)
-    ising_training_pool_instance = gt.IsingTrainingPool(z_mat=z_mat, x_y_mat=x_y_mat,epoch=epoch,
+    training_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, max_epoch=max_epoch,
                                                         ising_network=ising_network)
-    predicted_parameter_mat = ising_training_pool_instance.trainning()
+
+    result_dict = training_tunning_instance.train_compute_test_statistic(print_loss_boolean=False,
+                                                                         number_of_test_samples=number_of_test_samples)
 
     print(f"{scenario}: Sample size {sample_size} simulation {trail_index} is done.")
 
-    return (trail_index, predicted_parameter_mat)
+    return (trail_index, result_dict)
 
 
 # Naive Chisq

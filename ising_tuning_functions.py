@@ -93,25 +93,26 @@ def optimal_epoch_kl_one_trail(trail_result_dict):
     return [np.argmin(trail_kl_array) + 1, np.min(trail_kl_array)]
 
 
-def optimal_epoch_kl_one_sample_size(sample_size, trail_index_vet, tuning_result_dict):
+def optimal_epoch_kl_one_sample_size(sample_size, trail_index_vet, experiment_result_dict):
     number_of_trails = len(trail_index_vet)
     epoch_kl_mat = np.zeros((number_of_trails, 3))
 
     for i, trail_index in enumerate(trail_index_vet):
         epoch_kl_mat[i, 0] = trail_index
-        epoch_kl_mat[i, 1:3] = optimal_epoch_kl_one_trail(tuning_result_dict[sample_size][trail_index])
+        epoch_kl_mat[i, 1:3] = optimal_epoch_kl_one_trail(experiment_result_dict[sample_size][trail_index])
 
     return sample_size, epoch_kl_mat
 
 
-def optimal_epoch_kl(pool, sample_size_vet, trail_index_vet, tuning_result_dict):
-    pool_result_vet = pool.map(partial(optimal_epoch_kl_one_sample_size, tuning_result_dict=tuning_result_dict,
+def optimal_epoch_kl(pool, sample_size_vet, trail_index_vet, experiment_result_dict):
+    pool_result_vet = pool.map(partial(optimal_epoch_kl_one_sample_size, experiment_result_dict=experiment_result_dict,
                                        trail_index_vet=trail_index_vet), sample_size_vet)
 
     optimal_epoch_kl_dict = dict(pool_result_vet)
     return optimal_epoch_kl_dict
 
-def plot_optimal_epoch_kl(epoch_kl_dict):
+
+def plot_optimal_epoch_kl(epoch_kl_dict, figure_name):
     sample_size_vet = list(epoch_kl_dict.keys())
 #    number_of_trails = epoch_kl_dict[sample_size_vet[0]].shape[0]
 #    color_vet = ["teal", "coral", "slategray", "blueviolet"]
@@ -125,6 +126,9 @@ def plot_optimal_epoch_kl(epoch_kl_dict):
     ax[1].boxplot(kl_vet, labels=sample_size_vet)
     ax[1].set_title("KL")
 
+    fig.suptitle(figure_name)
+    fig.savefig(f"./tunning/epoch_kl_graph/{figure_name}.png")
+
     mean_kl_vet = np.array([np.mean(kl_array) for kl_array in kl_vet])
     sd_kl_vet = np.array([np.std(kl_array) for kl_array in kl_vet])
 
@@ -132,14 +136,14 @@ def plot_optimal_epoch_kl(epoch_kl_dict):
     print(f"Std of kls are {sd_kl_vet}")
 
 
-def process_plot_epoch_kl_raw_dict(pool, path_epoch_kl_dict, sample_size_vet, trail_index_vet):
-    with open(f"{path_epoch_kl_dict}", "rb") as fp:
-        epoch_kl_raw_dict = pickle.load(fp)
-
+def process_plot_epoch_kl_raw_dict(pool, experiment_result_dict, sample_size_vet, trail_index_vet, name_epoch_kl_dict):
     epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet,
-                                         tuning_result_dict=epoch_kl_raw_dict)
+                                         experiment_result_dict=experiment_result_dict)
 
-    plot_optimal_epoch_kl(epoch_kl_mat_dict)
+    plot_optimal_epoch_kl(epoch_kl_mat_dict, figure_name=name_epoch_kl_dict)
+
+    with open(f"./tunning/optimal_epoch/{name_epoch_kl_dict}_epoch_kl_mat_dict.p", "wb") as fp:
+        pickle.dump(epoch_kl_mat_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     return epoch_kl_mat_dict
 
