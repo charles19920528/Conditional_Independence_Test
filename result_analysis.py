@@ -61,11 +61,12 @@ stratified_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=stratifie
 
 ra.plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq", "mixture_data")
 
+
 ####################################################
 # Analyze the Ising model fitted on the Ising data #
 ####################################################
-with open('results/result_dict/ising_data/ising_result_null_dict.p', 'rb') as fp:
-    ising_result_null_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/ising_true_result_null_dict.p', 'rb') as fp:
+    ising_true_result_null_dict = pickle.load(fp)
 with open('results/result_dict/ising_data/ising_result_alt_dict.p', 'rb') as fp:
     ising_result_alt_dict = pickle.load(fp)
 
