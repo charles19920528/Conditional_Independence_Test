@@ -31,8 +31,8 @@ number_forward_elu_layers = 1
 hidden_dim_mixture_vet = [3, 12]
 result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}" for hidden_dim in hidden_dim_mixture_vet]
 
-np.random.seed(1)
-tf.random.set_seed(1)
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
 
 start_time = time.time()
 
@@ -58,8 +58,8 @@ print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {tim
 ################################
 # Tuning for true Ising model #
 ###############################
-np.random.seed(1)
-tf.random.set_seed(1)
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
 
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
     weights_dict = pickle.load(fp)
@@ -83,8 +83,8 @@ print("Tunning true Ising model takes %s seconds to finish." % (time.time() - st
 #######################################
 # Tuning for misspecified Ising model #
 #######################################
-np.random.seed(1)
-tf.random.set_seed(1)
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
 
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
     weights_dict = pickle.load(fp)

@@ -1,6 +1,9 @@
 import numpy as np
 import os
 
+# Seed for random rate.
+seed_index=1
+
 ###################
 # Data generation #
 ###################
@@ -38,23 +41,26 @@ batch_size = 100
 # learning rate for gradient descent.
 learning_rate = 0.005
 
-number_of_test_samples_vet = [5, 10, 50, 100]
-
 ###############################
 # Misspecified neural network #
 ###############################
-epoch_vet_misspecified = np.array([250, 250, 70, 70])
-hidden_1_out_dim_misspecified = 2
-hidden_2_out_dim_misspecified = 2
+wrong_number_forward_elu_layer = 2
+wrong_hidden_dim=2
 
 
 ####################################
 # Architecture on the mixture data #
 ####################################
-hidden_dim_vet = np.array([12, 12, 12, 12])
+mixture_number_forward_elu_layer = 1
+mixture_hidden_dim = 12
 
-epoch_vet_mixture_alt = np.array([20, 45, 25, 22])
-epoch_vet_mixture_null = np.array([40, 40, 15, 13])
+
+############
+# Training #
+############
+number_of_test_samples_vet = [5, 10, 50, 100]
+
+
 ################
 # Multiprocess #
 ################

@@ -87,12 +87,24 @@ def tuning_loop(pool, scenario, number_of_test_samples_vet, ising_network,
 # Result analysis #
 ###################
 def optimal_epoch_kl_one_trail(trail_result_dict):
+    """
+
+    :param trail_result_dict:
+    :return:
+    """
     trail_kl_array = trail_result_dict["loss_array"][2, :]
 
     return [np.argmin(trail_kl_array) + 1, np.min(trail_kl_array)]
 
 
 def optimal_epoch_kl_one_sample_size(sample_size, trail_index_vet, experiment_result_dict):
+    """
+
+    :param sample_size:
+    :param trail_index_vet:
+    :param experiment_result_dict:
+    :return:
+    """
     number_of_trails = len(trail_index_vet)
     epoch_kl_mat = np.zeros((number_of_trails, 3))
 
@@ -104,6 +116,14 @@ def optimal_epoch_kl_one_sample_size(sample_size, trail_index_vet, experiment_re
 
 
 def optimal_epoch_kl(pool, sample_size_vet, trail_index_vet, experiment_result_dict):
+    """
+
+    :param pool:
+    :param sample_size_vet:
+    :param trail_index_vet:
+    :param experiment_result_dict:
+    :return:
+    """
     pool_result_vet = pool.map(partial(optimal_epoch_kl_one_sample_size, experiment_result_dict=experiment_result_dict,
                                        trail_index_vet=trail_index_vet), sample_size_vet)
 
@@ -121,7 +141,12 @@ def optimal_epoch_kl(pool, sample_size_vet, trail_index_vet, experiment_result_d
 
 
 def plot_optimal_epoch_kl(optimal_epoch_kl_dict, figure_name):
+    """
 
+    :param optimal_epoch_kl_dict:
+    :param figure_name:
+    :return:
+    """
     sample_size_vet = list(optimal_epoch_kl_dict.keys())
     fig, ax = plt.subplots(1, 2)
 
@@ -141,6 +166,15 @@ def plot_optimal_epoch_kl(optimal_epoch_kl_dict, figure_name):
 
 
 def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size_vet, trail_index_vet):
+    """
+
+    :param pool:
+    :param scenario:
+    :param result_dict_name:
+    :param sample_size_vet:
+    :param trail_index_vet:
+    :return:
+    """
     with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
         experiment_result_dict = pickle.load(fp)
 

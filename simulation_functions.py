@@ -18,14 +18,14 @@ import hyperparameters as hp
 ####################
 # Simulation loops #
 ####################
-def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name,result_dict_name,
+def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, result_dict_name,
                     sample_size_vet=hp.sample_size_vet, number_of_trails=hp.number_of_trails,
                     epoch_vet=hp.epoch_vet, **kwargs):
     """
     A wrap up function for the simulation loop using the multiprocessing Pool function. The function will
     save the result dictionary in a pickle file under ./results/{result_dict_name}_result_{scenario}_dict.p.
 
-    :param pool:
+    :param pool: A multiprocessing.pool.Pool instance.
     :param simulation_wrapper: A function which should one of the wrapper function defined below.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
