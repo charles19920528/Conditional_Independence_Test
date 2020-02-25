@@ -37,14 +37,14 @@ tf.random.set_seed(1)
 start_time = time.time()
 
 for i, (hidden_dim_mixture, result_dict_name) in enumerate(zip(hidden_dim_mixture_vet, result_dict_name_vet)):
-    it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="null",
+    it.tuning_loop(pool=pool, scenario="null",
                    number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3)
 
-    it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_mixture_data, scenario="alt",
+    it.tuning_loop(pool=pool, scenario="alt",
                    number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
@@ -66,13 +66,13 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 
 start_time = time.time()
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="null",
+it.tuning_loop(pool=pool, scenario="null",
                number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
                input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="alt",
+it.tuning_loop(pool=pool, scenario="alt",
                number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
@@ -91,21 +91,19 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 
 start_time = time.time()
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="null",
+it.tuning_loop(pool=pool, scenario="null",
                number_of_test_samples_vet=number_of_test_samples_vet,  epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
 
-it.tuning_loop(pool=pool, tunning_pool_wrapper=it.tuning_pool_wrapper_ising_data, scenario="alt",
+it.tuning_loop(pool=pool, scenario="alt",
                number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
 
 print("Tunning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
-
-
 
 
 
@@ -118,72 +116,38 @@ trail_index_to_plot_vet = [0,290,360,402]
 # Ising data #
 ##############
 # True Ising model
-with open(f"tunning/ising_true_result_null_dict.p", "rb") as fp:
-    ising_true_result_null_dict = pickle.load(fp)
-with open(f"tunning/ising_true_result_alt_dict.p", "rb") as fp:
-    ising_true_result_alt_dict = pickle.load(fp)
-
-ising_true_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=ising_true_result_null_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="ising_true_null")
-
-ising_true_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=ising_true_result_alt_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="ising_wrong_alt")
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="ising_true",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="ising_true",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 
 # Misspecified Ising
-with open(f"tunning/ising_wrong_result_null_dict.p", "rb") as fp:
-    ising_wrong_result_null_dict = pickle.load(fp)
-with open(f"tunning/ising_wrong_result_alt_dict.p", "rb") as fp:
-    ising_wrong_result_alt_dict = pickle.load(fp)
-
-ising_wrong_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=ising_wrong_result_null_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="ising_wrong_null")
-
-ising_wrong_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=ising_wrong_result_alt_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="ising_wrong_alt")
-
-
-
-for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, epoch_ising_vet)):
-    it.plot_loss_kl(experiment_result_dict=ising_wrong_result_null_dict, trail_index_vet=trail_index_to_plot_vet,
-                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
-    it.plot_loss_kl(experiment_result_dict=ising_wrong_result_alt_dict, trail_index_vet=trail_index_to_plot_vet,
-                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="ising_wrong",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="ising_wrong",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 
 ################
 # Mixture data #
 ################
-with open(f"tunning/mixture_1_3_result_null_dict.p", "rb") as fp:
-    mixture_1_3_result_null_dict = pickle.load(fp)
-with open(f"tunning/mixture_1_3_result_alt_dict.p", "rb") as fp:
-    mixture_1_3_result_alt_dict = pickle.load(fp)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_3",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_3",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
-mixture_1_3_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=mixture_1_3_result_null_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="mixture_1_3_null")
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_12",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_12",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
-mixture_1_3_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=mixture_1_3_result_alt_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="mixture_1_3_alt")
+for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, epoch_ising_vet)):
+    it.plot_loss_kl(scenario="null", result_dict_name="mixture_1_12", trail_index_vet=trail_index_to_plot_vet,
+                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
+    it.plot_loss_kl(scenario="alt", result_dict_name="mixture_1_12", trail_index_vet=trail_index_to_plot_vet,
+                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=10)
 
 
-with open(f"tunning/mixture_1_12_result_null_dict.p", "rb") as fp:
-    mixture_1_12_result_null_dict = pickle.load(fp)
-with open(f"tunning/mixture_1_12_result_alt_dict.p", "rb") as fp:
-    mixture_1_12_result_alt_dict = pickle.load(fp)
-
-mixture_1_12_epoch_kl_null_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=mixture_1_12_result_null_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="mixture_1_12_null")
-
-mixture_1_12_epoch_kl_alt_dict = it.process_plot_epoch_kl_raw_dict(pool=pool,
-    experiment_result_dict=mixture_1_12_result_alt_dict, sample_size_vet=sample_size_vet,
-    trail_index_vet=trail_index_vet, name_epoch_kl_dict="mixture_1_12_alt")
-
-# pool.close()
-# pool.join()
+pool.close()
+pool.join()

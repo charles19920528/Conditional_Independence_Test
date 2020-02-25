@@ -9,14 +9,29 @@ import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
+def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_test_samples,
+                         ising_network, weights_dict=None, cut_off_radius=None,**kwargs):
+    """
 
-def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, number_of_test_samples, weights_dict,
-                                   ising_network, **kwargs):
+    :param trail_index:
+    :param scenario:
+    :param sample_size:
+    :param epoch:
+    :param number_of_test_samples:
+    :param ising_network:
+    :param weights_dict:
+    :param cut_off_radius:
+    :param kwargs:
+    :return:
+    """
+    assert cut_off_radius is None or weights_dict is None, \
+        "Both cut_off_radius and weights_dic are supplied."
+    assert cut_off_radius is not None or weights_dict is not None, \
+        "Neither cut_off_radius nor tweights_dict are supplied."
+
     x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
     z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
-    true_weights_array = weights_dict[sample_size][trail_index]
-
     ising_network_instance = ising_network(**kwargs)
     ising_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
                                                      max_epoch=epoch)
@@ -26,59 +41,43 @@ def tuning_pool_wrapper_ising_data(trail_index, scenario, sample_size, epoch, nu
     if scenario == "null":
         is_null_boolean = True
 
-    result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
-                                               number_of_test_samples=number_of_test_samples,
-                                               true_weight_array=true_weights_array)
+    if weights_dict is not None:
+        true_weights_array = weights_dict[sample_size][trail_index]
+        result_dict = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
+                                                    number_of_test_samples=number_of_test_samples,
+                                                    true_weight_array=true_weights_array)
+    else:
+        result_dict = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
+                                                   number_of_test_samples=number_of_test_samples,
+                                                   cut_off_radius=cut_off_radius)
 
-    return (trail_index, result_mat)
-
-
-def tuning_pool_wrapper_mixture_data(trail_index, scenario, sample_size, epoch, number_of_test_samples, ising_network,
-                                     cut_off_radius, **kwargs):
-
-    x_y_mat = np.loadtxt(f"./data/mixture_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
-    z_mat = np.loadtxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
-
-
-    ising_network_instance = ising_network(**kwargs)
-    ising_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
-                                                     max_epoch=epoch)
-
-    assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
-    is_null_boolean = False
-    if scenario == "null":
-        is_null_boolean = True
-
-    result_mat = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
-                                               number_of_test_samples=number_of_test_samples,
-                                               cut_off_radius=cut_off_radius)
-
-    return (trail_index, result_mat)
+    return result_dict
 
 
-def tuning_loop(pool, tunning_pool_wrapper, scenario, number_of_test_samples_vet, ising_network,
+def tuning_loop(pool, scenario, number_of_test_samples_vet, ising_network,
                 epoch_vet, trail_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet, **kwargs):
+    """
+
+    :param pool:
+    :param scenario:
+    :param number_of_test_samples_vet:
+    :param ising_network:
+    :param epoch_vet:
+    :param trail_index_vet:
+    :param result_dict_name:
+    :param sample_size_vet:
+    :param kwargs:
+    :return:
+    """
 
     result_dict = dict()
     for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet, number_of_test_samples_vet):
-#        pool = mp.Pool(processes=process_number)
-        pool_result_vet = pool.map(partial(tunning_pool_wrapper, scenario=scenario, sample_size=sample_size,
+
+        pool_result_vet = pool.map(partial(ising_tuning_wrapper, scenario=scenario, sample_size=sample_size,
                                            epoch=epoch, number_of_test_samples=number_of_test_samples,
                                            ising_network=ising_network, **kwargs), trail_index_vet)
 
-            # pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-            #                                    epoch=epoch, number_forward_elu_layers=number_forward_elu_layers,
-            #                                        input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim),
-            #                            trail_index_vet)
-            #
-            # pool_result_vet = pool.map(partial(tunning_pool_wrapper, sample_size=sample_size, scenario=scenario,
-            #                                    epoch=epoch, weights_dict=weights_dict, number_forward_elu_layers=number_forward_elu_layers,
-            #                                        input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim), trail_index_vet)
-
         result_dict[sample_size] = dict(pool_result_vet)
-
-        # pool.close()
-        # pool.join()
 
     with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -109,17 +108,26 @@ def optimal_epoch_kl(pool, sample_size_vet, trail_index_vet, experiment_result_d
                                        trail_index_vet=trail_index_vet), sample_size_vet)
 
     optimal_epoch_kl_dict = dict(pool_result_vet)
+
+    kl_vet = [optimal_epoch_kl_dict[sample_size][:, 2] for sample_size in sample_size_vet]
+
+    mean_kl_vet = np.array([np.mean(kl_array) for kl_array in kl_vet])
+    sd_kl_vet = np.array([np.std(kl_array) for kl_array in kl_vet])
+
+    print(f"Mean kls are {mean_kl_vet}")
+    print(f"Std of kls are {sd_kl_vet}")
+
     return optimal_epoch_kl_dict
 
 
-def plot_optimal_epoch_kl(epoch_kl_dict, figure_name):
-    sample_size_vet = list(epoch_kl_dict.keys())
-#    number_of_trails = epoch_kl_dict[sample_size_vet[0]].shape[0]
-#    color_vet = ["teal", "coral", "slategray", "blueviolet"]
+def plot_optimal_epoch_kl(optimal_epoch_kl_dict, figure_name):
+
+    sample_size_vet = list(optimal_epoch_kl_dict.keys())
     fig, ax = plt.subplots(1, 2)
 
-    kl_vet = [epoch_kl_dict[sample_size][:, 2] for sample_size in sample_size_vet]
-    epoch_vet = [epoch_kl_dict[sample_size][:, 1] for sample_size in sample_size_vet]
+    kl_vet = [optimal_epoch_kl_dict[sample_size][:, 2] for sample_size in sample_size_vet]
+    epoch_vet = [optimal_epoch_kl_dict[sample_size][:, 1] for sample_size in sample_size_vet]
+
     ax[0].boxplot(epoch_vet, labels=sample_size_vet)
     ax[0].set_title("Epoch")
 
@@ -129,26 +137,26 @@ def plot_optimal_epoch_kl(epoch_kl_dict, figure_name):
     fig.suptitle(figure_name)
     fig.savefig(f"./tunning/epoch_kl_graph/{figure_name}.png")
 
-    mean_kl_vet = np.array([np.mean(kl_array) for kl_array in kl_vet])
-    sd_kl_vet = np.array([np.std(kl_array) for kl_array in kl_vet])
-
-    print(f"Mean kls are {mean_kl_vet}")
-    print(f"Std of kls are {sd_kl_vet}")
 
 
-def process_plot_epoch_kl_raw_dict(pool, experiment_result_dict, sample_size_vet, trail_index_vet, name_epoch_kl_dict):
-    epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet,
-                                         experiment_result_dict=experiment_result_dict)
 
-    plot_optimal_epoch_kl(epoch_kl_mat_dict, figure_name=name_epoch_kl_dict)
+def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size_vet, trail_index_vet):
+    with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
+        experiment_result_dict = pickle.load(fp)
 
-    with open(f"./tunning/optimal_epoch/{name_epoch_kl_dict}_epoch_kl_mat_dict.p", "wb") as fp:
-        pickle.dump(epoch_kl_mat_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    optimal_epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet,
+                                                 trail_index_vet=trail_index_vet,
+                                                 experiment_result_dict=experiment_result_dict)
 
-    return epoch_kl_mat_dict
+    plot_optimal_epoch_kl(optimal_epoch_kl_mat_dict, figure_name=f"{result_dict_name} {scenario}")
+
+    with open(f"./tunning/optimal_epoch/{result_dict_name}_{scenario}_epoch_kl_mat_dict.p", "wb") as fp:
+        pickle.dump(optimal_epoch_kl_mat_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # return optimal_epoch_kl_mat_dict
 
 
-def plot_loss_kl(experiment_result_dict, trail_index_vet, sample_size, end_epoch, start_epoch=0, plot_loss=True,
+def plot_loss_kl(scenario, result_dict_name, trail_index_vet, sample_size, end_epoch, start_epoch=0, plot_loss=True,
                  plot_kl=True, plot_test_loss=True):
     """
 
@@ -162,6 +170,9 @@ def plot_loss_kl(experiment_result_dict, trail_index_vet, sample_size, end_epoch
     :param plot_test_loss:
     :return:
     """
+    with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
+        experiment_result_dict = pickle.load(fp)
+
     epoch_vet = np.arange(end_epoch)[start_epoch:]
     fig, ax = plt.subplots(4, 3)
 
@@ -178,5 +189,5 @@ def plot_loss_kl(experiment_result_dict, trail_index_vet, sample_size, end_epoch
     ax[0, 1].set_title("Test Likelihodd")
     ax[0, 2].set_title("KL")
 
-    fig.suptitle(f"Sample size {sample_size}")
+    fig.suptitle(f"{scenario}, sample size {sample_size}")
     fig.show()
