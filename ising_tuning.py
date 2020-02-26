@@ -11,9 +11,9 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 trail_index_vet = np.arange(hp.number_of_trails)
 sample_size_vet = hp.sample_size_vet
-number_of_test_samples_vet = [5, 10, 50, 100]
+number_of_test_samples_vet = [10, 10, 50, 100]
 
-epoch_ising_vet = np.array([300, 250, 100, 100])
+epoch_ising_vet = np.array([300, 300, 120, 120])
 epoch_mixture_1_vet = np.array([300, 250, 100, 100])
 
 if len(trail_index_vet) < hp.process_number:
@@ -69,13 +69,13 @@ start_time = time.time()
 it.tuning_loop(pool=pool, scenario="null",
                number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
-               result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
-               input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
+               weights_dict=weights_dict, input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 it.tuning_loop(pool=pool, scenario="alt",
                number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
-               result_dict_name="ising_true", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
+               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
                input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
@@ -106,7 +106,6 @@ it.tuning_loop(pool=pool, scenario="alt",
 print("Tunning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
 
 
-
 ###################
 # Result analysis #
 ###################
@@ -116,9 +115,9 @@ trail_index_to_plot_vet = [0,290,360,402]
 # Ising data #
 ##############
 # True Ising model
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="ising_true",
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"ising_true_rate_{hp.learning_rate}",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="ising_true",
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising_true_rate_{hp.learning_rate}",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 

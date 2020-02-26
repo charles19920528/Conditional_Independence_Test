@@ -51,7 +51,7 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
                                                    number_of_test_samples=number_of_test_samples,
                                                    cut_off_radius=cut_off_radius)
 
-    return result_dict
+    return (trail_index, result_dict)
 
 
 def tuning_loop(pool, scenario, number_of_test_samples_vet, ising_network,
