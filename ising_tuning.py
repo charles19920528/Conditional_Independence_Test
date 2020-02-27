@@ -80,6 +80,7 @@ it.tuning_loop(pool=pool, scenario="alt",
 
 print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
 
+
 #######################################
 # Tuning for misspecified Ising model #
 #######################################
