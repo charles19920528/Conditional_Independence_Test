@@ -74,7 +74,7 @@ ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_nu
                                 alt_result_dict=ising_true_result_alt_dict,
                                 test_statistic_one_trail=ra.ising_test_statistic_one_trial)
 
-ra.plot_roc(ising_fpr_tpr_dict, "Ising_True", "ising_data")
+ra.plot_roc(ising_fpr_tpr_dict, "True Ising Model, Rate: 0.01", "ising_data")
 
 
 #################################################################
@@ -89,7 +89,7 @@ misspecified_ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=misspec
                                              alt_result_dict=misspecified_ising_result_alt_dict,
                                              test_statistic_one_trail=ra.ising_test_statistic_one_trial)
 
-ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified_Ising_Model", "ising_data")
+ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified Ising Model, Rate: 0.01", "ising_data")
 
 
 ######################################################
