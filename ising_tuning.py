@@ -54,6 +54,58 @@ for i, (hidden_dim_mixture, result_dict_name) in enumerate(zip(hidden_dim_mixtur
 print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
       f"seconds to finish.")
 
+
+################################
+# Tuning for true Ising model #
+###############################
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+with open('data/ising_data/weights_dict.p', 'rb') as fp:
+    weights_dict = pickle.load(fp)
+
+start_time = time.time()
+
+it.tuning_loop(pool=pool, scenario="null",
+               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
+               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
+               weights_dict=weights_dict, input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
+it.tuning_loop(pool=pool, scenario="alt",
+               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
+               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
+               input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
+print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
+
+#######################################
+# Tuning for misspecified Ising model #
+#######################################
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+with open('data/ising_data/weights_dict.p', 'rb') as fp:
+    weights_dict = pickle.load(fp)
+
+start_time = time.time()
+
+it.tuning_loop(pool=pool, scenario="null",
+               number_of_test_samples_vet=number_of_test_samples_vet,  epoch_vet=epoch_ising_vet,
+               trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
+               input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
+
+it.tuning_loop(pool=pool, scenario="alt",
+               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
+               input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
+
+print("Tunning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
+
+
 ###################
 # Result analysis #
 ###################
