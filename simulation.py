@@ -60,12 +60,12 @@ start_time = time.time()
 
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
                                        scenario="null", data_directory_name="ising_data",
-                                       ising_network_class=gt.IsingNetwork, result_dict_name="ising_true",
+                                       ising_network_class=gt.IsingNetwork,
                                        input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
                                        scenario="alt", data_directory_name="ising_data",
-                                       ising_network_class=gt.IsingNetwork, result_dict_name="ising_true",
+                                       ising_network_class=gt.IsingNetwork,
                                        input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
@@ -82,14 +82,14 @@ start_time = time.time()
 
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
                                        scenario="null", data_directory_name="ising_data",
-                                       ising_network_class=gt.FullyConnectedNetwork, result_dict_name="ising_wrong",
+                                       ising_network_class=gt.FullyConnectedNetwork,
                                        number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
                                        input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
 
 
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
                                        scenario="alt", data_directory_name="ising_data",
-                                       ising_network_class=gt.FullyConnectedNetwork, result_dict_name="ising_wrong",
+                                       ising_network_class=gt.FullyConnectedNetwork,
                                        number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
                                        input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
 
@@ -103,15 +103,13 @@ tf.random.set_seed(hp.seed_index)
 
 start_time = time.time()
 
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_wrong", scenario="null",
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="null",
                                        data_directory_name="ising_data", ising_network_class=gt.FullyConnectedNetwork,
-                                       result_dict_name=epoch_kl_dict_name,
                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
                                        input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3)
 
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name="ising_wrong", scenario="alt",
+sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="alt",
                                        data_directory_name="ising_data", ising_network_class=gt.FullyConnectedNetwork,
-                                       result_dict_name=epoch_kl_dict_name,
                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
                                        input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3)
 

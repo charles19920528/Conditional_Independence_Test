@@ -66,7 +66,7 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
 
 
 def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data_directory_name,
-                                        ising_network_class, result_dict_name, sample_size_vet=hp.sample_size_vet,
+                                        ising_network_class, sample_size_vet=hp.sample_size_vet,
                                         number_of_trails=hp.number_of_trails,
                                         number_of_test_samples_vet=hp.number_of_test_samples_vet, **kwargs):
 
@@ -88,7 +88,7 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
 
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
 
-    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+    with open(f"./results/result_dict/{data_directory_name}/{epoch_kl_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
