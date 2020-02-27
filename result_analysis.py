@@ -80,16 +80,16 @@ ra.plot_roc(ising_fpr_tpr_dict, "Ising_True", "ising_data")
 #################################################################
 # Analyze the misspecified Ising model fitted on the Ising data #
 #################################################################
-# with open('results/result_dict/ising_data/misspecified_ising_result_null_dict.p', 'rb') as fp:
-#     misspecified_ising_result_null_dict = pickle.load(fp)
-# with open('results/result_dict/ising_data/misspecified_ising_result_alt_dict.p', 'rb') as fp:
-#     misspecified_ising_result_alt_dict = pickle.load(fp)
-#
-# misspecified_ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict=misspecified_ising_result_null_dict,
-#                                              alt_result_dict=misspecified_ising_result_alt_dict,
-#                                              test_statistic_one_trail=ra.ising_test_statistic_one_trial)
-#
-# ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified_Ising_Model", "ising_data")
+with open('results/result_dict/ising_data/ising_wrong_rate_0.01_result_null_dict.p', 'rb') as fp:
+    misspecified_ising_result_null_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/ising_wrong_rate_0.01_result_alt_dict.p', 'rb') as fp:
+    misspecified_ising_result_alt_dict = pickle.load(fp)
+
+misspecified_ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=misspecified_ising_result_null_dict,
+                                             alt_result_dict=misspecified_ising_result_alt_dict,
+                                             test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+
+ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified_Ising_Model", "ising_data")
 
 
 ######################################################

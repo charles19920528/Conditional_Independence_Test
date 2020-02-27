@@ -80,6 +80,20 @@ it.tuning_loop(pool=pool, scenario="alt",
 
 print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
 
+# Tuning for the test data size when sample size is 100
+for number_of_test_samples in [10, 15, 20, 30]:
+    it.tuning_loop(pool=pool, scenario="alt", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
+                   trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
+                   result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
+                   sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
+                   hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
+    it.tuning_loop(pool=pool, scenario="null", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
+                   trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
+                   result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
+                   sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
+                   hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
 
 #######################################
 # Tuning for misspecified Ising model #
