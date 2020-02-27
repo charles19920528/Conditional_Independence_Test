@@ -122,9 +122,9 @@ it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising
 
 
 # Misspecified Ising
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="ising_wrong",
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="ising_wrong",
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 
