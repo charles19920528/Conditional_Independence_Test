@@ -135,6 +135,13 @@ it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"isin
 it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising_true_rate_{hp.learning_rate}",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
+# Analyze test sample size when the total sample size is 100.
+result_dict_name_vet=[f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
+                      for number_of_test_samples in [10, 15, 20, 30]]
+for result_dict_name in result_dict_name_vet:
+    it.process_plot_epoch_kl_raw_dict(pool=pool, scenario="alt", result_dict_name=result_dict_name,
+                                      sample_size_vet=[100], trail_index_vet=trail_index_vet)
+
 
 # Misspecified Ising
 it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
