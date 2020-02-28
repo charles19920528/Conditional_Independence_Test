@@ -86,7 +86,7 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-        print(f"{result_dict_name}, {scenario}, {sample_size} finished")
+        print(f"{data_directory_name}, {scenario}, {sample_size} finished")
 
     with open(f"./results/result_dict/{data_directory_name}/{epoch_kl_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)

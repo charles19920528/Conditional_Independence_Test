@@ -71,6 +71,22 @@ sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_tru
 print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
 
 
+# Simulate when sample size is 100 using different test sample size.
+for number_of_test_samples in hp.number_of_test_samples_100_vet:
+    epoch_kl_dict_name = f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
+
+    sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
+                                           number_of_test_samples_vet=[number_of_test_samples],
+                                           scenario="null", data_directory_name="ising_data",
+                                           ising_network_class=gt.IsingNetwork,
+                                           input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
+    sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
+                                           number_of_test_samples_vet=[number_of_test_samples],
+                                           scenario="alt", data_directory_name="ising_data",
+                                           ising_network_class=gt.IsingNetwork,
+                                           input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
 #######################
 # General Ising Model #
 #######################

@@ -1,5 +1,6 @@
 import pickle
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 import result_analysis_functions as ra
 import hyperparameters as hp
@@ -75,6 +76,26 @@ ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_nu
                                 test_statistic_one_trail=ra.ising_test_statistic_one_trial)
 
 ra.plot_roc(ising_fpr_tpr_dict, "True Ising Model, Rate: 0.01", "ising_data")
+
+fig, ax = plt.subplots(1)
+color_vet = ["cyan", "magenta", "yellow", "black"]
+for i, number_of_test_samples in enumerate(hp.number_of_test_samples_100_vet):
+    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_result_null_dict.p', 'rb') as fp:
+        ising_true_result_null_dict = pickle.load(fp)
+    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_result_alt_dict.p', 'rb') as fp:
+        ising_true_result_alt_dict = pickle.load(fp)
+
+    ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
+                                    alt_result_dict=ising_true_result_alt_dict,
+                                    test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+
+
+    sample_size = 100
+    ax.plot(ising_fpr_tpr_dict[sample_size][0], ising_fpr_tpr_dict[sample_size][1], color=color_vet[i],
+            label=number_of_test_samples)
+    #    ax[0, 0].axvline(x=0.05, color="red")
+    ax.set_title(f"Sample size 100 with different testing size")
+ax.legend()
 
 
 #################################################################

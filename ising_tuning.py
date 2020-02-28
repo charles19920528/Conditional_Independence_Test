@@ -81,7 +81,7 @@ it.tuning_loop(pool=pool, scenario="alt",
 print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
 
 # Tuning for the test data size when sample size is 100
-for number_of_test_samples in [10, 15, 20, 30]:
+for number_of_test_samples in hp.number_of_test_samples_100_vet:
     it.tuning_loop(pool=pool, scenario="alt", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
                    trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                    result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
@@ -137,7 +137,7 @@ it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising
 
 # Analyze test sample size when the total sample size is 100.
 result_dict_name_vet=[f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
-                      for number_of_test_samples in [10, 15, 20, 30]]
+                      for number_of_test_samples in hp.number_of_test_samples_100_vet]
 for result_dict_name in result_dict_name_vet:
     it.process_plot_epoch_kl_raw_dict(pool=pool, scenario="alt", result_dict_name=result_dict_name,
                                       sample_size_vet=[100], trail_index_vet=trail_index_vet)

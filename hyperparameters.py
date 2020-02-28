@@ -59,6 +59,7 @@ mixture_hidden_dim = 12
 # Training #
 ############
 number_of_test_samples_vet = [5, 10, 50, 100]
+number_of_test_samples_100_vet = [10, 15, 20, 30]
 
 
 ################
