@@ -14,7 +14,7 @@ sample_size_vet = hp.sample_size_vet
 number_of_test_samples_vet = [10, 10, 50, 100]
 
 epoch_ising_vet = np.array([300, 300, 120, 120])
-epoch_mixture_1_vet = np.array([300, 250, 100, 100])
+epoch_mixture_1_vet = np.array([300, 300, 100, 100])
 
 if len(trail_index_vet) < hp.process_number:
     process_number = len(trail_index_vet)
@@ -28,8 +28,8 @@ pool = mp.Pool(processes=process_number)
 ##########################################
 # 1 layer
 number_forward_elu_layers = 1
-hidden_dim_mixture_vet = [3, 12]
-result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}" for hidden_dim in hidden_dim_mixture_vet]
+hidden_dim_mixture_vet = [12, 18, 24, 30]
+result_dict_name_vet = [f"test_mixture_{number_forward_elu_layers}_{hidden_dim}" for hidden_dim in hidden_dim_mixture_vet]
 
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
