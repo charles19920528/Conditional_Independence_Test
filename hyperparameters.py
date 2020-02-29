@@ -13,9 +13,6 @@ number_of_trails = 1000
 # Sample size we simulate.
 sample_size_vet = np.array([30, 100, 500, 1000])
 
-# Number of latent groups within samples.
-latent_group_number = 4
-
 # The radius we use for dividing z in to two groups under the mixture data scenario.
 null_cut_off_radius = 1
 alt_cut_off_radius = 1.539
@@ -40,6 +37,7 @@ batch_size = 100
 
 # learning rate for gradient descent.
 learning_rate = 0.01
+learning_rate_mixture = 0.005
 
 ###############################
 # Misspecified neural network #

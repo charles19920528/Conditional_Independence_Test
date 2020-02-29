@@ -10,7 +10,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_test_samples,
-                         ising_network, weights_dict=None, cut_off_radius=None,**kwargs):
+                         ising_network, learning_rate=hp.learning_rate, weights_dict=None, cut_off_radius=None,**kwargs):
     """
 
     :param trail_index:
@@ -19,6 +19,7 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
     :param epoch:
     :param number_of_test_samples:
     :param ising_network:
+    :param learning_rate:
     :param weights_dict:
     :param cut_off_radius:
     :param kwargs:
@@ -34,7 +35,7 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
 
     ising_network_instance = ising_network(**kwargs)
     ising_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
-                                                     max_epoch=epoch)
+                                                     max_epoch=epoch, learning_rate=learning_rate)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
     is_null_boolean = False
@@ -43,13 +44,15 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
 
     if weights_dict is not None:
         true_weights_array = weights_dict[sample_size][trail_index]
-        result_dict = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
+        result_dict = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
                                                     number_of_test_samples=number_of_test_samples,
                                                     true_weight_array=true_weights_array)
     else:
-        result_dict = ising_tunning_instance.tuning(print_loss_boolean=True, is_null_boolean=is_null_boolean,
+        result_dict = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
                                                    number_of_test_samples=number_of_test_samples,
                                                    cut_off_radius=cut_off_radius)
+
+        print(f"Scenario: {scenario}, sample size: {sample_size}, trail: {trail_index} finished.")
 
     return (trail_index, result_dict)
 

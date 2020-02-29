@@ -551,10 +551,12 @@ class ForwardEluLayer(tf.keras.layers.Layer):
             units=hidden_dim,
             input_shape=(input_dim,)
         )
+        self.layernorm = tf.keras.layers.LayerNormalization()
 
     def call(self, inputs, **kwargs):
         output = self.linear(inputs)
         output = tf.keras.activations.elu(output)
+#        output = self.layernorm(output)
 
         return output
 
