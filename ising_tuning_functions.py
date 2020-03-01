@@ -9,7 +9,7 @@ import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_test_samples,
+def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size, epoch, number_of_test_samples,
                          ising_network, learning_rate=hp.learning_rate, weights_dict=None, cut_off_radius=None,**kwargs):
     """
 
@@ -30,8 +30,9 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
     assert cut_off_radius is not None or weights_dict is not None, \
         "Neither cut_off_radius nor tweights_dict are supplied."
 
-    x_y_mat = np.loadtxt(f"./data/ising_data/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
-    z_mat = np.loadtxt(f"./data/ising_data/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+                         dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     ising_network_instance = ising_network(**kwargs)
     ising_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
@@ -57,7 +58,7 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
     return (trail_index, result_dict)
 
 
-def tuning_loop(pool, scenario, number_of_test_samples_vet, ising_network,
+def tuning_loop(pool, scenario, data_directory_name, number_of_test_samples_vet, ising_network,
                 epoch_vet, trail_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet, **kwargs):
     """
 
@@ -77,6 +78,7 @@ def tuning_loop(pool, scenario, number_of_test_samples_vet, ising_network,
     for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet, number_of_test_samples_vet):
 
         pool_result_vet = pool.map(partial(ising_tuning_wrapper, scenario=scenario, sample_size=sample_size,
+                                           data_directory_name=data_directory_name,
                                            epoch=epoch, number_of_test_samples=number_of_test_samples,
                                            ising_network=ising_network, **kwargs), trail_index_vet)
 
