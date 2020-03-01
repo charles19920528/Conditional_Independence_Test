@@ -556,7 +556,6 @@ class ForwardEluLayer(tf.keras.layers.Layer):
     def call(self, inputs, **kwargs):
         output = self.linear(inputs)
         output = tf.keras.activations.elu(output)
-#        output = self.layernorm(output)
 
         return output
 

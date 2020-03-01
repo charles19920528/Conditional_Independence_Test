@@ -52,7 +52,7 @@ def ising_tuning_wrapper(trail_index, scenario, sample_size, epoch, number_of_te
                                                    number_of_test_samples=number_of_test_samples,
                                                    cut_off_radius=cut_off_radius)
 
-        print(f"Scenario: {scenario}, sample size: {sample_size}, trail: {trail_index} finished.")
+    print(f"Scenario: {scenario}, sample size: {sample_size}, trail: {trail_index} finished.")
 
     return (trail_index, result_dict)
 
