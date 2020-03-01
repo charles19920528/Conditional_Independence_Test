@@ -17,14 +17,14 @@ if len(trail_index_vet) < hp.process_number:
 else:
     process_number = hp.process_number
 
-pool = mp.Pool(processes=process_number)
+pool = mp.Pool(processes=12)
 
 ##########################################
 # Fit the full model on the mixture data #
 ##########################################
 # 1 layer
 number_forward_elu_layers = 1
-hidden_dim_mixture_vet = [12, 16, 20, 24]
+hidden_dim_mixture_vet = [20, 24]
 mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture}"
                                 for hidden_dim in hidden_dim_mixture_vet]
 
