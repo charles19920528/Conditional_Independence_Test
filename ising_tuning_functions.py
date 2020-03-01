@@ -15,6 +15,7 @@ def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size
 
     :param trail_index:
     :param scenario:
+    :param data_directory_name:
     :param sample_size:
     :param epoch:
     :param number_of_test_samples:
@@ -35,7 +36,7 @@ def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     ising_network_instance = ising_network(**kwargs)
-    ising_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
+    ising_tuning_instance = gt.IsingTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, ising_network=ising_network_instance,
                                                      max_epoch=epoch, learning_rate=learning_rate)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
@@ -45,11 +46,11 @@ def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size
 
     if weights_dict is not None:
         true_weights_array = weights_dict[sample_size][trail_index]
-        result_dict = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
+        result_dict = ising_tuning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
                                                     number_of_test_samples=number_of_test_samples,
                                                     true_weight_array=true_weights_array)
     else:
-        result_dict = ising_tunning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
+        result_dict = ising_tuning_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
                                                    number_of_test_samples=number_of_test_samples,
                                                    cut_off_radius=cut_off_radius)
 
@@ -61,9 +62,10 @@ def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size
 def tuning_loop(pool, scenario, data_directory_name, number_of_test_samples_vet, ising_network,
                 epoch_vet, trail_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet, **kwargs):
     """
-
+    
     :param pool:
     :param scenario:
+    :param data_directory_name:
     :param number_of_test_samples_vet:
     :param ising_network:
     :param epoch_vet:
@@ -84,7 +86,7 @@ def tuning_loop(pool, scenario, data_directory_name, number_of_test_samples_vet,
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-    with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
+    with open(f"tuning/{result_dict_name}_result_{scenario}_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -165,7 +167,7 @@ def plot_optimal_epoch_kl(optimal_epoch_kl_dict, figure_name):
     ax[1].set_title("KL")
 
     fig.suptitle(figure_name)
-    fig.savefig(f"./tunning/epoch_kl_graph/{figure_name}.png")
+    fig.savefig(f"./tuning/epoch_kl_graph/{figure_name}.png")
 
 
 
@@ -180,7 +182,7 @@ def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size
     :param trail_index_vet:
     :return:
     """
-    with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
+    with open(f"tuning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
         experiment_result_dict = pickle.load(fp)
 
     optimal_epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet,
@@ -189,7 +191,7 @@ def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size
 
     plot_optimal_epoch_kl(optimal_epoch_kl_mat_dict, figure_name=f"{result_dict_name} {scenario}")
 
-    with open(f"./tunning/optimal_epoch/{result_dict_name}_{scenario}_epoch_kl_mat_dict.p", "wb") as fp:
+    with open(f"./tuning/optimal_epoch/{result_dict_name}_{scenario}_epoch_kl_mat_dict.p", "wb") as fp:
         pickle.dump(optimal_epoch_kl_mat_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     # return optimal_epoch_kl_mat_dict
@@ -209,7 +211,7 @@ def plot_loss_kl(scenario, result_dict_name, trail_index_vet, sample_size, end_e
     :param plot_test_loss:
     :return:
     """
-    with open(f"tunning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
+    with open(f"tuning/{result_dict_name}_result_{scenario}_dict.p", "rb") as fp:
         experiment_result_dict = pickle.load(fp)
 
     epoch_vet = np.arange(end_epoch)[start_epoch:]

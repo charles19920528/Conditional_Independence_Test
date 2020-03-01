@@ -34,21 +34,21 @@ tf.random.set_seed(hp.seed_index)
 start_time = time.time()
 
 for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_result_dict_name_vet):
-    it.tuning_loop(pool=pool, scenario="null",
+    it.tuning_loop(pool=pool, scenario="null", data_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
-    it.tuning_loop(pool=pool, scenario="alt",
+    it.tuning_loop(pool=pool, scenario="alt", data_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
-print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
+print(f"Tuning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
       f"seconds to finish.")
 
 
@@ -63,29 +63,31 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 
 start_time = time.time()
 
-it.tuning_loop(pool=pool, scenario="null",
+it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
                number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
                weights_dict=weights_dict, input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
-it.tuning_loop(pool=pool, scenario="alt",
+it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
                number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
                input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
-print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
+print("Tuning true Ising model takes %s seconds to finish." % (time.time() - start_time))
 
 # Tuning for the test data size when sample size is 100
 for number_of_test_samples in [10, 15, 20, 30]:
-    it.tuning_loop(pool=pool, scenario="alt", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
+    it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
+                   number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
                    trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                    result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
                    sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
                    hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
-    it.tuning_loop(pool=pool, scenario="null", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
+    it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
+                   number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
                    trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                    result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
                    sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
@@ -103,19 +105,19 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 
 start_time = time.time()
 
-it.tuning_loop(pool=pool, scenario="null",
+it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
                number_of_test_samples_vet=hp.number_of_test_samples_vet,  epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
 
-it.tuning_loop(pool=pool, scenario="alt",
+it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
                number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
 
-print("Tunning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
+print("Tuning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
 
 
 ###################

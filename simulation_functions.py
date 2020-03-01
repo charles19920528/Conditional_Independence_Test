@@ -70,7 +70,7 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
                                         number_of_trails=hp.number_of_trails,
                                         number_of_test_samples_vet=hp.number_of_test_samples_vet, **kwargs):
 
-    with open(f"tunning/optimal_epoch/{epoch_kl_dict_name}_{scenario}_epoch_kl_mat_dict.p", "rb") as fp:
+    with open(f"tuning/optimal_epoch/{epoch_kl_dict_name}_{scenario}_epoch_kl_mat_dict.p", "rb") as fp:
         epoch_kl_dict = pickle.load(fp)
 
     result_dict = dict()
@@ -125,10 +125,10 @@ def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_na
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
 
     ising_network = ising_network_class(**kwargs)
-    training_tunning_instance = gt.IsingTrainingTunning(z_mat=z_mat, x_y_mat=x_y_mat, max_epoch=max_epoch,
+    training_tuning_instance = gt.IsingTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, max_epoch=max_epoch,
                                                         ising_network=ising_network)
 
-    result_dict = training_tunning_instance.train_compute_test_statistic(print_loss_boolean=False,
+    result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
                                                                          number_of_test_samples=number_of_test_samples)
 
     print(f"{scenario}: Sample size {sample_size} simulation {trail_index} is done.")

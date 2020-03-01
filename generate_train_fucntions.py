@@ -345,7 +345,7 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
 #########################################
 # Class for the simulation and training #
 #########################################
-class IsingTrainingTunning:
+class IsingTrainingTuning:
     def __init__(self, z_mat, x_y_mat, ising_network, learning_rate=hp.learning_rate,
                  buffer_size=hp.buffer_size, batch_size=hp.batch_size, max_epoch=250):
         """

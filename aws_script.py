@@ -35,19 +35,19 @@ tf.random.set_seed(hp.seed_index)
 start_time = time.time()
 
 for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_result_dict_name_vet):
-    it.tuning_loop(pool=pool, scenario="null",
+    it.tuning_loop(pool=pool, scenario="null", data_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
-    it.tuning_loop(pool=pool, scenario="alt",
+    it.tuning_loop(pool=pool, scenario="alt", data_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
-print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
+print(f"Tuning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
       f"seconds to finish.")
