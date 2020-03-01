@@ -62,7 +62,7 @@ def ising_tuning_wrapper(trail_index, scenario, data_directory_name, sample_size
 def tuning_loop(pool, scenario, data_directory_name, number_of_test_samples_vet, ising_network,
                 epoch_vet, trail_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet, **kwargs):
     """
-    
+
     :param pool:
     :param scenario:
     :param data_directory_name:
