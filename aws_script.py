@@ -1,0 +1,53 @@
+import numpy as np
+import tensorflow as tf
+import ising_tuning_functions as it
+import generate_train_fucntions as gt
+import hyperparameters as hp
+import os
+import pickle
+import multiprocessing as mp
+import time
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+trail_index_vet = np.arange(hp.number_of_trails)
+sample_size_vet = hp.sample_size_vet
+
+if len(trail_index_vet) < hp.process_number:
+    process_number = len(trail_index_vet)
+else:
+    process_number = hp.process_number
+
+pool = mp.Pool(processes=process_number)
+
+##########################################
+# Fit the full model on the mixture data #
+##########################################
+# 1 layer
+number_forward_elu_layers = 1
+hidden_dim_mixture_vet = [8, 16, 20, 24]
+mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture}"
+                                for hidden_dim in hidden_dim_mixture_vet]
+
+
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+start_time = time.time()
+
+for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_result_dict_name_vet):
+    it.tuning_loop(pool=pool, scenario="null",
+                   number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
+                   trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+                   result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
+                   cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
+                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
+
+    it.tuning_loop(pool=pool, scenario="alt",
+                   number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
+                   trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
+                   result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
+                   cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
+                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
+
+print(f"Tunning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
+      f"seconds to finish.")

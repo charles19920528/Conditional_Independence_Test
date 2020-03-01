@@ -57,7 +57,7 @@ mixture_hidden_dim = 12
 # Training #
 ############
 number_of_test_samples_vet = [5, 10, 50, 100]
-number_of_test_samples_100_vet = [10, 15, 20, 30]
+
 
 
 ################
@@ -70,6 +70,7 @@ process_number = os.cpu_count()
 #########################
 # Tuning Ising network. #
 #########################
-
+epoch_ising_vet = np.array([300, 300, 120, 120])
+epoch_mixture_1_vet = np.array([300, 300, 120, 120])
 
 

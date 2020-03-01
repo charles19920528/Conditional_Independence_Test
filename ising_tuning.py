@@ -11,10 +11,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 trail_index_vet = np.arange(hp.number_of_trails)
 sample_size_vet = hp.sample_size_vet
-number_of_test_samples_vet = [10, 10, 50, 100]
-
-epoch_ising_vet = np.array([300, 300, 120, 120])
-epoch_mixture_1_vet = np.array([300, 300, 120, 120])
 
 if len(trail_index_vet) < hp.process_number:
     process_number = len(trail_index_vet)
@@ -29,7 +25,8 @@ pool = mp.Pool(processes=process_number)
 # 1 layer
 number_forward_elu_layers = 1
 hidden_dim_mixture_vet = [12]
-mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture}" for hidden_dim in hidden_dim_mixture_vet]
+mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture}"
+                                for hidden_dim in hidden_dim_mixture_vet]
 
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
@@ -38,14 +35,14 @@ start_time = time.time()
 
 for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_result_dict_name_vet):
     it.tuning_loop(pool=pool, scenario="null",
-                   number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
+                   number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
     it.tuning_loop(pool=pool, scenario="alt",
-                   number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_mixture_1_vet,
+                   number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
@@ -67,13 +64,13 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 start_time = time.time()
 
 it.tuning_loop(pool=pool, scenario="null",
-               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
                weights_dict=weights_dict, input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
 
 it.tuning_loop(pool=pool, scenario="alt",
-               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet, weights_dict=weights_dict,
                input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
@@ -81,7 +78,7 @@ it.tuning_loop(pool=pool, scenario="alt",
 print("Tunning true Ising model takes %s seconds to finish." % (time.time() - start_time))
 
 # Tuning for the test data size when sample size is 100
-for number_of_test_samples in hp.number_of_test_samples_100_vet:
+for number_of_test_samples in [10, 15, 20, 30]:
     it.tuning_loop(pool=pool, scenario="alt", number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
                    trail_index_vet=trail_index_vet, ising_network=gt.IsingNetwork,
                    result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
@@ -107,13 +104,13 @@ with open('data/ising_data/weights_dict.p', 'rb') as fp:
 start_time = time.time()
 
 it.tuning_loop(pool=pool, scenario="null",
-               number_of_test_samples_vet=number_of_test_samples_vet,  epoch_vet=epoch_ising_vet,
+               number_of_test_samples_vet=hp.number_of_test_samples_vet,  epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
 
 it.tuning_loop(pool=pool, scenario="alt",
-               number_of_test_samples_vet=number_of_test_samples_vet, epoch_vet=epoch_ising_vet,
+               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
                trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
                input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
@@ -171,7 +168,7 @@ for result_dict_name in mixture_result_dict_name_vet:
     #                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 
-for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, epoch_mixture_1_vet)):
+for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, hp.epoch_mixture_1_vet)):
     it.plot_loss_kl(scenario="null", result_dict_name="mixture_1_12", trail_index_vet=trail_index_to_plot_vet,
                     sample_size=sample_size, end_epoch=end_epoch, start_epoch=0)
     it.plot_loss_kl(scenario="alt", result_dict_name="mixture_1_12", trail_index_vet=trail_index_to_plot_vet,
