@@ -113,7 +113,7 @@ print("Misspecified Ising simulation takes %s seconds to finish." % (time.time()
 
 
 # Mixture data
-epoch_kl_dict_name = f"mixture_{hp.number_forward_elu_layers}_{16}_{hp.learning_rate_mixture}"
+epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{16}_{hp.learning_rate_mixture}"
 
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
