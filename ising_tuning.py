@@ -41,7 +41,7 @@ for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
                    hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
 
-    it.tuning_loop(pool=pool, scenario="alt", data_directory_name="mixture_data",
+    it.tuning_loop(pool=pool, scenario="alt", d0ta_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
