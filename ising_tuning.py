@@ -157,12 +157,7 @@ it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising
 ################
 # Mixture data #
 ################
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_3",
-                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_3",
-                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
-
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_12",
+it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_12_0.01",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_12",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)

@@ -172,7 +172,7 @@ def plot_optimal_epoch_kl(optimal_epoch_kl_dict, figure_name):
 
 
 
-def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size_vet, trail_index_vet, plot_boolean):
+def process_plot_epoch_kl_raw_dict(pool, scenario, result_dict_name, sample_size_vet, trail_index_vet):
     """
 
     :param pool:
