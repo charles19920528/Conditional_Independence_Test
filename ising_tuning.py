@@ -164,6 +164,8 @@ it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixtur
 
 it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_16_0.01",
                                   sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
+it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_16_0.01",
+                                  sample_size_vet=sample_size_vet, trail_index_vet=trail_index_vet)
 
 for result_dict_name in mixture_result_dict_name_vet:
     it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=result_dict_name,
