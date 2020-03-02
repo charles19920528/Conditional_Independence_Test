@@ -25,7 +25,7 @@ pool = mp.Pool(processes=process_number)
 # 1 layer
 number_forward_elu_layers = 1
 hidden_dim_mixture_vet = [20, 24]
-mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture}"
+mixture_result_dict_name_vet = [f"mixture_{number_forward_elu_layers}_{hidden_dim}_{hp.learning_rate_mixture_large}"
                                 for hidden_dim in hidden_dim_mixture_vet]
 
 
