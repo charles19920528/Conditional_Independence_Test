@@ -99,7 +99,7 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
 #####################
 # Ising simulation
 def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_name, sample_size, ising_network_class,
-                             number_of_test_samples, **kwargs):
+                             number_of_test_samples, learning_rate=hp.learning_rate, **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
@@ -126,7 +126,7 @@ def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_na
 
     ising_network = ising_network_class(**kwargs)
     training_tuning_instance = gt.IsingTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, max_epoch=max_epoch,
-                                                        ising_network=ising_network)
+                                                        ising_network=ising_network, learning_rate=learning_rate)
 
     result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
                                                                          number_of_test_samples=number_of_test_samples)

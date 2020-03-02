@@ -80,9 +80,11 @@ ra.plot_roc(ising_fpr_tpr_dict, "True Ising Model, Rate: 0.01", "ising_data")
 fig, ax = plt.subplots(1)
 color_vet = ["cyan", "magenta", "yellow", "black"]
 for i, number_of_test_samples in enumerate(hp.number_of_test_samples_100_vet):
-    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_result_null_dict.p', 'rb') as fp:
+    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_'
+              f'result_null_dict.p', 'rb') as fp:
         ising_true_result_null_dict = pickle.load(fp)
-    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_result_alt_dict.p', 'rb') as fp:
+    with open(f'results/result_dict/ising_data/ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}_'
+              f'result_alt_dict.p', 'rb') as fp:
         ising_true_result_alt_dict = pickle.load(fp)
 
     ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
