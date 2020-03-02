@@ -71,6 +71,6 @@ process_number = os.cpu_count()
 # Tuning Ising network. #
 #########################
 epoch_ising_vet = np.array([300, 300, 120, 120])
-epoch_mixture_1_vet = np.array([300, 300, 120, 120])
+epoch_mixture_1_vet = np.array([1, 1, 140, 140])
 
 
