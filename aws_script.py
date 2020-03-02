@@ -17,7 +17,7 @@ if len(trail_index_vet) < hp.process_number:
 else:
     process_number = hp.process_number
 
-pool = mp.Pool(processes=12)
+pool = mp.Pool(processes=process_number)
 
 ##########################################
 # Fit the full model on the mixture data #
@@ -40,14 +40,14 @@ for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.null_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
-                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
+                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture_large)
 
     it.tuning_loop(pool=pool, scenario="alt", data_directory_name="mixture_data",
                    number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_mixture_1_vet,
                    trail_index_vet=trail_index_vet, ising_network=gt.FullyConnectedNetwork,
                    result_dict_name=result_dict_name, sample_size_vet=sample_size_vet,
                    cut_off_radius=hp.alt_cut_off_radius, number_forward_elu_layers=1, input_dim=hp.dim_z,
-                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture)
+                   hidden_dim=hidden_dim_mixture, output_dim=3, learning_rate=hp.learning_rate_mixture_large)
 
 print(f"Tuning mixture model with {number_forward_elu_layers} layers takes {time.time() - start_time} "
       f"seconds to finish.")

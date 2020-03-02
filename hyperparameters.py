@@ -38,6 +38,7 @@ batch_size = 100
 # learning rate for gradient descent.
 learning_rate = 0.01
 learning_rate_mixture = 0.01
+learning_rate_mixture_large = 0.05
 
 ###############################
 # Misspecified neural network #
@@ -68,9 +69,9 @@ process_number = os.cpu_count()
 
 
 #########################
-# Tuning Ising network. #
+#ii Tuning Ising network. #
 #########################
-epoch_ising_vet = np.array([300, 300, 120, 120])
-epoch_mixture_1_vet = np.array([1, 1, 140, 140])
+iepoch_ising_vet = np.array([300, 300, 120, 120])
+epoch_mixture_1_vet = np.array([300, 300, 120, 120])
 
 
