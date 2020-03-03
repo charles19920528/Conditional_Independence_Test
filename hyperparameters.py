@@ -38,7 +38,6 @@ batch_size = 100
 # learning rate for gradient descent.
 learning_rate = 0.01
 learning_rate_mixture = 0.01
-learning_rate_mixture_large = 0.05
 
 ###############################
 # Misspecified neural network #
