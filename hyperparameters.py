@@ -51,7 +51,7 @@ wrong_hidden_dim=2
 # Architecture on the mixture data #
 ####################################
 mixture_number_forward_elu_layer = 1
-mixture_hidden_dim = 12
+mixture_hidden_dim = 16
 
 
 ############

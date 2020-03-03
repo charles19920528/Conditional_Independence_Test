@@ -113,7 +113,7 @@ print("Misspecified Ising simulation takes %s seconds to finish." % (time.time()
 
 
 # Mixture data
-epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{16}_{hp.learning_rate_mixture}"
+epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
 
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
@@ -123,12 +123,14 @@ start_time = time.time()
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="null",
                                        data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3)
+                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
+                                       learning_rate=hp.learning_rate_mixture)
 
 sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="alt",
                                        data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3)
+                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
+                                       learning_rate=hp.learning_rate_mixture)
 
 print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
 

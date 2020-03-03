@@ -118,26 +118,18 @@ ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified Ising Model, Rate: 0.
 ######################################################
 # Analyze the Ising model fitted on the mixture data #
 ######################################################
-# with open('results/result_dict/mixture_data/ising_wrong_rate_0.005_result_null_dict.p', 'rb') as fp:
-#     ising_result_null_dict = pickle.load(fp)
-# with open('results/result_dict/mixture_data/ising_wrong_rate_0.005_result_alt_dict.p', 'rb') as fp:
-#     ising_result_alt_dict = pickle.load(fp)
-#
-# ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict = ising_result_null_dict, alt_result_dict = ising_result_alt_dict,
-#                              test_statistic_one_trail = ra.ising_test_statistic_one_trial)
-#
-# ra.plot_roc(ising_fpr_tpr_dict, "Ising_Model", "mixture_data")
+epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
 
-with open('results/result_dict/mixture_data/ising_optimal_epoch_result_null_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/{epoch_kl_dict_name}_result_null_dict.p', 'rb') as fp:
     ising_optimal_epoch_result_null_dict = pickle.load(fp)
-with open('results/result_dict/mixture_data/ising_optimal_epoch_result_alt_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/{epoch_kl_dict_name}_result_alt_dict.p', 'rb') as fp:
     ising_optimal_epoch_result_alt_dict = pickle.load(fp)
 
-ising_fpr_tpr_dict = ra.fpr_tpr(null_result_dict=ising_optimal_epoch_result_null_dict,
+ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_optimal_epoch_result_null_dict,
                                 alt_result_dict=ising_optimal_epoch_result_alt_dict,
                                 test_statistic_one_trail=ra.ising_test_statistic_one_trial)
 
-ra.plot_roc(ising_fpr_tpr_dict, "Ising_Model_test", "mixture_data")
+ra.plot_roc(ising_fpr_tpr_dict, epoch_kl_dict_name, "mixture_data")
 
 
 ####################
