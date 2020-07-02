@@ -39,20 +39,6 @@ for sample_size in hp.sample_size_vet:
         np.savetxt(f"./data/mixture_data/alt/x_y_mat_{sample_size}_{trail_index}.txt", alt_x_y_mat)
 
 
-# for sample_size in hp.sample_size_vet:
-#     for i in range(hp.number_of_trails):
-#         x_y_mat_null = 2 * np.random.binomial(n=1, p=0.5, size=(sample_size, 2)) - 1
-#
-#         z_mat, label_vet = make_blobs(n_samples=sample_size, centers=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-#         x_y_mat_alt, p_mat_alt = gt.mixture_model_x_y_mat(label_vet=label_vet, p_x_equal_y=0.6)
-#
-#         np.savetxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{i}.txt", z_mat)
-#         np.savetxt(f"./data/mixture_data/null/x_y_mat_{sample_size}_{i}.txt", x_y_mat_null)
-#         np.savetxt(f"./data/mixture_data/alt/x_y_mat_{sample_size}_{i}.txt", x_y_mat_alt)
-#         np.savetxt(f"./data/mixture_data/alt/p_mat/p_mat_alt_{sample_size}_{i}.txt", p_mat_alt)
-
-
-
 ########################
 # Use the Ising model. #
 ########################

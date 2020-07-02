@@ -41,9 +41,11 @@ def pmf_collection(parameter_mat):
     """
     Compute the full distribution P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
     under the Ising model.
+
     :param parameter_mat: an n by p tensor. Each row contains a parameter for a one sample. If p = 2, we
-    assume the sample correpsonds the null model. If p = 3, we assume the sample corresponds to full model.
-    Columns of the parameter_mat are Jx, Jy and Jxy.
+        assume the sample corresponding to the null model. If p = 3, we assume the sample corresponds to full model.
+        Columns of the parameter_mat are Jx, Jy and Jxy.
+
     :return: prob_mat: an n by 4 tensor. Each row contains four joint probabilities.
     """
     #############################
@@ -76,35 +78,36 @@ def pmf_collection(parameter_mat):
     kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b=True)
     exp_kernel_mat = tf.exp(kernel_mat)
     # tf.transpose has a weird bug when running the ising_tuning script at sample size 1000.
+    # tf.transpose has a weird bug when running the ising_tuning script at sample size 1000.
     # prob_mat = tf.transpose(exp_kernel_mat, perm=[1, 0]) / tf.reduce_sum(exp_kernel_mat, axis=1)
     prob_mat = np.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
+    prob_mat = np.transpose(prob_mat)
 
-    return np.transpose(prob_mat)
+    return prob_mat
 
 
+"""
 def pmf_null(x, hx):
-    """
-    Compute the probability P(X = x) under the null model.
-    :param x: Expect either a scalar or an 1-d array of either 1 or negative 1.
-    :param hx: The parameter corresponds to x.
-    :return: pmf: P(X = x).
-    """
+    ##################
+    # To be deleted and be replaced by the pmf_collection
+    ###################
     hx = tf.cast(hx, tf.float32)
     numerator = tf.exp(- x * hx)
     denominator = tf.exp(- x * hx) + tf.exp(x * hx)
     pmf = numerator / denominator
 
     return pmf
+"""
 
 
-def log_ising_pmf(x_y_mat, parameter_mat):
+def log_ising_likelihood(x_y_mat, parameter_mat):
     """
-    Compute negative log likelihood of the Ising model under the alternative and use it as the loss function for
+    Compute negative log likelihood of the Ising model. The function can be used as the loss function for
     model training.
 
     :param x_y_mat: an n by 2 tensor which stores observed x's any y's.
-    :param parameter_mat: a tensor of shape [n, 3]. It should be the output of an object of class IsingNetwork.
-    Columns of the matrices are Jx, Jy and Jxy respectively.
+    :param parameter_mat: a tensor of shape [n, 2] or [n, 3]. It should be the output of an object of class
+        IsingNetwork. Columns of the matrices are Jx, Jy and Jxy respectively.
 
     :return: negative_log_likelihood
     """
@@ -115,20 +118,20 @@ def log_ising_pmf(x_y_mat, parameter_mat):
         parameter_mat = tf.concat(values=[parameter_mat, zero_tensor], axis=1)
 
     x_times_y = x_y_mat[:, 0] * x_y_mat[:, 1]
-    x_times_y = tf.reshape(x_times_y, (tf.shape(x_times_y)[0], 1))
+    x_times_y = tf.reshape(x_times_y, (-1, 1))
     x_y_xy_mat = tf.concat(values=[x_y_mat, x_times_y], axis=1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
     dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
 
     normalizing_constant = tf.constant(0., dtype=tf.float32)
+    one_mat = tf.constant([
+        [-1., -1., -1.],
+        [-1, 1, 1],
+        [1, -1, 1],
+        [1, 1, -1]
+    ], dtype=tf.float32)
     for i in tf.range(sample_size):
         parameter_vet = parameter_mat[i, :]
-        one_mat = tf.constant([
-            [-1., -1., -1.],
-            [-1, 1, 1],
-            [1, -1, 1],
-            [1, 1, -1]
-        ], dtype=tf.float32)
         exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
         normalizing_constant += log_sum_exp
@@ -137,15 +140,18 @@ def log_ising_pmf(x_y_mat, parameter_mat):
     return negative_log_likelihood
 
 
-def generate_x_y_mat(sample_size, p_mat):
+def generate_x_y_mat(p_mat):
     """
-    Generate an x_y_mat according to the p_mat.
-    :param sample_size: An integer.
+    Generate an x_y_mat according to the p_mat. The ith row of x_y_mat corresponds to a sample (x_i, y_i) following
+    the distribution specified in the ith row p_mat.
+
     :param p_mat: An sample_size x 4 matrix. The columns correspond to P(X = 1, Y = 1), P(X = 1, Y = -1),
-    P(X = -1, Y = 1) and P(X = -1, Y = -1).
+        P(X = -1, Y = 1) and P(X = -1, Y = -1).
+
     :return:
-    x_y_mat: x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
+        x_y_mat: An sample_size by 2 dimension matrix. Each column contains only 1 and -1.
     """
+    sample_size = p_mat.shape[0]
     raw_sample_mat = np.zeros((sample_size, 4))
     for i in np.arange(sample_size):
         p_vet = p_mat[i, :]
@@ -160,68 +166,36 @@ def generate_x_y_mat(sample_size, p_mat):
     return x_y_mat
 
 
-def generate_x_y_mat_ising(ising_network, z_mat, null_boolean, sample_size):
+def generate_x_y_mat_ising(ising_network, z_mat):
     """
-    The function will generate the matrix of responses (x, y) using the Ising model.
+    The function will generate the x_y_mat using the Ising model.
+
+    :param ising_network: An instance of IsingNetwork class.
     :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-    Usually, it is the output of the generate_z_mat method.
+        Usually, it is the output of the generate_z_mat method.
+
     :return:
-    x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
+        x_y_mat: An n by 2-dimension matrix. Each column contains only 1 and -1. The first column corresponds to X.
     """
     true_parameter_mat = ising_network(z_mat)
-    if null_boolean:
-        p_equal_1_mat = pmf_null(1, true_parameter_mat)
-        x_y_mat = np.random.binomial(n=1, p=p_equal_1_mat, size=(sample_size, 2)).astype(np.float32) * 2 - 1
-        return x_y_mat
-    else:
-        p_mat = pmf_collection(true_parameter_mat)
-        # Recall that the column of p_mat corresponds to P(X = 1, Y = 1),
-        # P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
-        x_y_mat = generate_x_y_mat(sample_size, p_mat)
+    p_mat = pmf_collection(true_parameter_mat)
+    x_y_mat = generate_x_y_mat(p_mat)
 
-        return x_y_mat
-
-
-def mixture_model_x_y_mat(label_vet, p_x_equal_y):
-    """
-    The function will generate the matrix of responses (x, y) using the mixture model.
-    :param label_vet: A vector of integers which should be one of the outputs of the make_blobs function.
-    :param p_x_eqaul_y: A scalar which is P(X = Y).
-
-    :return:
-    x_y_mat: An n by 2 dimension numpy array / tensor. Each column contains only 1 and -1.
-    p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and
-    P(X = -1, Y = -1).
-    """
-    sample_size = label_vet.shape[0]
-    group_0_length = np.sum(label_vet == 0)
-    remaining_group_length = sample_size - group_0_length
-
-    x_y_mat = np.zeros((sample_size, 2))
-    x_y_mat[label_vet != 0, :] = 2 * np.random.binomial(n=1, p=0.5, size=(remaining_group_length, 2)) - 1
-
-    p_equal = p_x_equal_y / 2.
-    p_different = 0.5 - p_equal
-    p_vet = np.array([p_equal, p_different, p_different, p_equal])
-
-    p_mat_group_0 = np.tile(p_vet, (group_0_length, 1))
-    x_y_mat[label_vet == 0, :] = generate_x_y_mat(sample_size=group_0_length, p_mat=p_mat_group_0)
-
-    p_mat = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
-    p_mat[np.argwhere(label_vet == 0).squeeze(), :] = p_mat_group_0
-
-    return x_y_mat, p_mat
+    return x_y_mat
 
 
 def data_generate_network(dim_z=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim):
     """
-    The function will generate an Ising Network under the alternative.
+    The function will generate a pair of IsingNetwork instances under the null and the alternative. The null network
+    has one less set of weights which corresponds to Jxy. Every other weights are exactly the same. Weights are
+    generated using a standard normal distribution. This function is  just a wrap-up function and the only purpose is to
+    make the code cleaner.
+
     :param dim_z: An interger. The dimension of the random_variables we condition on.
     :param hidden_1_out_dim: A integer which is the output dimension of the hidden layer.
-    :return:
-    null_network_generate: An instance of the IsingNetwork class.
-    alt_network_generate: An instance of the IsingNetwork class.
-    weights_list: A list containing weights of each layers.
+
+    :return: 1.null_network_generate: An instance of the IsingNetwork class. 2.alt_network_generate: An instance of the
+            IsingNetwork class. 3.weights_list: A list containing weights of each layers.
     """
     # Create the alternative network.
     alt_network_generate = IsingNetwork(dim_z, hidden_1_out_dim, 3)
@@ -261,9 +235,8 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     :param is_null_boolean: A boolean value to indicate if we compute the pmf under the independence assumption (H0).
     :param cut_off_radius: A positive scalar which we use to divide sample into two groups based on the norm of z.
 
-    :return:
-    p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and
-    P(X = -1, Y = -1).
+    :return: p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1)
+        and P(X = -1, Y = -1).
     """
     less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
     nrow = z_mat.shape[0]
@@ -464,7 +437,7 @@ class IsingTrainingTuning:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
-                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_likelihood(x_y_batch, batch_predicted_parameter_mat)
 
                     # print(f"finish compute log pmf {iteration}")
 
@@ -475,7 +448,7 @@ class IsingTrainingTuning:
 
             # Compute likelihood and  kl on test data  test_z_mat, test_x_y_mat
             predicted_test_parameter_mat = self.ising_network(test_z_mat)
-            likelihood_on_test = log_ising_pmf(test_x_y_mat, predicted_test_parameter_mat)
+            likelihood_on_test = log_ising_likelihood(test_x_y_mat, predicted_test_parameter_mat)
             predicted_test_p_mat = pmf_collection(parameter_mat=predicted_test_parameter_mat)
             kl_on_test_data = kl_divergence(p_mat_true=true_test_p_mat, p_mat_predicted=predicted_test_p_mat,
                                             isAverage=True)
@@ -523,7 +496,7 @@ class IsingTrainingTuning:
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:
                     batch_predicted_parameter_mat = self.ising_network(z_batch)
-                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
+                    loss = log_ising_likelihood(x_y_batch, batch_predicted_parameter_mat)
                 grads = tape.gradient(loss, self.ising_network.variables)
                 optimizer.apply_gradients(grads_and_vars=zip(grads, self.ising_network.variables))
 
@@ -598,236 +571,3 @@ class FullyConnectedNetwork(tf.keras.Model):
         self(dummy_z)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############################################## Freeze indefinitely.
-class IsingTraining_tf_function:
-    # Still need debugging.
-    def __init__(self, z_dataset, x_y_dataset, z_dim, hidden_1_out_dim, sample_size,
-                 learning_rate, buffer_size, batch_size, epoch):
-        """
-        Create a class which can generate data and train a network.
-        :param z_dataset:                                         . This is the data we condition on.
-        :param x_y_dataset:
-        :param z_dim
-        :param hidden_1_out_dim: A integer which is the output dimension of the hidden layer.
-        :param sample_size
-        :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
-        :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
-        :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
-        :param epoch: A scalar indicating the number of times training process pass through the data set.
-        """
-        self.z_dataset = z_dataset
-        self.x_y_dataset = x_y_dataset
-        self.z_dim = z_dim
-        self.hidden_1_out_dim = hidden_1_out_dim
-        self.sample_size = sample_size
-        self.learning_rate = learning_rate
-        self.buffer_size = buffer_size
-        self.batch_size = batch_size
-        self.epoch = epoch
-
-    def merge_z_x_y_dataset(self):
-        def dt_iterator():
-            for z, x_y in zip(self.z_dataset, self.x_y_dataset):
-                yield (z.numpy(), x_y.numpy())
-
-        merged_dataset = tf.data.Dataset.from_generator(dt_iterator, output_types=(tf.float32, tf.float32),
-                                                        output_shapes=(tf.TensorShape(3), tf.TensorShape(2)))
-
-        return merged_dataset
-
-    def trainning(self):
-        """
-        Train a neural network.
-        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
-        result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
-        second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
-        of parameters in the full Ising Model.
-        """
-        """
-                # Prepare training data.
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
-        """
-
-        train_ds = self.merge_z_x_y_dataset()
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
-
-        train_network = IsingNetwork(self.z_dim, self.hidden_1_out_dim, 3)
-        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-
-        batch_predicted_parameter_mat = tf.Variable(tf.zeros((self.batch_size, 3), dtype=tf.float32), trainable=True)
-        loss = tf.Variable(0, dtype=tf.float32, trainable=True)
-        predicted_parameter_mat = tf.Variable(tf.zeros((self.sample_size, 3), dtype=tf.float32))
-
-        for i in range(self.epoch):
-            for z_batch, x_y_batch in train_ds:
-                with tf.GradientTape() as tape:
-                    batch_predicted_parameter_mat.assign(train_network(z_batch))
-                    loss.assign(log_ising_pmf(x_y_batch, batch_predicted_parameter_mat))
-                grads = tape.gradient(loss, train_network.variables)
-                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
-
-        """
-        for i in range(self.epoch):
-            for z_batch, x_y_batch in train_ds:
-                with tf.GradientTape() as tape:
-                    batch_predicted_parameter_mat = train_network(z_batch)
-                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
-                grads = tape.gradient(loss, train_network.variables)
-                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
-
-        predicted_parameter_mat = tf.Variable( tf.zeros( (self.sample_size, 3), dtype = tf.float32) )
-        """
-
-        for z_mat in self.z_dataset.batch(self.sample_size):
-            predicted_parameter_mat.assign(train_network(z_mat))
-
-        # predicted_parameter_mat = train_network.predict(self.z_dataset.batch(self.batch_size))
-
-        return predicted_parameter_mat
-
-
-
-
-
-
-
-
-
-##################################################################
-# Helper functions to load txt data file into Tensorflow dataset #
-##################################################################
-# Not in use!
-
-# z_dataset = tf.data.TextLineDataset("./data/z_mat/z_mat_30.txt")
-# x_y_dataset = tf.data.TextLineDataset("./data/null/x_y_mat_30_0.txt")
-
-# Helper functions to read data using tensorflow dataset module.
-def parse_fnc(line):
-    string_vals = tf.strings.split([line]).values
-    return tf.strings.to_number(string_vals, tf.float32)
-
-
-# z_dataset = z_dataset.map(parse_fnc)
-# x_y_dataset = x_y_dataset.map(parse_fnc)
-
-def tf_load_z_dataset(sample_size_tensor):
-    z_file_format = tf.strings.format("./data/z_mat/z_mat_{}.txt", inputs=sample_size_tensor)
-    z_dataset = tf.data.TextLineDataset(z_file_format)
-    z_dataset = z_dataset.map(parse_fnc)
-
-    return z_dataset
-
-
-# z_dataset = tf_load_z_dataset(tf.constant(30))
-# print(list(z_mat.take(1)))
-
-def tf_load_x_y_dataset_null(sample_size_tensor, simulation_times_tensor):
-    x_y_file_format = tf.strings.format("./data/null/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
-                                                                                 simulation_times_tensor))
-    x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
-    x_y_dataset = x_y_dataset.map(parse_fnc)
-
-    return x_y_dataset
-
-
-# x_y_dataset = tf_load_x_y_dataset_null(tf.constant(30), tf.constant(1))
-# print(list(x_y_dataset.take(1)))
-
-def tf_load_x_y_dataset_alt(sample_size_tensor, simulation_times_tensor):
-    x_y_file_format = tf.strings.format("./data/alt/x_y_mat_{}_{}.txt", inputs=(sample_size_tensor,
-                                                                                simulation_times_tensor))
-    x_y_dataset = tf.data.TextLineDataset(x_y_file_format)
-    x_y_dataset = x_y_dataset.map(parse_fnc)
-
-    return x_y_dataset
-
-
-# x_y_dataset = tf_load_x_y_dataset_alt(tf.constant(30), tf.constant(1))
-# print(list(x_y_dataset.take(1)))
-
-
-######################### Freeze
-"""
-
-
-class IsingTrainingPool:
-    def __init__(self, z_mat, epoch, hidden_1_out_dim=hp.hidden_1_out_dim, learning_rate=hp.learning_rate,
-                 buffer_size=hp.buffer_size, batch_size=hp.batch_size):
-        
-        Create a class which can generate data and train a network.
-        :param z_mat: A n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
-        :param hidden_1_out_dim: A scalar which is the output dimension of the hidden layer.
-        :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
-        :param buffer_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
-        :param batch_size: A scalar which is a (hyper)parameter in the tf.data.Dataset.batch function.
-        :param epoch: A scalar indicating the number of times training process pass through the data set.
-        
-        self.z_mat = z_mat
-        self.hidden_1_out_dim = hidden_1_out_dim
-        self.learning_rate = learning_rate
-        self.buffer_size = buffer_size
-        self.batch_size = batch_size
-        self.epoch = epoch
-
-        self.sample_size = z_mat.shape[0]
-        self.dim_z = z_mat.shape[1]
-
-    def trainning(self, x_y_mat):
-        
-        Train a neural network.
-        :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :return: result_dict: A dictionary which contains two keys which are "loss_array" and "ising_par".
-        result_dict["loss_array"] is a 2 by epoch numpy of which the first row stores the (- 2 * LogLikelihood) and the
-        second row stores the kl divergences. result_dict["ising_parameters"] stores a tensor which is the fitted value
-        of parameters in the full Ising Model.
-        
-        
-        # Prepare training data.
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
-        
-
-        # Prepare training data.
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat, x_y_mat))
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
-
-        train_network = IsingNetwork(self.dim_z, self.hidden_1_out_dim, 3)
-        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-
-        for i in range(self.epoch):
-            for z_batch, x_y_batch in train_ds:
-                with tf.GradientTape() as tape:
-                    batch_predicted_parameter_mat = train_network(z_batch)
-                    loss = log_ising_pmf(x_y_batch, batch_predicted_parameter_mat)
-                grads = tape.gradient(loss, train_network.variables)
-                optimizer.apply_gradients(grads_and_vars=zip(grads, train_network.variables))
-
-        predicted_parameter_mat = train_network.predict(self.z_mat)
-
-        return predicted_parameter_mat
-
-"""
