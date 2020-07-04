@@ -1,5 +1,4 @@
 import tensorflow as tf
-# Numpy is for the generate_x_y_mat_ising method and trainning method in the IsingSimulation class.
 import numpy as np
 import hyperparameters as hp
 
@@ -48,12 +47,6 @@ def pmf_collection(parameter_mat):
 
     :return: prob_mat: an n by 4 tensor. Each row contains four joint probabilities.
     """
-    #############################
-    # Attention !!!!!!!!!!!! There may be numerical issue. The result is slightly different with the one obtained from
-    # pmf_null. Difference is 10^(-8).
-    # Use pmf_null(, parameter_mat)[:, 0] * pmf_null(, parameter_mat)[:, 1] - pmf_collection(parameter_mat)[:, 0]
-    # to check.
-    #############################
     number_of_columns = parameter_mat.shape[1]
     if number_of_columns == 2:
         one_mat = tf.constant([
@@ -76,28 +69,9 @@ def pmf_collection(parameter_mat):
 
     parameter_mat = tf.cast(parameter_mat, tf.float32)
     kernel_mat = tf.matmul(parameter_mat, one_mat, transpose_b=True)
-    exp_kernel_mat = tf.exp(kernel_mat)
-    # tf.transpose has a weird bug when running the ising_tuning script at sample size 1000.
-    # tf.transpose has a weird bug when running the ising_tuning script at sample size 1000.
-    # prob_mat = tf.transpose(exp_kernel_mat, perm=[1, 0]) / tf.reduce_sum(exp_kernel_mat, axis=1)
-    prob_mat = np.transpose(exp_kernel_mat) / tf.reduce_sum(exp_kernel_mat, axis=1)
-    prob_mat = np.transpose(prob_mat)
+    prob_mat = tf.nn.softmax(kernel_mat, axis=1)
 
     return prob_mat
-
-
-"""
-def pmf_null(x, hx):
-    ##################
-    # To be deleted and be replaced by the pmf_collection
-    ###################
-    hx = tf.cast(hx, tf.float32)
-    numerator = tf.exp(- x * hx)
-    denominator = tf.exp(- x * hx) + tf.exp(x * hx)
-    pmf = numerator / denominator
-
-    return pmf
-"""
 
 
 def log_ising_likelihood(x_y_mat, parameter_mat):
@@ -235,7 +209,9 @@ def data_generate_network(weights_distribution_string, dim_z=hp.dim_z, hidden_1_
 ########################
 def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     """
-    Compute the conditoinal pmf for the mixture data. Under the null,
+    Compute the conditoinal pmf for the mixture data. Under the null, if norm(z) is less than the cut_off_radius,
+    X and Y are independent Bernoulli random variables, otherwise, X = Y. Under the alternative, X is Bernoulli0.5),
+    if norm(z) is less than the cut_off_radius, y = -x. Otherwise, Y = X.
 
     :param z_mat: An n by p dimension numpy array / tensor. n is the sample size. This is the data we condition on.
     :param is_null_boolean: A boolean value to indicate if we compute the pmf under the independence assumption (H0).
@@ -245,15 +221,15 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
         and P(X = -1, Y = -1).
     """
     less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
-    nrow = z_mat.shape[0]
+    sample_size = z_mat.shape[0]
     if is_null_boolean:
-        p_mat = np.repeat(0.25, nrow * 4).reshape(nrow, 4)
-        helper_pmf_vet = np.array([0, 0, 0, 1]).reshape(1, 4)
+        p_mat = np.repeat(0.25, sample_size* 4).reshape(sample_size, 4)
+        helper_pmf_vet = np.array([0.5, 0, 0, 0.5]).reshape(1, 4)
         p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
 
         return p_mat
     else:
-        p_mat = np.tile([0, 0.5, 0.5, 0], (nrow, 1))
+        p_mat = np.tile([0, 0.5, 0.5, 0], (sample_size, 1))
         helper_pmf_vet = np.array([0.5, 0, 0, 0.5])
         p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
 

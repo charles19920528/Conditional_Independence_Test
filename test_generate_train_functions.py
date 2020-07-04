@@ -1,6 +1,7 @@
 import generate_train_functions_nightly as gt
 import tensorflow as tf
 import numpy as np
+import hyperparameters as hp
 
 tf.random.set_seed(0)
 np.random.seed(0)
@@ -44,3 +45,13 @@ null_network_generate, alt_network_generate, weights_list = \
 null_network_generate(z_mat)
 null_network_generate.get_weights()
 
+
+# Test conditional_pmf_collection_mixture function.
+null_conditional_pmf_mat = gt.conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=True,
+                                                                 cut_off_radius=0.5)
+null_conditional_pmf_mat = gt.conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=True,
+                                                                 cut_off_radius=10)
+alt_conditional_pmf_mat = gt.conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=False,
+                                                                 cut_off_radius=0.5)
+alt_conditional_pmf_mat = gt.conditional_pmf_collection_mixture(z_mat=z_mat, is_null_boolean=False,
+                                                                 cut_off_radius=10)
