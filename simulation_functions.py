@@ -18,7 +18,7 @@ import hyperparameters as hp
 # Simulation loops #
 ####################
 def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, result_dict_name,
-                    sample_size_vet=hp.sample_size_vet, number_of_trails=hp.number_of_trails,
+                    sample_size_vet=hp.sample_size_vet, number_of_trials=hp.number_of_trials,
                     epoch_vet=hp.epoch_vet, **kwargs):
     """
     A wrap up function for the simulation loop using the multiprocessing Pool function. The function will
@@ -32,7 +32,7 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
     :param result_dict_name:  A string ('str' class) which we use to name the result dictionary as
     {result_dict_name}_result_{scenario}_dict.
     :param sample_size_vet: A python list of integers. It contains all the sample size we simulated.
-    :param number_of_trails: An integer which is the number of trails we simulate for each sample size
+    :param number_of_trials: An integer which is the number of trials we simulate for each sample size
     :param epoch_vet: A python list of integers. It provides the training epoch, if simulation wrapper is the
     ising_simulation_wrapper,
     :param process_number: An integer. It is the argument of the Pool function telling us the number of workers.
@@ -45,16 +45,16 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
 
     for sample_size, epoch in zip(sample_size_vet, epoch_vet):
 
-        trail_index_vet = range(number_of_trails)
+        trial_index_vet = range(number_of_trials)
 
         if simulation_wrapper == ising_simulation_wrapper:
             pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
                                                data_directory_name=data_directory_name, epoch=epoch, **kwargs),
-                                       trail_index_vet)
+                                       trial_index_vet)
 
         else:
             pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                               data_directory_name=data_directory_name), trail_index_vet)
+                                               data_directory_name=data_directory_name), trial_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
@@ -66,7 +66,7 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
 
 def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data_directory_name,
                                         ising_network_class, sample_size_vet=hp.sample_size_vet,
-                                        number_of_trails=hp.number_of_trails,
+                                        number_of_trials=hp.number_of_trials,
                                         number_of_test_samples_vet=hp.number_of_test_samples_vet, **kwargs):
 
     with open(f"tuning/optimal_epoch/{epoch_kl_dict_name}_{scenario}_epoch_kl_mat_dict.p", "rb") as fp:
@@ -74,14 +74,14 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
 
     result_dict = dict()
     for sample_size, number_of_test_samples in zip(sample_size_vet, number_of_test_samples_vet):
-        trail_index_vet = range(number_of_trails)
+        trial_index_vet = range(number_of_trials)
         epoch_vet = epoch_kl_dict[sample_size][:, 1].astype(np.int8)
 
         pool_result_vet = pool.starmap(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
                                                data_directory_name=data_directory_name,
                                                ising_network_class=ising_network_class,
                                                number_of_test_samples=number_of_test_samples, **kwargs),
-                                       zip(trail_index_vet, epoch_vet))
+                                       zip(trial_index_vet, epoch_vet))
 
         result_dict[sample_size] = dict(pool_result_vet)
 
@@ -97,31 +97,35 @@ def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data
 # Wrapper functions #
 #####################
 # Ising simulation
-def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_name, sample_size, ising_network_class,
+def ising_simulation_wrapper(trial_index, sample_size, scenario, data_directory_name, max_epoch, ising_network_class,
                              number_of_test_samples, learning_rate=hp.learning_rate, **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
-    This function uses the true Ising model to perform conditional independence test on {trail_index}th trail with
+    This function uses the true Ising model to perform conditional independence test on {trial_index}th trial with
     sample size {sample_size} under the {scenario} hypothesis.
     The return will be used to create a dictionary.
 
-    :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
-    :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
-    under the null or alternative hypothesis.
-    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
-    :param sample_size: An integer.
+    :param trial_index: An integer indicating the data is the {trial_index}th trial of sample size {sample_size}.
+    :param sample_size: An integer indicating the sample size of the data.
+    :param scenario: It should either be "null" or "alt" depending on if the data is generated under the null or
+        alternative.
+    :param data_directory_name: It should either be "ising_data" or "mixture_data" depending on if the data is generated
+        under the Ising or mixture model.
+
     :param max_epoch: An integer indicating the number of training epoch when training the neural network.
+
+
     :param ising_network_class: A class object which is one of the Ising neural network.
     :param
     :param **kwargs: Keyword rguments to be passed in to the constructor of the ising_network_class
 
     :return:
-    A tuple (trail_index, result_vet). result_vet is the return of the gt.IsingTrainingPool function.
+    A tuple (trial_index, result_vet). result_vet is the return of the gt.IsingTrainingPool function.
     """
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
                          dtype=np.float32)
-    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
     ising_network = ising_network_class(**kwargs)
     training_tuning_instance = gt.IsingTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, max_epoch=max_epoch,
@@ -130,9 +134,9 @@ def ising_simulation_wrapper(trail_index, max_epoch, scenario, data_directory_na
     result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
                                                                          number_of_test_samples=number_of_test_samples)
 
-    print(f"{scenario}: Sample size {sample_size} simulation {trail_index} is done.")
+    print(f"{scenario}: Sample size {sample_size} simulation {trial_index} is done.")
 
-    return (trail_index, result_dict)
+    return (trial_index, result_dict)
 
 
 # Naive Chisq
@@ -153,26 +157,26 @@ def chi_squared_test(x_y_mat):
     return result_vet
 
 
-def naive_chisq_wrapper(trail_index, scenario, data_directory_name, sample_size):
+def naive_chisq_wrapper(trial_index, scenario, data_directory_name, sample_size):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iterations in parallel given a sample size and a scenario.
-    This function perform Chi squared test on {trail_index}th trail with sample size
+    This function perform Chi squared test on {trial_index}th trial with sample size
     {sample_size} under the {scenario} hypothesis.
     The return will be used to create a dictionary.
 
-    :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
+    :param trial_index: An integer indicating {trial_index}th trial among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param sample_size: An integer.
 
     :return:
-    A tuple (trail_index, result_vet). result_vet is the return of the chi_squared_test function.
+    A tuple (trial_index, result_vet). result_vet is the return of the chi_squared_test function.
     """
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     result_vet = chi_squared_test(x_y_mat)
-    return (trail_index, result_vet)
+    return (trial_index, result_vet)
 
 
 # Stratified Chisq
@@ -211,30 +215,30 @@ def stratified_chi_squared_test(x_y_mat_vet):
     return sum(chi_square_statistic_vet)
 
 
-def stratified_chisq_wrapper(trail_index, scenario, data_directory_name, sample_size, cluster_number=2):
+def stratified_chisq_wrapper(trial_index, scenario, data_directory_name, sample_size, cluster_number=2):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
-    This function perform stratified Chi squared test on {trail_index}th trail with sample size
+    This function perform stratified Chi squared test on {trial_index}th trial with sample size
     {sample_size} under the {scenario} hypothesis.
     The return will be used to create a dictionary.
 
-    :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
+    :param trial_index: An integer indicating {trial_index}th trial among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param sample_size: An integer.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
 
     :return:
-    A tuple (trail_index, result_vet). result_vet is the return of the stratified_chi_squared_test function.
+    A tuple (trial_index, result_vet). result_vet is the return of the stratified_chi_squared_test function.
     """
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
-    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
     x_y_mat_vet = stratify_x_y_mat(x_y_mat=x_y_mat, z_mat=z_mat, cluster_number=cluster_number)
     test_statistic = stratified_chi_squared_test(x_y_mat_vet)
 
-    return (trail_index, test_statistic)
+    return (trial_index, test_statistic)
 
 
 # CCIT
@@ -254,15 +258,15 @@ def process_x_y_mat(x_y_mat):
     return x, y
 
 
-def ccit_wrapper(trail_index, scenario, data_directory_name, sample_size, **kwargs):
+def ccit_wrapper(trial_index, scenario, data_directory_name, sample_size, **kwargs):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the partial function.
     The pool function will run iteration in parallel given a sample size and a scenario.
-    This function perform the model powered conditional independence test proposed by  on {trail_index}th trail with
+    This function perform the model powered conditional independence test proposed by  on {trial_index}th trial with
     sample size {sample_size} under the {scenario} hypothesis.
     The return will be used to create a dictionary.
 
-    :param trail_index: An integer indicating {trail_index}th trail among simulations under sample size {sample_size}.
+    :param trial_index: An integer indicating {trial_index}th trial among simulations under sample size {sample_size}.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
     under the null or alternative hypothesis.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
@@ -270,15 +274,15 @@ def ccit_wrapper(trail_index, scenario, data_directory_name, sample_size, **kwar
     :param kwargs: Arguments for the CCIT.CCIT functions.
 
     :return:
-    A tuple (trail_index, result_vet). result_vet is the return of the CCIT.CCIT function.
+    A tuple (trial_index, result_vet). result_vet is the return of the CCIT.CCIT function.
     """
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt")
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     x_array, y_array = process_x_y_mat(x_y_mat)
-    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
     p_value = CCIT.CCIT(x_array, y_array, z_mat, **kwargs)
 
-    print(f"{scenario}: Sample size {sample_size} simulation {trail_index} is done.")
+    print(f"{scenario}: Sample size {sample_size} simulation {trial_index} is done.")
 
-    return (trail_index, p_value)
+    return (trial_index, p_value)
 

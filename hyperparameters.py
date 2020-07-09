@@ -14,7 +14,7 @@ dim_z = 3
 number_of_trails = 1000
 
 # Sample size we simulate.
-sample_size_vet = np.array([30, 100, 500, 1000])
+sample_size_vet = np.array([50, 100, 500, 1000])
 
 # The radius we use for dividing z in to two groups under the mixture data scenario.
 # When dim_z = 3, the null_cut_off_radius will make P(x = -y) approximately 0.3252 and p(x = y) approximately 0.675.
@@ -22,12 +22,12 @@ sample_size_vet = np.array([30, 100, 500, 1000])
 null_cut_off_radius = 1.046 * np.sqrt(dim_z)
 alt_cut_off_radius = 0.8875 * np.sqrt(dim_z)
 
+
 ##################
 # Nerual network #
 ##################
 # Dimension of the hidden layer in the true network.
 hidden_1_out_dim = 3
-
 
 # Training epochs for samples sizes in the sample_size_vet
 epoch_vet = np.array([250, 250, 100, 90])
