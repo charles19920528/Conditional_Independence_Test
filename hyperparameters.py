@@ -10,8 +10,8 @@ seed_index=1
 # Dimension of the random_variables we condition on.
 dim_z = 3
 
-# Number of trails we simulate for each sample size
-number_of_trails = 1000
+# Number of trials we simulate for each sample size
+number_of_trials = 1000
 
 # Sample size we simulate.
 sample_size_vet = np.array([50, 100, 500, 1000])
@@ -31,6 +31,7 @@ hidden_1_out_dim = 3
 
 # Training epochs for samples sizes in the sample_size_vet
 epoch_vet = np.array([250, 250, 100, 90])
+mixture_epoch_vet = np.array([76, 71, 130, 93])
 
 # buffer size for Tensorflow dataset.
 buffer_size = 1024
@@ -52,8 +53,8 @@ wrong_hidden_dim=2
 ####################################
 # Architecture on the mixture data #
 ####################################
-mixture_number_forward_elu_layer = 1
-mixture_hidden_dim = 16
+mixture_number_forward_layer = 1
+mixture_hidden_dim = 150
 
 
 ############
@@ -70,10 +71,5 @@ number_of_test_samples_100_vet = [10, 15, 20, 30]
 process_number = os.cpu_count()
 
 
-#########################
-#ii Tuning Ising network. #
-#########################
-iepoch_ising_vet = np.array([300, 300, 120, 120])
-epoch_mixture_1_vet = np.array([300, 300, 120, 120])
 
 

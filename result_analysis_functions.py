@@ -130,28 +130,28 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
 
 
 ################################################################
-# Get test statistic for all trails with the same sample size. #
+# Get test statistic for all trials with the same sample size. #
 ################################################################
 # Shared functions to obtain fpr, tpr.
 def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_sample_size_alt_result_dict,
-                                   number_of_trails, test_statistic_one_trail, **kwargs):
+                                   number_of_trials, test_statistic_one_trail, **kwargs):
     """
     Apply test_statistic_one_trail function to each result dictionary of a particular sample size to obtain test
-    statistics for all trails.
+    statistics for all trials.
 
     :param
     :param one_sample_size_null_result_dict: A dictionary containing the raw outputs simulated under the null
     given a particular sample size.
     :param one_sample_size_alt_result_dict: A dictionary containing the raw outputs simulated under the
     alternative given a particular sample size.
-    :param number_of_trails:
+    :param number_of_trials:
     :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
     functions defined above.
     :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function. 
 
     :return:
     """
-    trail_index_vet = range(number_of_trails)
+    trail_index_vet = range(number_of_trials)
 
 
 
@@ -170,24 +170,24 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
 #######################
 # Compute fpr and tpr #
 #######################
-def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails):
+def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trials):
     """
     A wrap up function is used in the fpr_tpr function which uses the multiprocessing Pool function.
 
     :param test_statistic_one_sample_size_tuple:
-    :param number_of_trails: An integer which is the number of trails we simulate for each sample size
+    :param number_of_trials: An integer which is the number of trials we simulate for each sample size
 
     :return:
     Two ists containing false positive rates and true positive rates which can be used to draw the RoC curve.
     """
-    true_label = np.repeat([-1, 1], np.repeat(number_of_trails, 2))
+    true_label = np.repeat([-1, 1], np.repeat(number_of_trials, 2))
     combined_test_statistic_vet = np.concatenate(test_statistic_one_sample_size_tuple)
     fpr, tpr, thresholds = metrics.roc_curve(true_label, combined_test_statistic_vet, pos_label=1)
 
     return fpr, tpr
 
 
-def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, number_of_trails=hp.number_of_trails,
+def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, number_of_trials=hp.number_of_trials,
             **kwargs):
     """
     A wrapper function which compute fpr and tpr for simulations of different samples sizes.
@@ -196,7 +196,7 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, n
     :param null_result_dict:
     :param alt_result_dict:
     :param test_statistic_one_trail:
-    :param number_of_trails:
+    :param number_of_trials:
     :param kwargs:
 
     :return:
@@ -212,11 +212,11 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, n
                                                                               one_sample_size_null_result_dict,
                                                                               one_sample_size_alt_result_dict=
                                                                               one_sample_size_alt_result_dict,
-                                                                              number_of_trails=number_of_trails,
+                                                                              number_of_trials=number_of_trials,
                                                                               test_statistic_one_trail=
                                                                               test_statistic_one_trail, **kwargs)
 
-        fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trails)
+        fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trials)
 
         fpr_tpr_dict[sample_size] = [fpr, tpr]
 

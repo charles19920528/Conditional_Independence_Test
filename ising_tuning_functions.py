@@ -8,9 +8,10 @@ import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
+
 def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, max_epoch, number_of_test_samples,
-                         network_model_class, network_model_class_kwargs={}, learning_rate=hp.learning_rate,
-                         true_weights_dict=None, cut_off_radius=None):
+                           network_model_class, network_model_class_kwargs={}, learning_rate=hp.learning_rate,
+                           true_weights_dict=None, cut_off_radius=None):
     """
     Fit the neural network belongs to the {network_model_class} on {trial_index}th trial of data with sample size
     {sample_size} and record the losses and kl-divergence.
@@ -23,8 +24,8 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
         under the Ising or mixture model.
     :param max_epoch: An integer indicating the number of times training process pass through the data set.
     :param number_of_test_samples: An integer which is the number of samples used as validation set.
-    :param network_model_class: A subclass of tf.keras.Model with output dimension 3. This is the neural network to fit
-        on the data.
+    :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
+        neural network to fit on the data.
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
         network_model.
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
@@ -69,8 +70,8 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
 
 
 def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, number_of_test_samples_vet, max_epoch_vet,
-                trial_index_vet, result_dict_name, network_model_class_kwargs={}, sample_size_vet=hp.sample_size_vet,
-                learning_rate=hp.learning_rate, weights_or_radius_kwargs={}):
+                   trial_index_vet, result_dict_name, network_model_class_kwargs={}, sample_size_vet=hp.sample_size_vet,
+                   learning_rate=hp.learning_rate, weights_or_radius_kwargs={}):
     """
     A wrapper function uses multiprocess pool function to call the ising_tuning_one_trial functino on all data with
     sample size and trials specified by the arguments of the function.
@@ -106,7 +107,6 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, num
                                            network_model_class_kwargs=network_model_class_kwargs,
                                            learning_rate=learning_rate, **weights_or_radius_kwargs), trial_index_vet)
 
-
         result_dict[sample_size] = dict(pool_result_vet)
 
     with open(f"tuning/raw_result_dict/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
@@ -129,6 +129,8 @@ def optimal_epoch_kl_one_trial(trial_result_array):
     trial_kl_array = trial_result_array[2, :]
 
     return [np.argmin(trial_kl_array), np.min(trial_kl_array)]
+
+
 #    return [np.argmin(trial_kl_array) + 1, np.min(trial_kl_array)]
 
 
@@ -159,7 +161,8 @@ def optimal_epoch_kl_one_sample_size(sample_size, trial_index_vet, tuning_result
 def optimal_epoch_kl(pool, sample_size_vet, trial_index_vet, tuning_result_dict, raw_result_dict_name):
     """
     Extract the epoch which gives the minimum kl-divergence on the test set along with minimum kl-divergence for all
-    trials and sample size. The function will also print the mean and sd of the kl-divergence.
+    trials and sample size. The function will also print the mean and sd of the kl-divergence along with the median
+    optimal epochs for each sample size.
 
     :param pool:
     :param sample_size_vet:
@@ -174,13 +177,16 @@ def optimal_epoch_kl(pool, sample_size_vet, trial_index_vet, tuning_result_dict,
     optimal_epoch_kl_dict = dict(pool_result_vet)
 
     kl_vet = [optimal_epoch_kl_dict[sample_size][:, 2] for sample_size in sample_size_vet]
+    epoch_vet = [optimal_epoch_kl_dict[sample_size][:, 1] for sample_size in sample_size_vet]
 
     mean_kl_vet = np.array([np.mean(kl_array) for kl_array in kl_vet])
     sd_kl_vet = np.array([np.std(kl_array) for kl_array in kl_vet])
+    median_optimal_epoch_vet = np.array([np.median(epoch_array) for epoch_array in epoch_vet])
 
     print(f"Settings: {raw_result_dict_name}")
     print(f"Mean kls are {mean_kl_vet}")
     print(f"Std of kls are {sd_kl_vet}")
+    print(f"Median optimal epochs are {median_optimal_epoch_vet}")
 
     return optimal_epoch_kl_dict
 

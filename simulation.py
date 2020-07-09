@@ -5,7 +5,6 @@ import tensorflow as tf
 import os
 
 import simulation_functions as sf
-import generate_train_fucntions as gt
 import hyperparameters as hp
 
 pool = mp.Pool(processes=hp.process_number)
@@ -49,90 +48,24 @@ sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, sc
 sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq", cluster_number=2)
 
-
-####################
-# True Ising model #
-####################
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-start_time = time.time()
-
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
-                                       scenario="null", data_directory_name="ising_data",
-                                       ising_network_class=gt.IsingNetwork,
-                                       input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
-                                       scenario="alt", data_directory_name="ising_data",
-                                       ising_network_class=gt.IsingNetwork,
-                                       input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
-
-
-# Simulate when sample size is 100 using different test sample size.
-for number_of_test_samples in hp.number_of_test_samples_100_vet:
-    epoch_kl_dict_name = f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
-
-    sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
-                                           number_of_test_samples_vet=[number_of_test_samples],
-                                           scenario="null", data_directory_name="ising_data",
-                                           ising_network_class=gt.IsingNetwork,
-                                           input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-    sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
-                                           number_of_test_samples_vet=[number_of_test_samples],
-                                           scenario="alt", data_directory_name="ising_data",
-                                           ising_network_class=gt.IsingNetwork,
-                                           input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-#######################
-# General Ising Model #
-#######################
-# Ising data
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-start_time = time.time()
-
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
-                                       scenario="null", data_directory_name="ising_data",
-                                       ising_network_class=gt.FullyConnectedNetwork,
-                                       number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
-
-
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
-                                       scenario="alt", data_directory_name="ising_data",
-                                       ising_network_class=gt.FullyConnectedNetwork,
-                                       number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
-
-print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
-
-
+###############
+# Ising Model #
+###############
 # Mixture data
-epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
-
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
 start_time = time.time()
 
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="null",
-                                       data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
-                                       number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
-                                       learning_rate=hp.learning_rate_mixture)
+result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
 
-sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="alt",
-                                       data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
-                                       number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
-                                       input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
-                                       learning_rate=hp.learning_rate_mixture)
+mixture_network_model_class_kwargs = {"number_forward_layers": hp.mixture_number_forward_layer,
+                                           "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim, "output_dim": 3}
+mixture_ising_simulation_wrapper_kwargs = {}
 
-print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
+sf.simulation_loop(pool=pool, simulation_wrapper=sf.ising_simulation_wrapper, scenario="null",
+                   data_directory_name="mixture_data", result_dict_name=result_dict_name,
+                   epoch_vet=hp.mixture_epoch_vet, )
 
 
 ########
@@ -168,3 +101,103 @@ print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time)
 
 ccit_pool.close()
 ccit_pool.join()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# These simulation used the oracle optimal epoch. They are not in use now.
+####################
+# True Ising model #
+####################
+# np.random.seed(hp.seed_index)
+# tf.random.set_seed(hp.seed_index)
+#
+# start_time = time.time()
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
+#                                        scenario="null", data_directory_name="ising_data",
+#                                        ising_network_class=gt.IsingNetwork,
+#                                        input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_true_rate_{hp.learning_rate}",
+#                                        scenario="alt", data_directory_name="ising_data",
+#                                        ising_network_class=gt.IsingNetwork,
+#                                        input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+#
+# print("Ising simulation takes %s seconds to finish." % (time.time() - start_time))
+
+
+# Simulate when sample size is 100 using different test sample size.
+# for number_of_test_samples in hp.number_of_test_samples_100_vet:
+#     epoch_kl_dict_name = f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
+#
+#     sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
+#                                            number_of_test_samples_vet=[number_of_test_samples],
+#                                            scenario="null", data_directory_name="ising_data",
+#                                            ising_network_class=gt.IsingNetwork,
+#                                            input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+#
+#     sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, sample_size_vet=[100],
+#                                            number_of_test_samples_vet=[number_of_test_samples],
+#                                            scenario="alt", data_directory_name="ising_data",
+#                                            ising_network_class=gt.IsingNetwork,
+#                                            input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
+
+
+#######################
+# General Ising Model #
+#######################
+# Ising data
+# np.random.seed(hp.seed_index)
+# tf.random.set_seed(hp.seed_index)
+#
+# start_time = time.time()
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
+#                                        scenario="null", data_directory_name="ising_data",
+#                                        ising_network_class=gt.FullyConnectedNetwork,
+#                                        number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
+#                                        input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
+#
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
+#                                        scenario="alt", data_directory_name="ising_data",
+#                                        ising_network_class=gt.FullyConnectedNetwork,
+#                                        number_forward_elu_layers=hp.wrong_number_forward_elu_layer,
+#                                        input_dim=hp.dim_z, hidden_dim=hp.wrong_hidden_dim, output_dim=3)
+#
+# print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))
+
+
+# Mixture data
+# epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
+#
+# np.random.seed(hp.seed_index)
+# tf.random.set_seed(hp.seed_index)
+#
+# start_time = time.time()
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="null",
+#                                        data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
+#                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
+#                                        input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
+#                                        learning_rate=hp.learning_rate_mixture)
+#
+# sf.simulation_loop_ising_optimal_epoch(pool=pool, epoch_kl_dict_name=epoch_kl_dict_name, scenario="alt",
+#                                        data_directory_name="mixture_data", ising_network_class=gt.FullyConnectedNetwork,
+#                                        number_forward_elu_layers=hp.mixture_number_forward_elu_layer,
+#                                        input_dim=hp.dim_z, hidden_dim=hp.mixture_hidden_dim, output_dim=3,
+#                                        learning_rate=hp.learning_rate_mixture)
+#
+# print("Misspecified Ising simulation takes %s seconds to finish." % (time.time() - start_time))

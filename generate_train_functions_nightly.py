@@ -311,8 +311,8 @@ class NetworkTrainingTuning:
             This is the data we condition on.
         :param x_y_mat: an n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
             This the response.
-        :param network_model: A subclass of tf.keras.Model with output dimension 3. This is the neural network to fit on
-            the data.
+        :param network_model: A instance of a subclass of tf.keras.Model with output dimension 3. This is the neural
+            network to fit on the data.
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: An integer which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
         :param batch_size: An integer which is a (hyper)parameter in the tf.data.Dataset.batch function.
@@ -457,8 +457,9 @@ class NetworkTrainingTuning:
         :param number_of_test_samples: An integer which is the number of samples used as validation set.
 
         :return:
-            jxy_squared_mean: A scalar which is the test statistic computed on partial data(test data).
-            test_indices_vet: An array containing indices of samples which are used as validation set.
+            result_dict: A dictionary. result_dict["test_statistic] is a scalar which is the test statistic computed on
+            partial data(test data).
+            result_dict["test_indices_vet"] is an array containing indices of samples which are used as validation set.
         """
         # Prepare training and test data.
         train_array_tuple, test_array_tuple, test_indices_vet = self.train_test_split(number_of_test_samples=
@@ -483,8 +484,8 @@ class NetworkTrainingTuning:
         jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
         jxy_squared_mean = np.mean(jxy_squared_vet)
 
-
-        return jxy_squared_mean, test_indices_vet
+        result_dict = {"test_statistic": jxy_squared_mean, "test_indices_vet": test_indices_vet}
+        return result_dict
 
 
 #####################################################

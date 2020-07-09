@@ -17,7 +17,7 @@ null_cut_off_radius = hp.null_cut_off_radius
 alt_cut_off_radius = hp.alt_cut_off_radius
 
 for sample_size in hp.sample_size_vet:
-    for trail_index in np.arange(hp.number_of_trails):
+    for trail_index in np.arange(hp.number_of_trials):
         z_mat = tf.random.normal(mean=0, stddev=1, shape=(sample_size, hp.dim_z))
 
         # H0
@@ -44,7 +44,7 @@ np.random.seed(seed_index)
 weights_dict = dict()
 for sample_size in hp.sample_size_vet:
     sample_size_weight_dict = dict()
-    for i in range(hp.number_of_trails):
+    for i in range(hp.number_of_trials):
         # Generate z_mat
         centers = [np.repeat(0.5, 3), np.repeat(-0.5, 3)]
         z_mat = make_blobs(n_samples=sample_size, centers=centers)[0]
@@ -68,7 +68,7 @@ with open("data/ising_data/weights_dict.p", "wb") as fp:
 
 # Following code is kept for the debugging purpose. It is not longer in use.
 # for sample_size in hp.sample_size_vet:
-#     for trail_index in np.arange(hp.number_of_trails):
+#     for trail_index in np.arange(hp.number_of_trials):
 #         z_mat = tf.random.normal(mean=0, stddev=1, shape=(sample_size, hp.dim_z))
 #         null_less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < \
 #                                          null_cut_off_radius
