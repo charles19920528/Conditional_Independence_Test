@@ -11,26 +11,26 @@ pool = mp.Pool(processes=hp.process_number)
 # Analayze the Naive Chi Squared #
 ##################################
 # Ising data
-with open('results/result_dict/ising_data/naive_chisq_result_null_dict.p', 'rb') as fp:
-    naive_chisq_result_null_dict = pickle.load(fp)
-with open('results/result_dict/ising_data/naive_chisq_result_alt_dict.p', 'rb') as fp:
-    naive_chisq_result_alt_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/naive_chisq_null_result_dict.p', 'rb') as fp:
+    naive_chisq_null_result_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/naive_chisq_alt_result_dict.p', 'rb') as fp:
+    naive_chisq_alt_result_dict = pickle.load(fp)
 
-naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_result_null_dict,
-                                      alt_result_dict=naive_chisq_result_alt_dict,
-                                      test_statistic_one_trail=ra.naive_sq_statistic_one_trail, isPvalue=False)
+naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_null_result_dict,
+                                      alt_result_dict=naive_chisq_alt_result_dict,
+                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial, isPvalue=False)
 
 ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "ising_data")
 
 # Mixture data
-with open('results/result_dict/mixture_data/naive_chisq_result_null_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/naive_chisq_null_result_dict.p', 'rb') as fp:
     naive_chisq_result_null_dict = pickle.load(fp)
-with open('results/result_dict/mixture_data/naive_chisq_result_alt_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/naive_chisq_alt_result_dict.p', 'rb') as fp:
     naive_chisq_result_alt_dict = pickle.load(fp)
 
 naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_result_null_dict,
                                       alt_result_dict=naive_chisq_result_alt_dict,
-                                      test_statistic_one_trail=ra.naive_sq_statistic_one_trail, isPvalue=False)
+                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial, isPvalue=False)
 
 ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "mixture_data")
 
@@ -39,26 +39,26 @@ ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "mixture_data")
 # Analyze the stratified Chi Squared #
 ######################################
 # Ising data
-with open('results/result_dict/ising_data/stratified_chisq_result_null_dict.p', 'rb') as fp:
+with open('results/result_dict/ising_data/stratified_chisq_null_result_dict.p', 'rb') as fp:
     stratified_chisq_result_null_dict = pickle.load(fp)
-with open('results/result_dict/ising_data/stratified_chisq_result_alt_dict.p', 'rb') as fp:
+with open('results/result_dict/ising_data/stratified_chisq_alt_result_dict.p', 'rb') as fp:
     stratified_chisq_result_alt_dict = pickle.load(fp)
 
 stratified_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=stratified_chisq_result_null_dict,
                                            alt_result_dict=stratified_chisq_result_alt_dict,
-                                           test_statistic_one_trail=ra.stratified_sq_statistic_one_trail)
+                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial)
 
 ra.plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq", "ising_data")
 
 # Mixture data
-with open('results/result_dict/mixture_data/stratified_chisq_result_null_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/stratified_chisq_null_result_dict.p', 'rb') as fp:
     stratified_chisq_result_null_dict = pickle.load(fp)
-with open('results/result_dict/mixture_data/stratified_chisq_result_alt_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/stratified_chisq_alt_result_dict.p', 'rb') as fp:
     stratified_chisq_result_alt_dict = pickle.load(fp)
 
 stratified_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=stratified_chisq_result_null_dict,
                                            alt_result_dict=stratified_chisq_result_alt_dict,
-                                           test_statistic_one_trail=ra.stratified_sq_statistic_one_trail)
+                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial)
 
 ra.plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq", "mixture_data")
 
@@ -73,7 +73,7 @@ with open('results/result_dict/ising_data/ising_true_rate_0.01_result_alt_dict.p
 
 ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
                                 alt_result_dict=ising_true_result_alt_dict,
-                                test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+                                test_statistic_one_trial=ra.ising_test_statistic_one_trial)
 
 ra.plot_roc(ising_fpr_tpr_dict, "True Ising Model, Rate: 0.01", "ising_data")
 
@@ -89,7 +89,7 @@ for i, number_of_test_samples in enumerate(hp.number_of_test_samples_100_vet):
 
     ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
                                     alt_result_dict=ising_true_result_alt_dict,
-                                    test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+                                    test_statistic_one_trial=ra.ising_test_statistic_one_trial)
 
 
     sample_size = 100
@@ -110,7 +110,7 @@ with open('results/result_dict/ising_data/ising_wrong_rate_0.01_result_alt_dict.
 
 misspecified_ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=misspecified_ising_result_null_dict,
                                              alt_result_dict=misspecified_ising_result_alt_dict,
-                                             test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+                                             test_statistic_one_trial=ra.ising_test_statistic_one_trial)
 
 ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified Ising Model, Rate: 0.01", "ising_data")
 
@@ -118,18 +118,18 @@ ra.plot_roc(misspecified_ising_fpr_tpr_dict, "Misspecified Ising Model, Rate: 0.
 ######################################################
 # Analyze the Ising model fitted on the mixture data #
 ######################################################
-epoch_kl_dict_name = f"mixture_{hp.mixture_number_forward_elu_layer}_{hp.mixture_hidden_dim}_{hp.learning_rate_mixture}"
+result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}"
 
-with open(f'results/result_dict/mixture_data/{epoch_kl_dict_name}_result_null_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/{result_dict_name }_null_result_dict.p', 'rb') as fp:
     ising_optimal_epoch_result_null_dict = pickle.load(fp)
-with open(f'results/result_dict/mixture_data/{epoch_kl_dict_name}_result_alt_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/{result_dict_name }_alt_result_dict.p', 'rb') as fp:
     ising_optimal_epoch_result_alt_dict = pickle.load(fp)
 
 ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_optimal_epoch_result_null_dict,
                                 alt_result_dict=ising_optimal_epoch_result_alt_dict,
-                                test_statistic_one_trail=ra.ising_test_statistic_one_trial)
+                                test_statistic_one_trial=ra.ising_test_statistic_one_trial)
 
-ra.plot_roc(ising_fpr_tpr_dict, epoch_kl_dict_name, "mixture_data")
+ra.plot_roc(ising_fpr_tpr_dict, result_dict_name, "mixture_data")
 
 
 ####################
@@ -142,7 +142,7 @@ with open('results/result_dict/ising_data/ccit_result_alt_dict.p', 'rb') as fp:
     ccit_result_alt_dict = pickle.load(fp)
 
 ccit_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ccit_result_null_dict, alt_result_dict=ccit_result_alt_dict,
-                               test_statistic_one_trail=ra.ccit_one_trail)
+                               test_statistic_one_trial=ra.ccit_one_trial)
 
 ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "ising_data")
 
@@ -153,6 +153,6 @@ with open('results/result_dict/mixture_data/ccit_result_alt_dict.p', 'rb') as fp
     ccit_result_alt_dict = pickle.load(fp)
 
 ccit_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ccit_result_null_dict, alt_result_dict=ccit_result_alt_dict,
-                               test_statistic_one_trail=ra.ccit_one_trail)
+                               test_statistic_one_trial=ra.ccit_one_trial)
 
 ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")

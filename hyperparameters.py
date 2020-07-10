@@ -30,7 +30,7 @@ alt_cut_off_radius = 0.8875 * np.sqrt(dim_z)
 hidden_1_out_dim = 3
 
 # Training epochs for samples sizes in the sample_size_vet
-epoch_vet = np.array([250, 250, 100, 90])
+ising_epoch_vet = np.array([250, 250, 100, 90])
 mixture_epoch_vet = np.array([76, 71, 130, 93])
 
 # buffer size for Tensorflow dataset.
@@ -46,7 +46,7 @@ learning_rate_mixture = 0.01
 ###############################
 # Misspecified neural network #
 ###############################
-wrong_number_forward_elu_layer = 2
+wrong_number_forward_layer = 2
 wrong_hidden_dim=2
 
 
@@ -54,15 +54,13 @@ wrong_hidden_dim=2
 # Architecture on the mixture data #
 ####################################
 mixture_number_forward_layer = 1
-mixture_hidden_dim = 150
+mixture_hidden_dim = 200
 
 
 ############
 # Training #
 ############
 number_of_test_samples_vet = [5, 10, 50, 100]
-number_of_test_samples_100_vet = [10, 15, 20, 30]
-
 
 ################
 # Multiprocess #

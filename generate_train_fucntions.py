@@ -320,7 +320,7 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
 #########################################
 class IsingTrainingTuning:
     def __init__(self, z_mat, x_y_mat, ising_network, learning_rate=hp.learning_rate,
-                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, max_epoch=250):
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, epoch=250):
         """
         Create a class which can generate data and train a network. It is used to get training oracle information
         such as training epoch.
@@ -338,7 +338,7 @@ class IsingTrainingTuning:
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.max_epoch = max_epoch
+        self.epoch = epoch
 
 
     def train_test_split(self, number_of_test_samples):
@@ -425,12 +425,12 @@ class IsingTrainingTuning:
             true_test_p_mat = pmf_collection(parameter_mat=true_test_parameter_mat)
 
         # Prepare storage for results.
-        loss_kl_array = np.zeros((3, self.max_epoch))
+        loss_kl_array = np.zeros((3, self.epoch))
         result_dict = dict()
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         iteration = 0
-        while iteration < self.max_epoch:
+        while iteration < self.epoch:
 
             # print(f"start training epoch {iteration}")
             # Training loop.
@@ -491,7 +491,7 @@ class IsingTrainingTuning:
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         iteration = 0
-        while iteration < self.max_epoch:
+        while iteration < self.epoch:
             # Training loop.
             for z_batch, x_y_batch in train_ds:
                 with tf.GradientTape() as tape:

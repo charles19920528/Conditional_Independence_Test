@@ -15,12 +15,11 @@ import generate_train_functions_nightly as gt
 import hyperparameters as hp
 
 
-
 ####################
 # Simulation loops #
 ####################
-def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, result_dict_name,
-                    sample_size_vet=hp.sample_size_vet):
+def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, result_dict_name, trial_index_vet,
+                    sample_size_vet=hp.sample_size_vet, **kwargs):
     """
     A wrap up function for the simulation loop using the multiprocessing Pool function. The function will
     save the result dictionary in a pickle file under ./results/{result_dict_name}_result_{scenario}_dict.p.
@@ -29,17 +28,13 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
     :param simulation_wrapper: A function which should one of the wrapper functions defined below except for the
         ising_simulation_wrapper.
     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
-    under the null or alternative hypothesis.
+        under the null or alternative hypothesis.
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param result_dict_name:  A string ('str' class) which we use to name the result dictionary as
-    {result_dict_name}_result_{scenario}_dict.
+        {data_directory_name}/{result_dict_name}_{scenario}_result_dict.p.
+    :param trial_index_vet: An array of integers which contains the trial indices of data used.
     :param sample_size_vet: A python list of integers. It contains all the sample size we simulated.
-    :param number_of_trials: An integer which is the number of trials we simulate for each sample size
-    :param epoch_vet: A python list of integers. It provides the training epoch, if simulation wrapper is the
-    ising_simulation_wrapper,
-    :param process_number: An integer. It is the argument of the Pool function telling us the number of workers.
-    :param **kwargs: Keyword arguments to be passed in to the ising_simulation_wrapper when simulation_wrapper is
-        ising_simulation_wrapper. See the documentation of ising_simulation_wrapper for additional details.
+    :param **kwargs: Additional keywords arguments to pass into the simulation_wrapper if necessary.
 
     :return:
         None.
@@ -47,13 +42,8 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
     result_dict = dict()
 
     for sample_size in sample_size_vet:
-        trial_index_vet = range(number_of_trials)
-        if simulation_wrapper == ising_simulation_wrapper and ising_simulation_wrapper_kwargs == {}:
-            sys.exit("ising_simulation_wrapper_kwargs is not supplied while running the simulation of Ising Model.")
-        else:
-            pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
-                                               data_directory_name=data_directory_name,
-                                               **ising_simulation_wrapper_kwargs), trial_index_vet)
+        pool_result_vet = pool.map(partial(simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                           data_directory_name=data_directory_name, **kwargs), trial_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
@@ -63,11 +53,27 @@ def simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, res
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def ising_simulation_loop(pool, simulation_wrapper, scenario, data_directory_name, result_dict_name,
-                    sample_size_vet=hp.sample_size_vet, number_of_trials=hp.number_of_trials,
-                    epoch_vet=hp.epoch_vet, ising_simulation_wrapper_kwargs={}):
+def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name, trial_index_vet, network_model_class,
+                          network_model_class_kwargs_vet, epoch_vet, learning_rate, sample_size_vet=hp.sample_size_vet,
+                          number_of_test_samples_vet=hp.number_of_test_samples_vet):
+    result_dict = dict()
 
+    for sample_size, number_of_test_samples, epoch, network_model_class_kwargs in zip(sample_size_vet,
+                                                                                      number_of_test_samples_vet,
+                                                                                      epoch_vet,
+                                                                                      network_model_class_kwargs_vet):
+        pool_result_vet = pool.map(partial(ising_simulation_wrapper, sample_size=sample_size, scenario=scenario,
+                                           data_directory_name=data_directory_name, epoch=epoch,
+                                           network_model_class=network_model_class,
+                                           number_of_test_samples=number_of_test_samples, learning_rate=learning_rate,
+                                           network_model_class_kwargs=network_model_class_kwargs), trial_index_vet)
 
+        result_dict[sample_size] = dict(pool_result_vet)
+
+        print(f"{result_dict_name}, {scenario}, sample size: {sample_size} finished")
+
+    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # def simulation_loop_ising_optimal_epoch(pool, epoch_kl_dict_name, scenario, data_directory_name,
@@ -97,13 +103,11 @@ def ising_simulation_loop(pool, simulation_wrapper, scenario, data_directory_nam
 #         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-
-
 #####################
 # Wrapper functions #
 #####################
 # Ising simulation
-def ising_simulation_wrapper(trial_index, sample_size, scenario, data_directory_name, max_epoch, network_model_class,
+def ising_simulation_wrapper(trial_index, sample_size, scenario, data_directory_name, epoch, network_model_class,
                              number_of_test_samples, learning_rate=hp.learning_rate, network_model_class_kwargs={}):
     """
     A wrapper function for the multiprocessing Pool function. It will be passed into the simulation_loop function.
@@ -111,13 +115,14 @@ def ising_simulation_wrapper(trial_index, sample_size, scenario, data_directory_
     on {trial_index}th trial with sample size {sample_size} under the {scenario} hypothesis.
     The tuple returned return will be used to create a dictionary.
 
+    :param data_directory_name:
     :param trial_index: An integer indicating the data is the {trial_index}th trial of sample size {sample_size}.
     :param sample_size: An integer indicating the sample size of the data.
     :param scenario: It should either be "null" or "alt" depending on if the data is generated under the null or
         alternative.
     param data_directory_name: It should either be "ising_data" or "mixture_data" depending on if the data is generated
         under the Ising or mixture model.
-    :param max_epoch: An integer indicating the number of training epoch when training the neural network.
+    :param epoch: An integer indicating the number of training epoch when training the neural network.
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
         neural network to fit on the data.
     :param number_of_test_samples: An integer which is the number of samples used as the test data.
@@ -133,12 +138,12 @@ def ising_simulation_wrapper(trial_index, sample_size, scenario, data_directory_
 
     network_model = network_model_class(**network_model_class_kwargs)
     training_tuning_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, network_model=network_model,
-                                                        learning_rate=learning_rate, max_epoch=max_epoch)
+                                                        learning_rate=learning_rate, epoch=epoch)
 
     result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
-                                                                         number_of_test_samples=number_of_test_samples)
+                                                                        number_of_test_samples=number_of_test_samples)
 
-    print(f"{scenario}: Sample size {sample_size} simulation {trial_index} is done.")
+    print(f"{scenario}: Sample size {sample_size} trial {trial_index} is done.")
 
     return (trial_index, result_dict)
 
@@ -289,4 +294,3 @@ def ccit_wrapper(trial_index, scenario, data_directory_name, sample_size, **kwar
     print(f"{scenario}: Sample size {sample_size} simulation {trial_index} is done.")
 
     return (trial_index, p_value)
-

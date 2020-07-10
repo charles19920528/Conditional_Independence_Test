@@ -13,20 +13,23 @@ import hyperparameters as hp
 
 
 #####################################
-# Get test statistic for one trail. #
+# Get test statistic for one trial. #
 #####################################
-# Method specific functions to bbtain test statistic for one trial.
-def ising_test_statistic_one_trial(trail_index, one_sample_size_result_dict):
+def ising_pvalue_one_trial(tr):
+    pass
+
+# Method specific functions to obtain test statistic for one trial.
+def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
 
-    :param trail_index:
+    :param trial_index:
     :param one_sample_size_result_dict:
     :return:
     """
     # """
-    # Calculate the average of squared Jxy in one trail.
+    # Calculate the average of squared Jxy in one trial.
     #
-    # :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    # :param trial_index: An integer indicating the index of the simulation trial of which we extract the test statistic.
     # :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
     # a particular sample size.
     #
@@ -34,19 +37,19 @@ def ising_test_statistic_one_trial(trail_index, one_sample_size_result_dict):
     # jxy_squared_mean: An scalar which is the average of squared Jxy..
     # """
 
-    # jxy_squared_vet = np.square(one_sample_size_result_dict[trail_index][:, 2])
+    # jxy_squared_vet = np.square(one_sample_size_result_dict[trial_index][:, 2])
     # jxy_squared_mean = np.mean(jxy_squared_vet)
 
 
     # return jxy_squared_mean
-    return one_sample_size_result_dict[trail_index]["test_statistic"]
+    return one_sample_size_result_dict[trial_index]["test_statistic"]
 
 
-def naive_sq_statistic_one_trail(trail_index, one_sample_size_result_dict, isPvalue):
+def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue):
     """
     Obtain either p-value or Chi squared statistic of the Naive Chi square test.
 
-    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    :param trial_index: An integer indicating the index of the simulation trial of which we extract the test statistic.
     :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
     a particular sample size.
 
@@ -54,33 +57,33 @@ def naive_sq_statistic_one_trail(trail_index, one_sample_size_result_dict, isPva
     A scalar. If isPvalue is true, return a scalar between 0 and 1. Otherwise, return a postive scalar.
     """
     if isPvalue:
-        pvalue = one_sample_size_result_dict[trail_index][1]
+        pvalue = one_sample_size_result_dict[trial_index][1]
         return pvalue
     else:
-        chisq_statistic = one_sample_size_result_dict[trail_index][0]
+        chisq_statistic = one_sample_size_result_dict[trial_index][0]
         return chisq_statistic
 
 
-def stratified_sq_statistic_one_trail(trail_index, one_sample_size_result_dict):
+def stratified_sq_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
     Obtain the sum of the test statistic of the stratified Chi Squared test.
 
-    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    :param trial_index: An integer indicating the index of the simulation trial of which we extract the test statistic.
     :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
     a particular sample size.
 
     :return:
     test_statistic: A positive scalar.
     """
-    test_statistic = one_sample_size_result_dict[trail_index]
+    test_statistic = one_sample_size_result_dict[trial_index]
     return test_statistic
 
 
-def ccit_one_trail(trail_index, one_sample_size_result_dict):
+def ccit_one_trial(trial_index, one_sample_size_result_dict):
     """
     Obatin the sum of the test statistic of the CCIT test.
 
-    :param trail_index: An integer indicating the index of the simulation trail of which we extract the test statistic.
+    :param trial_index: An integer indicating the index of the simulation trial of which we extract the test statistic.
     :param one_sample_size_result_dict: A dictionary which contains all results of the simulation of the Ising model for
     a particular sample size.
 
@@ -88,16 +91,16 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
     test_statistic: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
     classified.
     """
-    test_statistic = 1 - one_sample_size_result_dict[trail_index]
+    test_statistic = 1 - one_sample_size_result_dict[trial_index]
     return test_statistic
 
 
-# def ising_residual_statistic_one_trail(trail_index, sample_size, scenario, data_directory_name,
+# def ising_residual_statistic_one_trial(trial_index, sample_size, scenario, data_directory_name,
 #                                        one_sample_size_result_dict):
 #     """
-#     Obatin the residual test statistic of the Ising model for one trail.
+#     Obatin the residual test statistic of the Ising model for one trial.
 #
-#     :param trail_index: An integer indicating the index of the simulation trail of which we extract the test
+#     :param trial_index: An integer indicating the index of the simulation trial of which we extract the test
 #     statistic.
 #     :param sample_size: An integer which is the sample size corresponding to the one_sample_size_result_dict.
 #     :param scenario: A string ('str' class) which is either "null" or "alt" indicating if the sample is simulated
@@ -110,13 +113,13 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
 #     test_statistic: A positive scalar between 0 and 1 representing the percentage of samples which are correctly
 #     classified.
 #     """
-#     parameter_mat = one_sample_size_result_dict[trail_index]
+#     parameter_mat = one_sample_size_result_dict[trial_index]
 #     pmf_mat = gt.pmf_null(x=1, hx=parameter_mat)
 #     expectation_mat = pmf_mat - (1 - pmf_mat)
 #     expectation_x_vet = expectation_mat[:, 0]
 #     expectation_y_vet = expectation_mat[:, 1]
 #
-#     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+#     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
 #                          dtype=np.float32)
 #     centered_x_vet = x_y_mat[:, 0] - expectation_x_vet
 #     centered_y_vet = x_y_mat[:, 1] - expectation_y_vet
@@ -134,9 +137,9 @@ def ccit_one_trail(trail_index, one_sample_size_result_dict):
 ################################################################
 # Shared functions to obtain fpr, tpr.
 def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_sample_size_alt_result_dict,
-                                   number_of_trials, test_statistic_one_trail, **kwargs):
+                                   number_of_trials, test_statistic_one_trial, **kwargs):
     """
-    Apply test_statistic_one_trail function to each result dictionary of a particular sample size to obtain test
+    Apply test_statistic_one_trial function to each result dictionary of a particular sample size to obtain test
     statistics for all trials.
 
     :param
@@ -145,24 +148,24 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
     :param one_sample_size_alt_result_dict: A dictionary containing the raw outputs simulated under the
     alternative given a particular sample size.
     :param number_of_trials:
-    :param test_statistic_one_trail: A function which extract the test statistic for one trail. It should be one of the
+    :param test_statistic_one_trial: A function which extract the test statistic for one trial. It should be one of the
     functions defined above.
-    :param kwargs: Other named arguments to be passed into the test_statistic_one_trail function. 
+    :param kwargs: Other named arguments to be passed into the test_statistic_one_trial function.
 
     :return:
     """
-    trail_index_vet = range(number_of_trials)
+    trial_index_vet = range(number_of_trials)
 
 
 
-    null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+    null_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trial,
                                                           one_sample_size_result_dict=
                                                           one_sample_size_null_result_dict, **kwargs),
-                                                  trail_index_vet)
-    alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trail,
+                                                  trial_index_vet)
+    alt_test_statistic_vet_one_sample = pool.map(partial(test_statistic_one_trial,
                                                          one_sample_size_result_dict=
                                                          one_sample_size_alt_result_dict, **kwargs, ),
-                                                     trail_index_vet)
+                                                     trial_index_vet)
 
     return null_test_statistic_vet_one_sample, alt_test_statistic_vet_one_sample
 
@@ -187,7 +190,7 @@ def fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_tria
     return fpr, tpr
 
 
-def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, number_of_trials=hp.number_of_trials,
+def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, number_of_trials=hp.number_of_trials,
             **kwargs):
     """
     A wrapper function which compute fpr and tpr for simulations of different samples sizes.
@@ -195,7 +198,7 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, n
     :param pool:
     :param null_result_dict:
     :param alt_result_dict:
-    :param test_statistic_one_trail:
+    :param test_statistic_one_trial:
     :param number_of_trials:
     :param kwargs:
 
@@ -213,8 +216,8 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trail, n
                                                                               one_sample_size_alt_result_dict=
                                                                               one_sample_size_alt_result_dict,
                                                                               number_of_trials=number_of_trials,
-                                                                              test_statistic_one_trail=
-                                                                              test_statistic_one_trail, **kwargs)
+                                                                              test_statistic_one_trial=
+                                                                              test_statistic_one_trial, **kwargs)
 
         fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, number_of_trials)
 
@@ -240,7 +243,7 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
     None
     """
     fig, ax = plt.subplots(2, 2)
-    sample_size = 30
+    sample_size = 50
     ax[0, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
 #    ax[0, 0].axvline(x=0.05, color="red")
     ax[0, 0].set_title(f"Sample size {sample_size}")

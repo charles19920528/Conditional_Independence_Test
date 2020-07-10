@@ -68,14 +68,14 @@ kl_divergence = gt.kl_divergence_ising(true_parameter_mat=null_parameter_mat, pr
 data_directory_name = "mixture_data"
 scenario = "null"
 sample_size = 30
-trail_index = 10
+trial_index = 10
 
-x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trail_index}.txt",
+x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
                      dtype=np.float32)
-z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trail_index}.txt", dtype=np.float32)
+z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
 network_tt_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, network_model=alt_ising_network,
-                                               max_epoch=21)
+                                               epoch=21)
 loss_kl_array = network_tt_instance.tuning(print_loss_boolean=True, is_null_boolean=True, number_of_test_samples=5,
                                            cut_off_radius=hp.null_cut_off_radius)
 test_statistic = network_tt_instance.train_compute_test_statistic(print_loss_boolean=True, number_of_test_samples=5)

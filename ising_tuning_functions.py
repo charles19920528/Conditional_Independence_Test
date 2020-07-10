@@ -9,7 +9,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, max_epoch, number_of_test_samples,
+def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, number_of_test_samples,
                            network_model_class, network_model_class_kwargs={}, learning_rate=hp.learning_rate,
                            true_weights_dict=None, cut_off_radius=None):
     """
@@ -22,7 +22,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
         alternative.
     :param data_directory_name: It should either be "ising_data" or "mixture_data" depending on if the data is generated
         under the Ising or mixture model.
-    :param max_epoch: An integer indicating the number of times training process pass through the data set.
+    :param epoch: An integer indicating the number of times training process pass through the data set.
     :param number_of_test_samples: An integer which is the number of samples used as validation set.
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
         neural network to fit on the data.
@@ -47,7 +47,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
 
     network_instance = network_model_class(**network_model_class_kwargs)
     network_train_tune_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, network_model=network_instance,
-                                                           max_epoch=max_epoch, learning_rate=learning_rate)
+                                                           epoch=epoch, learning_rate=learning_rate)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
     is_null_boolean = False
@@ -69,7 +69,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     return (trial_index, loss_kl_array)
 
 
-def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, number_of_test_samples_vet, max_epoch_vet,
+def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, number_of_test_samples_vet, epoch_vet,
                    trial_index_vet, result_dict_name, network_model_class_kwargs={}, sample_size_vet=hp.sample_size_vet,
                    learning_rate=hp.learning_rate, weights_or_radius_kwargs={}):
     """
@@ -84,7 +84,7 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, num
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. This is the neural network to fit
         on the data.
     :param number_of_test_samples_vet: An array of integers which contains the sample size of data used.
-    :param max_epoch_vet: An array of integers. It should have the same length as the sample_size_vet does.
+    :param epoch_vet: An array of integers. It should have the same length as the sample_size_vet does.
     :param trial_index_vet: An array of integers which contains the trial indices of data used.
     :param result_dict_name: A string ('str' class). The name of the result dictionary.
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
@@ -98,10 +98,10 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, num
         containing the loss_kl_array of each trial.
     """
     result_dict = dict()
-    for sample_size, max_epoch, number_of_test_samples in zip(sample_size_vet, max_epoch_vet,
+    for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet,
                                                               number_of_test_samples_vet):
         pool_result_vet = pool.map(partial(ising_tuning_one_trial, scenario=scenario, sample_size=sample_size,
-                                           data_directory_name=data_directory_name, max_epoch=max_epoch,
+                                           data_directory_name=data_directory_name, epoch=epoch,
                                            number_of_test_samples=number_of_test_samples,
                                            network_model_class=network_model_class,
                                            network_model_class_kwargs=network_model_class_kwargs,

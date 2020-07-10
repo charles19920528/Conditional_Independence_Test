@@ -303,7 +303,7 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
 #########################################
 class NetworkTrainingTuning:
     def __init__(self, z_mat, x_y_mat, network_model, learning_rate=hp.learning_rate,
-                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, max_epoch=250):
+                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, epoch=250):
         """
         Create a class which can be used to get optimal oracle training information such as training epoch.
 
@@ -316,7 +316,7 @@ class NetworkTrainingTuning:
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: An integer which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
         :param batch_size: An integer which is a (hyper)parameter in the tf.data.Dataset.batch function.
-        :param max_epoch: An integer indicating the number of times training process pass through the data set.
+        :param epoch: An integer indicating the number of times training process pass through the data set.
         """
         self.z_mat = z_mat
         self.x_y_mat = x_y_mat
@@ -325,7 +325,7 @@ class NetworkTrainingTuning:
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.max_epoch = max_epoch
+        self.epoch = epoch
 
 
     def train_test_split(self, number_of_test_samples):
@@ -388,7 +388,7 @@ class NetworkTrainingTuning:
             Ising network.
 
         :return:
-        loss_kl_array: A 3 by self.max_epoch numpy array of which the first row stores the (- 2 * LogLikelihood),
+        loss_kl_array: A 3 by self.epoch numpy array of which the first row stores the (- 2 * LogLikelihood),
             the second row stores the (- 2 * LogLikelihood) on the test set;
             and the third row stores the kl divergence on the test data.
         """
@@ -419,12 +419,12 @@ class NetworkTrainingTuning:
             true_test_p_mat = pmf_collection(parameter_mat=true_test_parameter_mat)
 
         # Prepare for the training.
-        loss_kl_array = np.zeros((3, self.max_epoch))
+        loss_kl_array = np.zeros((3, self.epoch))
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         kl = tf.keras.losses.KLDivergence(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
 
         epoch = 0
-        while epoch < self.max_epoch:
+        while epoch < self.epoch:
             loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer)
 
             # Compute likelihood and kl on test data.
@@ -470,7 +470,7 @@ class NetworkTrainingTuning:
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         epoch = 0
-        while epoch < self.max_epoch:
+        while epoch < self.epoch:
             # Training loop.
             loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer)
 
