@@ -239,39 +239,6 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
 ##################################
 # Functions for parameter tuning #
 ##################################
-# The kl_divergence function is defunct. It replaced by tf.keras.losses.KLDivergence.
-# def kl_divergence(p_mat_true, p_mat_predicted, isAverage):
-#     """
-#     Compute the KL divergence between two discrete distribution. KL(True distribution,
-#     Fitted distribution) (/ n). See Wikipedia for detail description.
-#
-#     :param p_mat_true: An n x p numpy array. n is the sample size and p is the number of values in the support.
-#     This is the matrix containing the pmf of the true distribution.
-#     :param p_mat_predicted: An n x p numpy array. n is the sample size and p is the number of values in the
-#     support. This is the matrix containing the pmf of the fitted distribution.
-#     :param isAverage: a boolean value. If it is true, then the function will return the average kl divergence of the
-#     sample. Otherwise, it will return the kl divergence between distribiutions for each sample (Z)_.
-#
-#     :return:
-#     kl_divergence_scalr: a scalar. Or kl_divergence_list: a list of length n.
-#     """
-#     assert p_mat_true.shape == p_mat_predicted.shape
-#
-#     none_zero_mass_boolean = p_mat_true != 0
-#
-#     kl_divergence_mat = np.zeros(p_mat_true.shape)
-#     kl_divergence_mat[none_zero_mass_boolean] = p_mat_true[none_zero_mass_boolean] * \
-#                                                 np.log(p_mat_true[none_zero_mass_boolean] /
-#                                                        p_mat_predicted[none_zero_mass_boolean])
-#     np.nan_to_num(x=kl_divergence_mat, copy=False, nan=2)
-#     if isAverage:
-#         kl_divergence_scalar = np.sum(kl_divergence_mat) / p_mat_true.shape[0]
-#         return kl_divergence_scalar
-#     else:
-#         kl_divergence_list = np.sum(kl_divergence_mat, axis=1)
-#         return kl_divergence_list
-
-
 def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
     """
     Compute the average or individual KL divergence between two sets of Ising models. KL(True distribution,
@@ -491,6 +458,7 @@ class NetworkTrainingTuning:
 #####################################################
 # Class for n layers fully connected neural network #
 #####################################################
+# This the neural network model we are going to use to fit on the data.
 class ForwardLayer(tf.keras.layers.Layer):
     def __init__(self, input_dim, hidden_dim):
         super(ForwardLayer, self).__init__()
@@ -537,11 +505,3 @@ class FullyConnectedNetwork(tf.keras.Model):
             output = self.final_linear(output)
 
         return output
-
-    # def dummy_run(self):
-    #     """
-    #     This method is to let python initialize the network and weights not just the computation graph.
-    #     :return: None.
-    #     """
-    #     dummy_z = tf.random.normal(shape=(1, self.input_dim), mean=0, stddev=1, dtype=tf.float32)
-    #     self(dummy_z)

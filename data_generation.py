@@ -65,26 +65,3 @@ for sample_size in hp.sample_size_vet:
 with open("data/ising_data/weights_dict.p", "wb") as fp:
     pickle.dump(weights_dict, fp, protocol = pickle.HIGHEST_PROTOCOL)
 
-
-# Following code is kept for the debugging purpose. It is not longer in use.
-# for sample_size in hp.sample_size_vet:
-#     for trial_index in np.arange(hp.number_of_trials):
-#         z_mat = tf.random.normal(mean=0, stddev=1, shape=(sample_size, hp.dim_z))
-#         null_less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < \
-#                                          null_cut_off_radius
-#         alt_less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < \
-#                                          alt_cut_off_radius
-#         # H0
-#         x_y_prime_mat = np.random.binomial(n=1, p=0.5, size=(sample_size, 2))
-#         null_x_y_mat = x_y_prime_mat * null_less_than_cut_off_boolean[:, np.newaxis]
-#         null_x_y_mat = 2 * null_x_y_mat - 1
-#
-#         # H1
-#         x_vet = 2 * np.random.binomial(n=1, p=0.5, size=(sample_size, 1)) - 1
-#         y_vet = np.copy(x_vet)
-#         y_vet[alt_less_than_cut_off_boolean] = y_vet[alt_less_than_cut_off_boolean] * (-1)
-#         alt_x_y_mat = np.hstack([x_vet, y_vet])
-#
-#         np.savetxt(f"./data/mixture_data/z_mat/z_mat_{sample_size}_{trial_index}.txt", z_mat)
-#         np.savetxt(f"./data/mixture_data/null/x_y_mat_{sample_size}_{trial_index}.txt", null_x_y_mat)
-#         np.savetxt(f"./data/mixture_data/alt/x_y_mat_{sample_size}_{trial_index}.txt", alt_x_y_mat)

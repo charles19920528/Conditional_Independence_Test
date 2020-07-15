@@ -49,13 +49,13 @@ for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_
 
 # Analysis results.
 for mixture_result_dict_name in mixture_result_dict_name_vet:
-    raw_result_dict_name = mixture_result_dict_name + "_alt"
-    it.process_plot_epoch_kl_raw_dict(pool=pool, raw_result_dict_name=raw_result_dict_name,
+    tuning_result_dict_name = mixture_result_dict_name + "_alt"
+    it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
                                       sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
 
-it.plot_loss_kl(scenario="alt", raw_result_dict_name=mixture_result_dict_name_vet[4], trial_index_vet=[0,10, 49, 60],
-                sample_size=1000, end_epoch=50, start_epoch=0,
-                 plot_train_loss=True, plot_kl=True, plot_test_loss=True)
+it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4], trial_index_vet=[0,10, 49, 60],
+                sample_size=1000, end_epoch=50, start_epoch=0, plot_train_loss_boolean=True, plot_kl_boolean=True,
+                plot_test_loss_boolean=True)
 
 # When hidden dim is between 100 and 200, the kl seems to be smaller when sample size is 500 and 100. When hidden dim is
 #   large, the kl is smaller when sample size is 100. Still is is pretty bad about 0.33.

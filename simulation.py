@@ -16,20 +16,20 @@ pool = mp.Pool(processes=hp.process_number)
 # Naive Chi squared test #
 ##########################
 # Ising data
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.naive_chisq_wrapper, scenario="null",
+sf.simulation_loop(pool=pool, simulation_method=sf.naive_chisq_method, scenario="null",
                    data_directory_name="ising_data", result_dict_name="naive_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.naive_chisq_wrapper, scenario="alt",
+sf.simulation_loop(pool=pool, simulation_method=sf.naive_chisq_method, scenario="alt",
                    data_directory_name="ising_data", result_dict_name="naive_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
 # Naive Chisq simulation
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.naive_chisq_wrapper, scenario="null",
+sf.simulation_loop(pool=pool, simulation_method=sf.naive_chisq_method, scenario="null",
                    data_directory_name="mixture_data", result_dict_name="naive_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.naive_chisq_wrapper, scenario="alt",
+sf.simulation_loop(pool=pool, simulation_method=sf.naive_chisq_method, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="naive_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
@@ -40,20 +40,20 @@ np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
 # Ising data
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, scenario="null",
+sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="null",
                    data_directory_name="ising_data", result_dict_name="stratified_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, scenario="alt",
+sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="alt",
                    data_directory_name="ising_data", result_dict_name="stratified_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
 # Mixture data
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, scenario="null",
+sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="null",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials), cluster_number=2)
 
-sf.simulation_loop(pool=pool, simulation_wrapper=sf.stratified_chisq_wrapper, scenario="alt",
+sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials), cluster_number=2)
 
@@ -109,10 +109,10 @@ ccit_pool = mp.Pool(processes=process_number_ccit)
 # Ising data
 start_time = time.time()
 
-sf.simulation_loop(pool=ccit_pool, simulation_wrapper=sf.ccit_wrapper, scenario="null",
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="null",
                    data_directory_name="ising_data", result_dict_name="ccit")
 
-sf.simulation_loop(pool=ccit_pool, simulation_wrapper=sf.ccit_wrapper, scenario="alt",
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="alt",
                    data_directory_name="ising_data", result_dict_name="ccit")
 
 print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))
@@ -120,10 +120,10 @@ print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time)
 # mixture data
 start_time = time.time()
 
-sf.simulation_loop(pool=ccit_pool, simulation_wrapper=sf.ccit_wrapper, scenario="null",
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="null",
                    data_directory_name="mixture_data", result_dict_name="ccit")
 
-sf.simulation_loop(pool=ccit_pool, simulation_wrapper=sf.ccit_wrapper, scenario="alt",
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="ccit")
 
 print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))
