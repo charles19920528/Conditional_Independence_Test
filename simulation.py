@@ -63,15 +63,15 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 # Ising Model #
 ###############
 # Mixture data
+# Alternative
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
-# Alternative
 # Prepare arguments for ising_simulation_loop.
 result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}"
 mixture_network_model_class_kwargs = {"number_forward_layers": hp.mixture_number_forward_layer,
                                       "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim, "output_dim": 3}
-mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for i in range(len(hp.sample_size_vet))]
+mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
 
 start_time = time.time()
 sf.ising_simulation_loop(pool=pool, scenario="alt", data_directory_name="mixture_data",
@@ -97,6 +97,43 @@ sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="mixtur
                          sample_size_vet=hp.sample_size_vet, number_of_test_samples_vet=hp.number_of_test_samples_vet)
 
 print("Ising simulation under null mixture data takes %s seconds to finish." % (time.time() - start_time))
+
+
+# Ising data
+# Alternative
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+# Prepare arguments for ising_simulation_loop.
+result_dict_name = f"ising_data_true_architecture"
+true_network_model_class_kwargs = {"number_forward_layers": 1, "input_dim": hp.dim_z,
+                                   "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
+true_network_model_class_kwargs_vet = [true_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
+
+start_time = time.time()
+sf.ising_simulation_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
+                         result_dict_name=result_dict_name, trial_index_vet=np.arange(hp.number_of_trials),
+                         network_model_class=gt.FullyConnectedNetwork,
+                         network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
+                         epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate_mixture,
+                         sample_size_vet=hp.sample_size_vet, number_of_test_samples_vet=hp.number_of_test_samples_vet)
+
+print("Ising simulation under null Ising data takes %s seconds to finish." % (time.time() - start_time))
+
+
+# Null
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+start_time = time.time()
+sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="ising_data",
+                         result_dict_name=result_dict_name, trial_index_vet=np.arange(hp.number_of_trials),
+                         network_model_class=gt.FullyConnectedNetwork,
+                         network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
+                         epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate_mixture,
+                         sample_size_vet=hp.sample_size_vet, number_of_test_samples_vet=hp.number_of_test_samples_vet)
+
+print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
 
 
 ########

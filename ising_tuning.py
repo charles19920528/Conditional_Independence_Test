@@ -52,14 +52,16 @@ for mixture_result_dict_name in mixture_result_dict_name_vet:
     it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
                                       sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
 
-it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4],
-                trial_index_vet=[0, 10, 49, 60],
-                sample_size=1000, end_epoch=50, start_epoch=0, plot_train_loss_boolean=True, plot_kl_boolean=True,
-                plot_test_loss_boolean=True)
+for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4],
+                    trial_index_vet=[0, 10, 49, 60],
+                    sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True,
+                    plot_kl_boolean=True, plot_test_loss_boolean=True)
 
 # When hidden dim is between 100 and 200, the kl seems to be smaller when sample size is 500 and 100. When hidden dim is
 #   large, the kl is smaller when sample size is 100. Still is is pretty bad about 0.33.
 
+# When sample size is 50 or 100, there seems to be overfitting problem.
 
 ################################
 # Tuning for true Ising model #
@@ -72,6 +74,7 @@ epoch_vet = [500, 300, 150, 100]
 true_result_dict_name = f"true_1_{hp.hidden_1_out_dim}_{hp.learning_rate_mixture}"
 true_one_layer_network_kwargs_dict = {"number_forward_layers": 1, "input_dim": hp.dim_z,
                                       "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
+trial_index_vet = np.arange(20)
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
     true_weights_dict = pickle.load(fp)
 
@@ -83,6 +86,17 @@ it.tuning_wrapper(pool=pool, scenario="alt", data_directory_name="ising_data",
                   sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
                   weights_or_radius_kwargs={"true_weights_dict": true_weights_dict})
 
+it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=true_result_dict_name+"_alt",
+                                      sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
+
+for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    it.plot_loss_kl(scenario="alt", tuning_result_dict_name=true_result_dict_name,
+                    trial_index_vet=[0, 10, 49, 60],
+                    sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True, plot_kl_boolean=True,
+                    plot_test_loss_boolean=True)
+
+# The median optimal epochs are  99, 129, 131, 91.
+# When sample size is 50 or 100, there seems to be overfitting problem.
 
 pool.close()
 pool.join()
