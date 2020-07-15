@@ -7,7 +7,7 @@ from scipy.stats import chi2_contingency
 from sklearn.cluster import KMeans
 from CCIT import CCIT
 
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'

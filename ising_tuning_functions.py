@@ -3,7 +3,7 @@ import pickle
 from functools import partial
 import numpy as np
 import matplotlib.pyplot as plt
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -74,7 +74,7 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, net
                    trial_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet,
                    learning_rate=hp.learning_rate):
     """
-    A wrapper function uses multiprocess pool function to call the ising_tuning_one_trial function on data with
+    A wrapper function uses multiprocess Pool class to call the ising_tuning_one_trial function on data with
     sample size and trials specified by the arguments of the function.
 
     :param pool: A multiprocessing.pool.Pool instance.

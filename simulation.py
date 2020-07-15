@@ -5,7 +5,7 @@ import tensorflow as tf
 import os
 
 import simulation_functions as sf
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import hyperparameters as hp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -33,6 +33,7 @@ sf.simulation_loop(pool=pool, simulation_method=sf.naive_chisq_method, scenario=
                    data_directory_name="mixture_data", result_dict_name="naive_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials))
 
+
 ###############################
 # Stratified Chi squared test #
 ###############################
@@ -56,6 +57,7 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq",
                    trial_index_vet=np.arange(hp.number_of_trials), cluster_number=2)
+
 
 ###############
 # Ising Model #
@@ -130,6 +132,7 @@ print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time)
 
 ccit_pool.close()
 ccit_pool.join()
+
 
 # These simulation used the oracle optimal epoch. They are not in use now.
 ####################

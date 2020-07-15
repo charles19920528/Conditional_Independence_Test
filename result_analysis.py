@@ -6,6 +6,7 @@ import result_analysis_functions as ra
 import hyperparameters as hp
 
 pool = mp.Pool(processes=hp.process_number)
+trial_index_vet = list(range(hp.number_of_trials))
 
 ##################################
 # Analayze the Naive Chi Squared #
@@ -18,7 +19,8 @@ with open('results/result_dict/ising_data/naive_chisq_alt_result_dict.p', 'rb') 
 
 naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_null_result_dict,
                                       alt_result_dict=naive_chisq_alt_result_dict,
-                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial, isPvalue=False)
+                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial,
+                                      trial_index_vet=trial_index_vet,isPvalue=False)
 
 ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "ising_data")
 

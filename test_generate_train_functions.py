@@ -1,4 +1,4 @@
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import tensorflow as tf
 import numpy as np
 import hyperparameters as hp

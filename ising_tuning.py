@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import ising_tuning_functions as it
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import hyperparameters as hp
 import os
 import pickle
@@ -46,14 +46,14 @@ for hidden_dim_mixture, result_dict_name in zip(hidden_dim_mixture_vet, mixture_
 
     print(f"hidden_dim {hidden_dim_mixture} finished.")
 
-
 # Analysis results.
 for mixture_result_dict_name in mixture_result_dict_name_vet:
     tuning_result_dict_name = mixture_result_dict_name + "_alt"
     it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
                                       sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
 
-it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4], trial_index_vet=[0,10, 49, 60],
+it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4],
+                trial_index_vet=[0, 10, 49, 60],
                 sample_size=1000, end_epoch=50, start_epoch=0, plot_train_loss_boolean=True, plot_kl_boolean=True,
                 plot_test_loss_boolean=True)
 
@@ -61,157 +61,28 @@ it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name
 #   large, the kl is smaller when sample size is 100. Still is is pretty bad about 0.33.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Code below needs to be replaced.
-
 ################################
 # Tuning for true Ising model #
 ###############################
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
+epoch_vet = [500, 300, 150, 100]
+
+true_result_dict_name = f"true_1_{hp.hidden_1_out_dim}_{hp.learning_rate_mixture}"
+true_one_layer_network_kwargs_dict = {"number_forward_layers": 1, "input_dim": hp.dim_z,
+                                      "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
 with open('data/ising_data/weights_dict.p', 'rb') as fp:
-    weights_dict = pickle.load(fp)
+    true_weights_dict = pickle.load(fp)
 
-start_time = time.time()
+it.tuning_wrapper(pool=pool, scenario="alt", data_directory_name="ising_data",
+                  network_model_class=gt.FullyConnectedNetwork,
+                  number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=epoch_vet,
+                  trial_index_vet=trial_index_vet, result_dict_name=true_result_dict_name,
+                  network_model_class_kwargs=true_one_layer_network_kwargs_dict,
+                  sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
+                  weights_or_radius_kwargs={"true_weights_dict": true_weights_dict})
 
-it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
-               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
-               trial_index_vet=trial_index_vet, ising_network=gt.IsingNetwork,
-               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
-               weights_dict=weights_dict, input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
-               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
-               trial_index_vet=trial_index_vet, ising_network=gt.IsingNetwork,
-               result_dict_name=f"ising_true_rate_{hp.learning_rate}", sample_size_vet=sample_size_vet,
-               weights_dict=weights_dict,
-               input_dim=hp.dim_z, hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-print("Tuning true Ising model takes %s seconds to finish." % (time.time() - start_time))
-
-# Tuning for the test data size when sample size is 100
-for number_of_test_samples in hp.number_of_test_samples_100_vet:
-    it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
-                   number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
-                   trial_index_vet=trial_index_vet, ising_network=gt.IsingNetwork,
-                   result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
-                   sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
-                   hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-    it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
-                   number_of_test_samples_vet=[number_of_test_samples], epoch_vet=[400],
-                   trial_index_vet=trial_index_vet, ising_network=gt.IsingNetwork,
-                   result_dict_name=f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}",
-                   sample_size_vet=[100], weights_dict=weights_dict, input_dim=hp.dim_z,
-                   hidden_1_out_dim=hp.hidden_1_out_dim, output_dim=3)
-
-#######################################
-# Tuning for misspecified Ising model #
-#######################################
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-with open('data/ising_data/weights_dict.p', 'rb') as fp:
-    weights_dict = pickle.load(fp)
-
-start_time = time.time()
-
-it.tuning_loop(pool=pool, scenario="null", data_directory_name="ising_data",
-               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
-               trial_index_vet=trial_index_vet, ising_network=gt.FullyConnectedNetwork,
-               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
-               input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
-
-it.tuning_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
-               number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=hp.epoch_ising_vet,
-               trial_index_vet=trial_index_vet, ising_network=gt.FullyConnectedNetwork,
-               result_dict_name="ising_wrong", sample_size_vet=sample_size_vet, number_forward_elu_layers=2,
-               input_dim=hp.dim_z, hidden_dim=2, output_dim=3, weights_dict=weights_dict)
-
-print("Tuning misspecified Ising model takes %s seconds to finish." % (time.time() - start_time))
-
-###################
-# Result analysis #
-###################
-trial_index_to_plot_vet = [0, 1, 2, 3]
-
-##############
-# Ising data #
-##############
-# True Ising model
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"ising_true_rate_{hp.learning_rate}",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising_true_rate_{hp.learning_rate}",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
-# Analyze test sample size when the total sample size is 100.
-result_dict_name_test_size_vet = [f"ising_true_rate_{hp.learning_rate}_n_100_test_{number_of_test_samples}"
-                                  for number_of_test_samples in hp.number_of_test_samples_100_vet]
-
-for result_dict_name in result_dict_name_test_size_vet:
-    it.process_plot_epoch_kl_raw_dict(pool=pool, scenario="alt", result_dict_name=result_dict_name,
-                                      sample_size_vet=[100], trial_index_vet=trial_index_vet)
-
-for result_dict_name in result_dict_name_test_size_vet:
-    it.process_plot_epoch_kl_raw_dict(pool=pool, scenario="null", result_dict_name=result_dict_name,
-                                      sample_size_vet=[100], trial_index_vet=trial_index_vet)
-
-# Misspecified Ising
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=f"ising_wrong_rate_{hp.learning_rate}",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
-################
-# Mixture data #
-################
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_12_0.01",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_12_0.01",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
-it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name="mixture_1_16_0.01",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name="mixture_1_16_0.01",
-                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
-for result_dict_name in mixture_result_dict_name_vet:
-    it.process_plot_epoch_kl_raw_dict(pool, scenario="null", result_dict_name=result_dict_name,
-                                      sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-    # it.process_plot_epoch_kl_raw_dict(pool, scenario="alt", result_dict_name=result_dict_name,
-    #                                   sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
-for i, (sample_size, end_epoch) in enumerate(zip(sample_size_vet, hp.epoch_mixture_1_vet)):
-    it.plot_loss_kl(scenario="null", result_dict_name="mixture_1_12_0.01", trial_index_vet=trial_index_to_plot_vet,
-                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=0)
-    it.plot_loss_kl(scenario="alt", result_dict_name="mixture_1_12_0.01", trial_index_vet=trial_index_to_plot_vet,
-                    sample_size=sample_size, end_epoch=end_epoch, start_epoch=0)
-
-# for result_dict_name in mixture_result_dict_name_vet:
-#     it.plot_loss_kl(scenario="null", result_dict_name=result_dict_name, trial_index_vet=trial_index_to_plot_vet,
-#                     sample_size=1000, end_epoch=100, start_epoch=0)
-#     it.plot_loss_kl(scenario="alt", result_dict_name=result_dict_name, trial_index_vet=trial_index_to_plot_vet,
-#                     sample_size=1000, end_epoch=100, start_epoch=0)
 
 pool.close()
 pool.join()

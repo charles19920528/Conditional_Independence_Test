@@ -1,5 +1,5 @@
 import numpy as np
-import generate_train_functions_nightly as gt
+import generate_train_functions as gt
 import tensorflow as tf
 import pickle
 from sklearn.datasets.samples_generator import make_blobs
