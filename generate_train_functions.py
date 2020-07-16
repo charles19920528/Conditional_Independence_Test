@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from functools import partial
 import hyperparameters as hp
 
 
@@ -505,3 +506,66 @@ class FullyConnectedNetwork(tf.keras.Model):
             output = self.final_linear(output)
 
         return output
+
+
+
+####################################################################
+# Functions to generate data from the argmax of a Gaussian process #
+####################################################################
+def argmax_gaussian_process_one_trial_one_net(_, z_mat, network_model_class, network_model_class_kwargs,
+                                              network_net_size):
+    """
+    Simulate a single Gaussian process on data of a single trial.
+
+    :param _: A dummy argument. It allows the function to be called inside the multiprocess Pool.map method.
+    :param z_mat: An n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
+            This is the data we condition on.
+    :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
+        neural network to fit on the data.
+    :param network_model_class_kwarg: A dictionaries which contains keyword arguments to create an instance of the
+        network_model_class.
+    :param network_net_size: The number of neural networks we use to create the epsilon net.
+
+    :return:
+        The test statistic which use the argmax of the Gaussian process to compute.
+    """
+    variance_vet = np.zeros(network_net_size)
+    for i in range(network_net_size):
+        network_model = network_model_class(**network_model_class_kwargs)
+        jxy_vet = network_model(z_mat)[:, 2]
+
+        # Notice that the variance is actually the test statistic.
+        variance_vet[i] = np.mean(jxy_vet ** 2)
+
+    gaussian_process_vet = np.random.normal(scale=variance_vet, size=network_net_size)
+    argmax = np.argmax(gaussian_process_vet)
+
+    return variance_vet[argmax]
+
+
+def argmax_gaussian_process_one_trial(pool, z_mat, network_model_class, network_model_class_kwargs, network_net_size,
+                                      number_of_nets):
+    """
+    Return a sample of test statistic by repeating one_trial_one_net {number_of_nets} times.
+
+    :param pool: A multiprocessing.pool.Pool instance.
+    :param z_mat: See one_trial_one_net function.
+    :param network_model_class: See one_trial_one_net function.
+    :param network_model_class_kwargs: See one_trial_one_net function.
+    :param network_net_size: See one_trial_one_net function.
+    :param number_of_nets: An integer. The number of different epsilon net to generated.
+
+    :return:
+        A numpy array of length {number_of_nets}.
+    """
+    test_statistic_sample_vet = pool.map(partial(argmax_gaussian_process_one_trial_one_net, z_mat=z_mat,
+                                                 network_model_class=network_model_class,
+                                                 network_model_class_kwargs=network_model_class_kwargs,
+                                                 network_net_size=network_net_size), np.arange(number_of_nets))
+
+    return np.array(test_statistic_sample_vet)
+
+
+
+
+

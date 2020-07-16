@@ -136,6 +136,23 @@ sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="ising_
 print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
 
 
+####################################
+# Simulate argmax Gaussian Process #
+####################################
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+start_time = time.time()
+
+
+
+
+print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
+
+pool.close()
+pool.join()
+
+
 ########
 # CCIT #
 ########

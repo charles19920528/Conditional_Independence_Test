@@ -1,6 +1,7 @@
 import generate_train_functions as gt
 import tensorflow as tf
 import numpy as np
+from multiprocessing import Pool
 import hyperparameters as hp
 
 tf.random.set_seed(0)
@@ -79,5 +80,32 @@ network_tt_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, net
 loss_kl_array = network_tt_instance.tuning(print_loss_boolean=True, is_null_boolean=True, number_of_test_samples=5,
                                            cut_off_radius=hp.null_cut_off_radius)
 test_statistic = network_tt_instance.train_compute_test_statistic(print_loss_boolean=True, number_of_test_samples=5)
+
+
+# Test ising_test_statistic_distribution_one_trial_one_net function.
+np.random.seed(0)
+pool = Pool(processes=hp.process_number)
+
+z_mat = np.random.normal(size=(4, 3))
+network_model_class_kwargs = {"number_forward_layers": 1, "input_dim": 3,
+                              "hidden_dim": 3, "output_dim": 3}
+network_net_size=5
+number_of_nets=10
+gt.argmax_gaussian_process_one_trial_one_net(_=1, z_mat=z_mat, network_model_class=gt.FullyConnectedNetwork,
+                                             network_model_class_kwargs=network_model_class_kwargs,
+                                             network_net_size=network_net_size)
+
+
+# Test ising_test_statistic_distribution_one_trial function.
+gt.argmax_gaussian_process_one_trial(pool=pool, z_mat=z_mat, network_model_class=gt.FullyConnectedNetwork,
+                                     network_model_class_kwargs=network_model_class_kwargs,
+                                     network_net_size=hp.network_net_size, number_of_nets=number_of_nets)
+
+pool.close()
+pool.join()
+
+
+
+
 
 

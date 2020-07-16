@@ -150,9 +150,9 @@ ccit_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ccit_result_null_dict
 ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "ising_data")
 
 # Mixture data
-with open('results/result_dict/mixture_data/ccit_result_null_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/ccit_null_result_dict.p', 'rb') as fp:
     ccit_result_null_dict = pickle.load(fp)
-with open('results/result_dict/mixture_data/ccit_result_alt_dict.p', 'rb') as fp:
+with open('results/result_dict/mixture_data/ccit_alt_result_dict.p', 'rb') as fp:
     ccit_result_alt_dict = pickle.load(fp)
 
 ccit_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ccit_result_null_dict, alt_result_dict=ccit_result_alt_dict,

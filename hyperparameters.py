@@ -64,5 +64,9 @@ number_of_test_samples_vet = [5, 10, 50, 100]
 process_number = os.cpu_count()
 
 
-
+###########################################
+# Sampling distribution of test statistic #
+###########################################
+network_net_size = 500
+number_of_nets = 10**5
 

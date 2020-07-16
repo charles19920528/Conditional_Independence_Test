@@ -3,28 +3,15 @@ import os
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
-import generate_train_functions as gt
 import hyperparameters as hp
 
 # Only run on CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-##########################################################
-# Get sampling distribution of the Ising test statistic. #
-##########################################################
-def ising_test_statistic_distribution_one_trial(z_mat, network_model_class, network_model_class_kwargs,
-                                                network_net_size=500):
-    network_net_vet = [network_model_class(network_model_class_kwargs) for i in range(network_net_size)]
-
-
 #####################################
 # Get test statistic for one trial. #
 #####################################
-def ising_pvalue_one_trial(trial_index, one_sample_size_result_dict):
-    pass
-
-
 # Method specific functions to obtain test statistic for one trial.
 def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
