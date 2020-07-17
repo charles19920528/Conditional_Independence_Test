@@ -102,10 +102,11 @@ def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name,
 
 
 def argmax_simulation_loop(pool, trial_index_vet, sample_size_vet, scenario, data_directory_name,
-                           ising_simulation_result_dict_name, network_model_class, network_model_class_kwargs_vet,
-                           network_net_size, number_of_nets):
+                           ising_simulation_result_dict_name, result_dict_name, network_model_class,
+                           network_model_class_kwargs_vet, network_net_size, number_of_nets):
     """
 
+    :param result_dict_name:
     :param pool:
     :param trial_index_vet:
     :param sample_size_vet:
@@ -131,6 +132,9 @@ def argmax_simulation_loop(pool, trial_index_vet, sample_size_vet, scenario, dat
                                                           network_net_size=network_net_size,
                                                           number_of_nets=number_of_nets)
         result_dict[sample_size] = sample_size_result_dict
+
+    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     return result_dict
 
@@ -213,9 +217,10 @@ def argmax_gaussian_process_simulation_method(pool, trial_index, sample_size, sc
                                              network_model_class_kwargs=network_model_class_kwargs,
                                              network_net_size=network_net_size, number_of_nets=number_of_nets)
 
-    print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done.")
+    p_value =sum(trial_test_statistic < test_statistic_sample_vet) / number_of_nets
+    print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done. p-value: {p_value}")
 
-    return (trial_test_statistic > test_statistic_sample_vet) / number_of_nets
+    return
 
 
 # Naive Chisq
