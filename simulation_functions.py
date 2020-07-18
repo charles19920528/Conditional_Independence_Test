@@ -101,42 +101,66 @@ def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name,
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def argmax_simulation_loop(pool, trial_index_vet, sample_size_vet, scenario, data_directory_name,
-                           ising_simulation_result_dict_name, result_dict_name, network_model_class,
-                           network_model_class_kwargs_vet, network_net_size, number_of_nets):
-    """
-
-    :param result_dict_name:
-    :param pool:
-    :param trial_index_vet:
-    :param sample_size_vet:
-    :param scenario:
-    :param data_directory_name:
-    :param ising_simulation_result_dict_name:
-    :param network_model_class:
-    :param network_model_class_kwargs_vet:
-    :param network_net_size:
-    :param number_of_nets:
-    :return:
-    """
+def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_result_dict_name, result_dict_name,
+                         trial_index_vet, network_model_class,
+                         network_model_class_kwargs_vet, number_of_bootstrap_samples, epoch_vet,
+                         learning_rate=hp.learning_rate,
+                         sample_size_vet=hp.sample_size_vet):
     result_dict = {}
-    for sample_size, network_model_class_kwargs in zip(sample_size_vet, network_model_class_kwargs_vet):
+    for sample_size, network_model_class_kwargs, epoch in zip(sample_size_vet,
+                                                              network_model_class_kwargs_vet, epoch_vet):
         sample_size_result_dict = {}
         for trial_index in trial_index_vet:
             sample_size_result_dict[trial_index] = \
-                argmax_gaussian_process_simulation_method(pool=pool, trial_index=trial_index, sample_size=sample_size,
-                                                          scenario=scenario, data_directory_name=data_directory_name,
-                                                          ising_simulation_result_dict_name=ising_simulation_result_dict_name,
-                                                          network_model_class=network_model_class,
-                                                          network_model_class_kwargs=network_model_class_kwargs,
-                                                          network_net_size=network_net_size,
-                                                          number_of_nets=number_of_nets)
+                ising_bootstrap_method(pool=pool, trial_index=trial_index, sample_size=sample_size, scenario=scenario,
+                                       data_directory_name=data_directory_name,
+                                       ising_simulation_result_dict_name=ising_simulation_result_dict_name,
+                                       network_model_class=network_model_class,
+                                       network_model_class_kwargs=network_model_class_kwargs,
+                                       number_of_bootstrap_samples=number_of_bootstrap_samples, epoch=epoch,
+                                       learning_rate=learning_rate)
         result_dict[sample_size] = sample_size_result_dict
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return result_dict
+# Not in use.
+# def argmax_simulation_loop(pool, trial_index_vet, sample_size_vet, scenario, data_directory_name,
+#                            ising_simulation_result_dict_name, result_dict_name, network_model_class,
+#                            network_model_class_kwargs_vet, network_net_size, number_of_nets):
+#     """
+#
+#     :param result_dict_name:
+#     :param pool:
+#     :param trial_index_vet:
+#     :param sample_size_vet:
+#     :param scenario:
+#     :param data_directory_name:
+#     :param ising_simulation_result_dict_name:
+#     :param network_model_class:
+#     :param network_model_class_kwargs_vet:
+#     :param network_net_size:
+#     :param number_of_nets:
+#     :return:
+#     """
+#     result_dict = {}
+#     for sample_size, network_model_class_kwargs in zip(sample_size_vet, network_model_class_kwargs_vet):
+#         sample_size_result_dict = {}
+#         for trial_index in trial_index_vet:
+#             sample_size_result_dict[trial_index] = \
+#                 argmax_gaussian_process_simulation_method(pool=pool, trial_index=trial_index, sample_size=sample_size,
+#                                                           scenario=scenario, data_directory_name=data_directory_name,
+#                                                           ising_simulation_result_dict_name=ising_simulation_result_dict_name,
+#                                                           network_model_class=network_model_class,
+#                                                           network_model_class_kwargs=network_model_class_kwargs,
+#                                                           network_net_size=network_net_size,
+#                                                           number_of_nets=number_of_nets)
+#         result_dict[sample_size] = sample_size_result_dict
+#
+#     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
+#         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+#
+#     return result_dict
 
 
 #####################
@@ -173,8 +197,9 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
                          dtype=np.float32)
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
-    network_model = network_model_class(**network_model_class_kwargs)
-    training_tuning_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, network_model=network_model,
+    training_tuning_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
+                                                        network_model_class=network_model_class,
+                                                        network_model_class_kwargs=network_model_class_kwargs,
                                                         learning_rate=learning_rate, epoch=epoch)
 
     result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
@@ -185,9 +210,10 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
     return (trial_index, result_dict)
 
 
-def argmax_gaussian_process_simulation_method(pool, trial_index, sample_size, scenario, data_directory_name,
-                                              ising_simulation_result_dict_name, network_model_class,
-                                              network_model_class_kwargs, network_net_size, number_of_nets):
+def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_directory_name,
+                           ising_simulation_result_dict_name, network_model_class,
+                           network_model_class_kwargs, number_of_bootstrap_samples, epoch,
+                           learning_rate=hp.learning_rate):
     """
 
     :param pool:
@@ -198,8 +224,9 @@ def argmax_gaussian_process_simulation_method(pool, trial_index, sample_size, sc
     :param ising_simulation_result_dict_name:
     :param network_model_class:
     :param network_model_class_kwargs:
-    :param network_net_size:
-    :param number_of_nets:
+    :param number_of_bootstrap_samples:
+    :param epoch:
+    :param learning_rate:
     :return:
     """
     with open(f'results/result_dict/{data_directory_name}/{ising_simulation_result_dict_name}_{scenario}_result_'
@@ -209,18 +236,61 @@ def argmax_gaussian_process_simulation_method(pool, trial_index, sample_size, sc
     trial_test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_statistic"]
     test_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["test_indices_vet"]
 
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
+                         dtype=np.float32)
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
-    test_z_mat = z_mat[test_indices_vet, :]
 
-    test_statistic_sample_vet = \
-        gt.argmax_gaussian_process_one_trial(pool=pool, z_mat=test_z_mat, network_model_class=network_model_class,
-                                             network_model_class_kwargs=network_model_class_kwargs,
-                                             network_net_size=network_net_size, number_of_nets=number_of_nets)
+    training_tuning_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
+                                                        network_model_class=network_model_class,
+                                                        network_model_class_kwargs=network_model_class_kwargs,
+                                                        learning_rate=learning_rate, epoch=epoch)
 
-    p_value =sum(trial_test_statistic < test_statistic_sample_vet) / number_of_nets
+    bootstrap_sample_vet = training_tuning_instance.bootstrap(pool=pool, test_indices_vet=test_indices_vet,
+                                                              number_of_bootstrap_samples=number_of_bootstrap_samples)
+
+    p_value =sum(trial_test_statistic < bootstrap_sample_vet) / number_of_bootstrap_samples
     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done. p-value: {p_value}")
 
-    return
+    return p_value
+
+
+
+# not in use.
+# def argmax_gaussian_process_simulation_method(pool, trial_index, sample_size, scenario, data_directory_name,
+#                                               ising_simulation_result_dict_name, network_model_class,
+#                                               network_model_class_kwargs, network_net_size, number_of_nets):
+#     """
+#
+#     :param pool:
+#     :param trial_index:
+#     :param sample_size:
+#     :param scenario:
+#     :param data_directory_name:
+#     :param ising_simulation_result_dict_name:
+#     :param network_model_class:
+#     :param network_model_class_kwargs:
+#     :param network_net_size:
+#     :param number_of_nets:
+#     :return:
+#     """
+#     with open(f'results/result_dict/{data_directory_name}/{ising_simulation_result_dict_name}_{scenario}_result_'
+#               f'dict.p', 'rb') as fp:
+#         ising_simulation_loop_result_dict = pickle.load(fp)
+#
+#     trial_test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_statistic"]
+#     test_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["test_indices_vet"]
+#
+#     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
+#     test_z_mat = z_mat[test_indices_vet, :]
+#
+#     test_statistic_sample_vet = \
+#         gt.argmax_gaussian_process_one_trial(pool=pool, z_mat=test_z_mat, network_model_class=network_model_class,
+#                                              network_model_class_kwargs=network_model_class_kwargs,
+#                                              network_net_size=network_net_size, number_of_nets=number_of_nets)
+#
+#     p_value = sum(trial_test_statistic < test_statistic_sample_vet) / number_of_nets
+#     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done. p-value: {p_value}")
+#     return p_value
 
 
 # Naive Chisq

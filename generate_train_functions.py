@@ -270,8 +270,8 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
 # Class for the simulation and training #
 #########################################
 class NetworkTrainingTuning:
-    def __init__(self, z_mat, x_y_mat, network_model, learning_rate=hp.learning_rate,
-                 buffer_size=hp.buffer_size, batch_size=hp.batch_size, epoch=250):
+    def __init__(self, z_mat, x_y_mat, network_model_class, network_model_class_kwargs, epoch,
+                 learning_rate=hp.learning_rate, buffer_size=hp.buffer_size, batch_size=hp.batch_size):
         """
         Create a class which can be used to get optimal oracle training information such as training epoch.
 
@@ -279,22 +279,23 @@ class NetworkTrainingTuning:
             This is the data we condition on.
         :param x_y_mat: an n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
             This the response.
-        :param network_model: A instance of a subclass of tf.keras.Model with output dimension 3. This is the neural
-            network to fit on the data.
+        :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
+        neural network to fit on the data.
+    :param network_model_class_kwargs: Keyword arguments to be passed in to the constructor of the network_model_class.
+        :param epoch: An integer indicating the number of times training process pass through the data set.
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
         :param buffer_size: An integer which is a (hyper)parameter in the tf.data.Dataset.shuffle function.
         :param batch_size: An integer which is a (hyper)parameter in the tf.data.Dataset.batch function.
-        :param epoch: An integer indicating the number of times training process pass through the data set.
         """
         self.z_mat = z_mat
         self.x_y_mat = x_y_mat
         self.sample_size = z_mat.shape[0]
-        self.network_model = network_model
+        self.network_model_class = network_model_class
+        self.network_model_class_kwargs = network_model_class_kwargs
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.epoch = epoch
-
+        self.max_epoch = epoch
 
     def train_test_split(self, number_of_test_samples):
         """
@@ -316,27 +317,26 @@ class NetworkTrainingTuning:
 
         return train_array_tuple, test_array_tuple, test_indices_vet
 
-
-    def __train_network(self, train_ds, optimizer):
+    def __train_network(self, train_ds, optimizer, network_model):
         """
         This private method is a helper function used in training neural network. It trains the ising_network 1 epoch on
         the train_ds
 
         :param train_ds: A tensorflow dataset object. This is the training data.
         :param optimizer: A tf.keras.optimizers instance.
+        :param network_model: An instance of self.network_model_class.
 
         :return:
             A scalar which is the loss on that last batch of the training data.
         """
         for z_batch, x_y_batch in train_ds:
             with tf.GradientTape() as tape:
-                batch_predicted_parameter_mat = self.network_model(z_batch)
+                batch_predicted_parameter_mat = network_model(z_batch)
                 loss = log_ising_likelihood(x_y_batch, batch_predicted_parameter_mat)
-            grads = tape.gradient(loss, self.network_model.variables)
-            optimizer.apply_gradients(grads_and_vars=zip(grads, self.network_model.variables))
+            grads = tape.gradient(loss, network_model.variables)
+            optimizer.apply_gradients(grads_and_vars=zip(grads, network_model.variables))
 
         return loss.numpy()
-
 
     def tuning(self, print_loss_boolean, is_null_boolean, number_of_test_samples, cut_off_radius=None,
                true_weights_array=None):
@@ -350,13 +350,13 @@ class NetworkTrainingTuning:
         :param number_of_test_samples: An integer which is the number of samples used as validation set.
         :param is_null_boolean: A boolean value to indicate if we compute the data is generated under the conditional
             independence assumption (H0).
-        :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating 
+        :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating
             the mixture data.
         :param true_weights_array: If supplied , it should be an array which is the true weights of the data generating
             Ising network.
 
         :return:
-        loss_kl_array: A 3 by self.epoch numpy array of which the first row stores the (- 2 * LogLikelihood),
+        loss_kl_array: A 3 by self.max_epoch numpy array of which the first row stores the (- 2 * LogLikelihood),
             the second row stores the (- 2 * LogLikelihood) on the test set;
             and the third row stores the kl divergence on the test data.
         """
@@ -387,16 +387,19 @@ class NetworkTrainingTuning:
             true_test_p_mat = pmf_collection(parameter_mat=true_test_parameter_mat)
 
         # Prepare for the training.
-        loss_kl_array = np.zeros((3, self.epoch))
+        network_model = self.network_model_class(**self.network_model_class_kwargs)
+
+        loss_kl_array = np.zeros((3, self.max_epoch))
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         kl = tf.keras.losses.KLDivergence(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
 
         epoch = 0
-        while epoch < self.epoch:
-            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer)
+        while epoch < self.max_epoch:
+            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer,
+                                                          network_model=network_model)
 
             # Compute likelihood and kl on test data.
-            predicted_test_parameter_mat = self.network_model(test_z_mat)
+            predicted_test_parameter_mat = network_model(test_z_mat)
             likelihood_on_test = log_ising_likelihood(test_x_y_mat, predicted_test_parameter_mat)
             predicted_test_p_mat = pmf_collection(parameter_mat=predicted_test_parameter_mat)
             kl_on_test_data = kl(true_test_p_mat, predicted_test_p_mat).numpy()
@@ -414,7 +417,6 @@ class NetworkTrainingTuning:
             epoch += 1
 
         return loss_kl_array
-
 
     def train_compute_test_statistic(self, print_loss_boolean, number_of_test_samples):
         """
@@ -436,24 +438,57 @@ class NetworkTrainingTuning:
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, _ = test_array_tuple
 
+        network_model = self.network_model_class(**self.network_model_class_kwargs)
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         epoch = 0
-        while epoch < self.epoch:
+        while epoch < self.max_epoch:
             # Training loop.
-            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer)
-
+            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer,
+                                                          network_model=network_model)
             if epoch % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d." % (self.sample_size, epoch))
                 print(f"The training loss is {loss_on_the_last_batch}.")
 
             epoch += 1
 
-        predicted_test_parameter_mat = self.network_model(test_z_mat)
+        predicted_test_parameter_mat = network_model(test_z_mat)
         jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
         jxy_squared_mean = np.mean(jxy_squared_vet)
 
         result_dict = {"test_statistic": jxy_squared_mean, "test_indices_vet": test_indices_vet}
         return result_dict
+
+    def bootstrap_one_trial(self, _, test_indices_vet):
+        # Resample
+        train_sample_size = self.sample_size - len(test_indices_vet)
+        train_indices_vet = np.delete(np.arange(self.sample_size), test_indices_vet)
+        new_train_indices_vet = np.random.choice(train_indices_vet, size=train_sample_size)
+        new_train_z_mat = self.z_mat[new_train_indices_vet, :]
+        new_train_x_y_mat = self.x_y_mat[new_train_indices_vet, :]
+
+        train_ds = tf.data.Dataset.from_tensor_slices((new_train_z_mat, new_train_x_y_mat))
+        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+
+        # Train the network.
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+        network_model = self.network_model_class(**self.network_model_class_kwargs)
+        epoch = 0
+        while epoch < self.max_epoch:
+            _ = self.__train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
+            epoch += 1
+
+        predicted_test_parameter_mat = network_model(self.z_mat[test_indices_vet, :])
+        jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
+        jxy_squared_mean = np.mean(jxy_squared_vet)
+
+        return jxy_squared_mean
+
+    def bootstrap(self, pool, test_indices_vet, number_of_bootstrap_samples):
+        bootstrap_test_statistic_vet = pool.map(partial(self.bootstrap_one_trial,
+                                                        test_indices_vet=test_indices_vet),
+                                                np.arange(number_of_bootstrap_samples))
+
+        return bootstrap_test_statistic_vet
 
 
 #####################################################
@@ -507,65 +542,59 @@ class FullyConnectedNetwork(tf.keras.Model):
 
         return output
 
-
-
+# Not in use now.
 ####################################################################
 # Functions to generate data from the argmax of a Gaussian process #
 ####################################################################
-def argmax_gaussian_process_one_trial_one_net(_, z_mat, network_model_class, network_model_class_kwargs,
-                                              network_net_size):
-    """
-    Simulate a single Gaussian process on data of a single trial.
-
-    :param _: A dummy argument. It allows the function to be called inside the multiprocess Pool.map method.
-    :param z_mat: An n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
-            This is the data we condition on.
-    :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
-        neural network to fit on the data.
-    :param network_model_class_kwarg: A dictionaries which contains keyword arguments to create an instance of the
-        network_model_class.
-    :param network_net_size: The number of neural networks we use to create the epsilon net.
-
-    :return:
-        The test statistic which use the argmax of the Gaussian process to compute.
-    """
-    variance_vet = np.zeros(network_net_size)
-    for i in range(network_net_size):
-        network_model = network_model_class(**network_model_class_kwargs)
-        jxy_vet = network_model(z_mat)[:, 2]
-
-        # Notice that the variance is actually the test statistic.
-        variance_vet[i] = np.mean(jxy_vet ** 2)
-
-    gaussian_process_vet = np.random.normal(scale=variance_vet, size=network_net_size)
-    argmax = np.argmax(gaussian_process_vet)
-
-    return variance_vet[argmax]
-
-
-def argmax_gaussian_process_one_trial(pool, z_mat, network_model_class, network_model_class_kwargs, network_net_size,
-                                      number_of_nets):
-    """
-    Return a sample of test statistic by repeating one_trial_one_net {number_of_nets} times.
-
-    :param pool: A multiprocessing.pool.Pool instance.
-    :param z_mat: See one_trial_one_net function.
-    :param network_model_class: See one_trial_one_net function.
-    :param network_model_class_kwargs: See one_trial_one_net function.
-    :param network_net_size: See one_trial_one_net function.
-    :param number_of_nets: An integer. The number of different epsilon net to generated.
-
-    :return:
-        A numpy array of length {number_of_nets}.
-    """
-    test_statistic_sample_vet = pool.map(partial(argmax_gaussian_process_one_trial_one_net, z_mat=z_mat,
-                                                 network_model_class=network_model_class,
-                                                 network_model_class_kwargs=network_model_class_kwargs,
-                                                 network_net_size=network_net_size), np.arange(number_of_nets))
-
-    return np.array(test_statistic_sample_vet)
-
-
-
-
-
+# def argmax_gaussian_process_one_trial_one_net(_, z_mat, network_model_class, network_model_class_kwargs,
+#                                               network_net_size):
+#     """
+#     Simulate a single Gaussian process on data of a single trial.
+#
+#     :param _: A dummy argument. It allows the function to be called inside the multiprocess Pool.map method.
+#     :param z_mat: An n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
+#             This is the data we condition on.
+#     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
+#         neural network to fit on the data.
+#     :param network_model_class_kwarg: A dictionaries which contains keyword arguments to create an instance of the
+#         network_model_class.
+#     :param network_net_size: The number of neural networks we use to create the epsilon net.
+#
+#     :return:
+#         The test statistic which use the argmax of the Gaussian process to compute.
+#     """
+#     variance_vet = np.zeros(network_net_size)
+#     for i in range(network_net_size):
+#         network_model = network_model_class(**network_model_class_kwargs)
+#         jxy_vet = network_model(z_mat)[:, 2]
+#
+#         # Notice that the variance is actually the test statistic.
+#         variance_vet[i] = np.mean(jxy_vet ** 2)
+#
+#     gaussian_process_vet = np.random.normal(scale=variance_vet, size=network_net_size)
+#     argmax = np.argmax(gaussian_process_vet)
+#
+#     return variance_vet[argmax]
+#
+#
+# def argmax_gaussian_process_one_trial(pool, z_mat, network_model_class, network_model_class_kwargs, network_net_size,
+#                                       number_of_nets):
+#     """
+#     Return a sample of test statistic by repeating one_trial_one_net {number_of_nets} times.
+#
+#     :param pool: A multiprocessing.pool.Pool instance.
+#     :param z_mat: See one_trial_one_net function.
+#     :param network_model_class: See one_trial_one_net function.
+#     :param network_model_class_kwargs: See one_trial_one_net function.
+#     :param network_net_size: See one_trial_one_net function.
+#     :param number_of_nets: An integer. The number of different epsilon net to generated.
+#
+#     :return:
+#         A numpy array of length {number_of_nets}.
+#     """
+#     test_statistic_sample_vet = pool.map(partial(argmax_gaussian_process_one_trial_one_net, z_mat=z_mat,
+#                                                  network_model_class=network_model_class,
+#                                                  network_model_class_kwargs=network_model_class_kwargs,
+#                                                  network_net_size=network_net_size), np.arange(number_of_nets))
+#
+#     return np.array(test_statistic_sample_vet)

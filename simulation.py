@@ -129,40 +129,6 @@ sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="ising_
 
 print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
 
-
-####################################
-# Simulate argmax Gaussian Process #
-####################################
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-# Ising
-# Null data
-start_time = time.time()
-sf.argmax_simulation_loop(pool=pool, trial_index_vet=np.arange(hp.number_of_trials), sample_size_vet=hp.sample_size_vet,
-                          scenario="null", data_directory_name="ising_data",
-                          ising_simulation_result_dict_name=true_result_dict_name,
-                          network_model_class=gt.FullyConnectedNetwork,
-                          network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
-                          network_net_size=hp.network_net_size, number_of_nets=hp.number_of_nets,
-                          result_dict_name="gaussian_process")
-
-print(f"Gaussian process simulation under null Ising data takes {time.time() - start_time} seconds to finish.")
-
-
-# Alt
-start_time = time.time()
-sf.argmax_simulation_loop(pool=pool, trial_index_vet=np.arange(hp.number_of_trials), sample_size_vet=[1000],
-                          scenario="alt", data_directory_name="ising_data",
-                          ising_simulation_result_dict_name=true_result_dict_name,
-                          network_model_class=gt.FullyConnectedNetwork,
-                          network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
-                          network_net_size=hp.network_net_size, number_of_nets=hp.number_of_nets,
-                          result_dict_name="gaussian_process")
-
-print(f"Gaussian process simulation under alternative Ising data takes {time.time() - start_time} seconds to finish.")
-
-
 pool.close()
 pool.join()
 
