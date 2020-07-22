@@ -3,7 +3,8 @@ import tensorflow as tf
 import numpy as np
 from multiprocessing import Pool
 import hyperparameters as hp
-
+# import multiprocessing as mp
+# mp.set_start_method("forkserver", force=True)
 tf.random.set_seed(0)
 np.random.seed(0)
 

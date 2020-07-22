@@ -462,52 +462,63 @@ class NetworkTrainingTuning:
         jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
         jxy_squared_mean = np.mean(jxy_squared_vet)
 
-        # For save the result for future use.
-        result_dict = {"test_statistic": jxy_squared_mean, "train_indices_vet": train_indices_vet,
-                       "test_indices_vet": test_indices_vet, "weights_vet": network_model.get_weights()}
-
-        self.test_indices_vet = test_indices_vet
-        self.train_indices_vet = train_indices_vet
         fitted_train_par_mat = network_model(self.z_mat[train_indices_vet, :])
-        self.fitted_train_p_mat = pmf_collection(fitted_train_par_mat)
-        self.result_dict = result_dict
+        fitted_train_p_mat = pmf_collection(fitted_train_par_mat)
+        result_dict = {"test_statistic": jxy_squared_mean, "train_indices_vet": train_indices_vet,
+                       "test_indices_vet": test_indices_vet, "weights_vet": network_model.get_weights(),
+                       "fitted_train_p_mat": fitted_train_p_mat}
 
-    def bootstrap_one_trial(self, _):
-        if self.result_dict is None:
-            sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
-        print("One trial begins")
-        # Resample
-        new_train_x_y_mat = generate_x_y_mat(self.fitted_train_p_mat)
-        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat[self.train_indices_vet, :], new_train_x_y_mat))
-        train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
+        return result_dict
 
-        # Train the network.
-        optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-        network_model = self.network_model_class(**self.network_model_class_kwargs)
-        epoch = 0
-        while epoch < self.max_epoch:
-            _ = self.__train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
-            epoch += 1
 
-        predicted_test_parameter_mat = network_model(self.z_mat[self.test_indices_vet, :])
-        jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
-        jxy_squared_mean = np.mean(jxy_squared_vet)
-        print("One trial finished.")
-        return jxy_squared_mean
 
-    def bootstrap(self, pool, number_of_bootstrap_samples):
-        if self.result_dict is None:
-            sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
 
-        print("Boostrap begins.")
-        bootstrap_test_statistic_vet = pool.map(partial(self.bootstrap_one_trial),
-                                                np.arange(number_of_bootstrap_samples))
-        print("Bootstrap finished.")
-
-        self.result_dict["bootstrap_test_statistic_vet"] = bootstrap_test_statistic_vet
-        p_value = sum(bootstrap_test_statistic_vet > self.test_statistic) / number_of_bootstrap_samples
-        self.result_dict["p_value"] = p_value
-
+# def __ising_bootstrap_one_trial(_, fitted_train_p_mat, z_mat, train_indices_vet, ,
+#                                 network_model_class, network_model_class_kwargs, buffer_size, batch_size, learning_rate,
+#                                 max_epoch):
+#     """
+#     Helper function to generate a boostrap sample using neural ising model and obtain bootstrap test statistic. We wiil
+#     pass the function into a Pool instance.
+#
+#     :param _:
+#     :param fitted_train_p_mat:
+#     :param z_mat:
+#     :param train_indices_vet:
+#     :param buffer_size:
+#     :param batch_size:
+#     :param learning_rate:
+#     :return:
+#     """
+#     # Resample
+#     new_train_x_y_mat = generate_x_y_mat(fitted_train_p_mat)
+#     train_ds = tf.data.Dataset.from_tensor_slices((z_mat[train_indices_vet, :], new_train_x_y_mat))
+#     train_ds = train_ds.shuffle(buffer_size).batch(batch_size)
+#
+#     # Train the network.
+#     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+#     network_model = network_model_class(**network_model_class_kwargs)
+#     epoch = 0
+#     while epoch < max_epoch:
+#         _ = self.__train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
+#         epoch += 1
+#
+#     predicted_test_parameter_mat = network_model(z_mat[test_indices_vet, :])
+#     jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
+#     jxy_squared_mean = np.mean(jxy_squared_vet)
+#     print("One trial finished.")
+#     return jxy_squared_mean
+#
+#     def bootstrap(self, pool, number_of_bootstrap_samples):
+#         if self.result_dict is None:
+#             sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
+#
+#         print("Boostrap begins.")
+#         bootstrap_test_statistic_vet = pool.map(self.bootstrap_one_trial, np.arange(number_of_bootstrap_samples))
+#         print("Bootstrap finished.")
+#
+#         self.result_dict["bootstrap_test_statistic_vet"] = bootstrap_test_statistic_vet
+#         p_value = sum(bootstrap_test_statistic_vet > self.test_statistic) / number_of_bootstrap_samples
+#         self.result_dict["p_value"] = p_value
 
 
 #####################################################
