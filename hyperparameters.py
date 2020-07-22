@@ -67,6 +67,5 @@ process_number = os.cpu_count()
 ###########################################
 # Sampling distribution of test statistic #
 ###########################################
-network_net_size = 500
-number_of_nets = 10**4
+number_of_boostrap_samples = 10**3
 

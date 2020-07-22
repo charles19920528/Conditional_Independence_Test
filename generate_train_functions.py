@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from functools import partial
+import sys
 import hyperparameters as hp
 
 
@@ -297,6 +298,12 @@ class NetworkTrainingTuning:
         self.batch_size = batch_size
         self.max_epoch = epoch
 
+        self.train_indices_vet = None
+        self.test_indices_vet = None
+        self.fitted_train_p_mat = None
+        self.test_statistic = None
+        self.result_dict = None
+
     def train_test_split(self, number_of_test_samples):
         """
         Create and split the full data into the training data and the test data. number_of_test_samples samples are used
@@ -309,13 +316,13 @@ class NetworkTrainingTuning:
             test_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the test data.
         """
         indices_vet = np.random.permutation(self.sample_size)
-        training_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], \
+        train_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], \
                                                  indices_vet[:number_of_test_samples]
 
-        train_array_tuple = (self.z_mat[training_indices_vet, :], self.x_y_mat[training_indices_vet, :])
+        train_array_tuple = (self.z_mat[train_indices_vet, :], self.x_y_mat[train_indices_vet, :])
         test_array_tuple = (self.z_mat[test_indices_vet, :], self.x_y_mat[test_indices_vet, :])
 
-        return train_array_tuple, test_array_tuple, test_indices_vet
+        return train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet
 
     def __train_network(self, train_ds, optimizer, network_model):
         """
@@ -366,7 +373,7 @@ class NetworkTrainingTuning:
             "Neither cut_off_radius nor true_weights_array are supplied."
 
         # Prepare training and test data.
-        train_array_tuple, test_array_tuple, _ = self.train_test_split(number_of_test_samples=number_of_test_samples)
+        train_array_tuple, test_array_tuple, _ , _= self.train_test_split(number_of_test_samples=number_of_test_samples)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, test_x_y_mat = test_array_tuple
@@ -432,8 +439,8 @@ class NetworkTrainingTuning:
             result_dict["test_indices_vet"] is an array containing indices of samples which are used as validation set.
         """
         # Prepare training and test data.
-        train_array_tuple, test_array_tuple, test_indices_vet = self.train_test_split(number_of_test_samples=
-                                                                                      number_of_test_samples)
+        train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet = \
+            self.train_test_split(number_of_test_samples=number_of_test_samples)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, _ = test_array_tuple
@@ -455,18 +462,23 @@ class NetworkTrainingTuning:
         jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
         jxy_squared_mean = np.mean(jxy_squared_vet)
 
-        result_dict = {"test_statistic": jxy_squared_mean, "test_indices_vet": test_indices_vet}
-        return result_dict
+        # For save the result for future use.
+        result_dict = {"test_statistic": jxy_squared_mean, "train_indices_vet": train_indices_vet,
+                       "test_indices_vet": test_indices_vet, "weights_vet": network_model.get_weights()}
 
-    def bootstrap_one_trial(self, _, test_indices_vet):
+        self.test_indices_vet = test_indices_vet
+        self.train_indices_vet = train_indices_vet
+        fitted_train_par_mat = network_model(self.z_mat[train_indices_vet, :])
+        self.fitted_train_p_mat = pmf_collection(fitted_train_par_mat)
+        self.result_dict = result_dict
+
+    def bootstrap_one_trial(self, _):
+        if self.result_dict is None:
+            sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
+        print("One trial begins")
         # Resample
-        train_sample_size = self.sample_size - len(test_indices_vet)
-        train_indices_vet = np.delete(np.arange(self.sample_size), test_indices_vet)
-        new_train_indices_vet = np.random.choice(train_indices_vet, size=train_sample_size)
-        new_train_z_mat = self.z_mat[new_train_indices_vet, :]
-        new_train_x_y_mat = self.x_y_mat[new_train_indices_vet, :]
-
-        train_ds = tf.data.Dataset.from_tensor_slices((new_train_z_mat, new_train_x_y_mat))
+        new_train_x_y_mat = generate_x_y_mat(self.fitted_train_p_mat)
+        train_ds = tf.data.Dataset.from_tensor_slices((self.z_mat[self.train_indices_vet, :], new_train_x_y_mat))
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
 
         # Train the network.
@@ -477,18 +489,25 @@ class NetworkTrainingTuning:
             _ = self.__train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
             epoch += 1
 
-        predicted_test_parameter_mat = network_model(self.z_mat[test_indices_vet, :])
+        predicted_test_parameter_mat = network_model(self.z_mat[self.test_indices_vet, :])
         jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
         jxy_squared_mean = np.mean(jxy_squared_vet)
-
+        print("One trial finished.")
         return jxy_squared_mean
 
-    def bootstrap(self, pool, test_indices_vet, number_of_bootstrap_samples):
-        bootstrap_test_statistic_vet = pool.map(partial(self.bootstrap_one_trial,
-                                                        test_indices_vet=test_indices_vet),
-                                                np.arange(number_of_bootstrap_samples))
+    def bootstrap(self, pool, number_of_bootstrap_samples):
+        if self.result_dict is None:
+            sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
 
-        return bootstrap_test_statistic_vet
+        print("Boostrap begins.")
+        bootstrap_test_statistic_vet = pool.map(partial(self.bootstrap_one_trial),
+                                                np.arange(number_of_bootstrap_samples))
+        print("Bootstrap finished.")
+
+        self.result_dict["bootstrap_test_statistic_vet"] = bootstrap_test_statistic_vet
+        p_value = sum(bootstrap_test_statistic_vet > self.test_statistic) / number_of_bootstrap_samples
+        self.result_dict["p_value"] = p_value
+
 
 
 #####################################################
