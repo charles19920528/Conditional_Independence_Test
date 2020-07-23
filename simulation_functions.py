@@ -3,6 +3,7 @@ import pickle
 import os
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from scipy.stats import chi2_contingency
 from sklearn.cluster import KMeans
 from CCIT import CCIT
@@ -103,12 +104,12 @@ def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name,
 
 def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_result_dict_name, result_dict_name,
                          trial_index_vet, network_model_class,
-                         network_model_class_kwargs_vet, number_of_bootstrap_samples, epoch_vet,
-                         learning_rate=hp.learning_rate,
+                         network_model_class_kwargs_vet, number_of_bootstrap_samples, max_epoch_vet,
+                         learning_rate=hp.learning_rate, buffer_size = hp.buffer_size, batch_size = hp.batch_size,
                          sample_size_vet=hp.sample_size_vet):
     result_dict = {}
-    for sample_size, network_model_class_kwargs, epoch in zip(sample_size_vet,
-                                                              network_model_class_kwargs_vet, epoch_vet):
+    for sample_size, network_model_class_kwargs, max_epoch in zip(sample_size_vet, network_model_class_kwargs_vet,
+                                                                  max_epoch_vet):
         sample_size_result_dict = {}
         for trial_index in trial_index_vet:
             trial_result_dict = \
@@ -117,9 +118,11 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
                                        ising_simulation_result_dict_name=ising_simulation_result_dict_name,
                                        network_model_class=network_model_class,
                                        network_model_class_kwargs=network_model_class_kwargs,
-                                       number_of_bootstrap_samples=number_of_bootstrap_samples, epoch=epoch,
-                                       learning_rate=learning_rate)
+                                       number_of_bootstrap_samples=number_of_bootstrap_samples, max_epoch=max_epoch,
+                                       batch_size=batch_size, buffer_size=buffer_size, learning_rate=learning_rate)
             sample_size_result_dict[trial_index] = trial_result_dict
+            print(f"Bootstrap, data: {data_directory_name}, scenario: {scenario}, sample_size: {sample_size}, "
+                  f"trial_index: {trial_index} finished.")
 
         result_dict[sample_size] = sample_size_result_dict
 
@@ -213,9 +216,49 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
     return (trial_index, result_dict)
 
 
+# Ising bootstrap
+def ising_bootstrap_one_trial(_, fitted_train_p_mat, z_mat, train_indices_vet, test_indices_vet,
+                              network_model_class, network_model_class_kwargs, buffer_size, batch_size, learning_rate,
+                              max_epoch):
+    """
+
+    :param _:
+    :param fitted_train_p_mat:
+    :param z_mat:
+    :param train_indices_vet:
+    :param test_indices_vet:
+    :param network_model_class:
+    :param network_model_class_kwargs:
+    :param buffer_size:
+    :param batch_size:
+    :param learning_rate:
+    :param max_epoch:
+    :return:
+    """
+    # Resample
+    new_train_x_y_mat = gt.generate_x_y_mat(fitted_train_p_mat)
+    train_ds = tf.data.Dataset.from_tensor_slices((z_mat[train_indices_vet, :], new_train_x_y_mat))
+    train_ds = train_ds.shuffle(buffer_size).batch(batch_size)
+
+    # Train the network.
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    network_model = network_model_class(**network_model_class_kwargs)
+    epoch = 0
+    while epoch < max_epoch:
+        _ = gt.train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
+        epoch += 1
+
+    predicted_test_parameter_mat = network_model(z_mat[test_indices_vet, :])
+    jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
+    jxy_squared_mean = np.mean(jxy_squared_vet)
+
+    return jxy_squared_mean
+
+
+
 def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_directory_name,
-                           ising_simulation_result_dict_name, network_model_class,
-                           network_model_class_kwargs, number_of_bootstrap_samples, epoch,
+                           ising_simulation_result_dict_name, network_model_class, network_model_class_kwargs,
+                           number_of_bootstrap_samples, max_epoch, batch_size=hp.batch_size, buffer_size=hp.buffer_size,
                            learning_rate=hp.learning_rate):
     """
 
@@ -228,33 +271,36 @@ def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_direct
     :param network_model_class:
     :param network_model_class_kwargs:
     :param number_of_bootstrap_samples:
-    :param epoch:
+    :param max_epoch:
+    :param batch_size:
+    :param buffer_size:
     :param learning_rate:
     :return:
     """
+
     with open(f'results/result_dict/{data_directory_name}/{ising_simulation_result_dict_name}_{scenario}_result_'
               f'dict.p', 'rb') as fp:
         ising_simulation_loop_result_dict = pickle.load(fp)
 
-    trial_test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_statistic"]
-    test_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["test_indices_vet"]
-
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
-                         dtype=np.float32)
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
+    fitted_train_p_mat = ising_simulation_loop_result_dict[sample_size][trial_index]["fitted_train_p_mat"]
+    train_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["train_indices_vet"]
+    test_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["test_indices_vet"]
+    test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_statistic"]
 
-    training_tuning_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
-                                                        network_model_class=network_model_class,
-                                                        network_model_class_kwargs=network_model_class_kwargs,
-                                                        learning_rate=learning_rate, epoch=epoch)
+    bootstrap_test_statistic_vet = pool.map(partial(ising_bootstrap_one_trial, fitted_train_p_mat=fitted_train_p_mat,
+                                                    z_mat=z_mat, train_indices_vet=train_indices_vet,
+                                                    test_indices_vet=test_indices_vet,
+                                                    network_model_class=network_model_class,
+                                                    network_model_class_kwargs=network_model_class_kwargs,
+                                                    buffer_size=buffer_size, batch_size=batch_size,
+                                                    learning_rate=learning_rate, max_epoch=max_epoch),
+                                            np.arange(number_of_bootstrap_samples))
 
-    test_statistic_sample = training_tuning_instance.bootstrap(pool=pool, test_indices_vet=test_indices_vet,
-                                                               number_of_bootstrap_samples=number_of_bootstrap_samples)
+    p_value = sum(np.array(bootstrap_test_statistic_vet) > test_statistic) / number_of_bootstrap_samples
+    result_dict = {"p_value": p_value, "bootstrap_test_statistic_vet": bootstrap_test_statistic_vet,
+                   "test_statistic": test_statistic}
 
-    p_value = sum(trial_test_statistic < test_statistic_sample) / number_of_bootstrap_samples
-    print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done. p-value: {p_value}")
-
-    result_dict = {"p_value": p_value, "test_statistic_sample": test_statistic_sample}
     return result_dict
 
 

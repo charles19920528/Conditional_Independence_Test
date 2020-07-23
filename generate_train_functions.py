@@ -270,6 +270,27 @@ def kl_divergence_ising(true_parameter_mat, predicted_parameter_mat, isAverage):
 #########################################
 # Class for the simulation and training #
 #########################################
+def train_network(train_ds, optimizer, network_model):
+    """
+    This private method is a helper function used in training neural network. It trains the ising_network 1 epoch on
+    the train_ds
+
+    :param train_ds: A tensorflow dataset object. This is the training data.
+    :param optimizer: A tf.keras.optimizers instance.
+    :param network_model: An instance of self.network_model_class.
+
+    :return:
+        A scalar which is the loss on that last batch of the training data.
+    """
+    for z_batch, x_y_batch in train_ds:
+        with tf.GradientTape() as tape:
+            batch_predicted_parameter_mat = network_model(z_batch)
+            loss = log_ising_likelihood(x_y_batch, batch_predicted_parameter_mat)
+        grads = tape.gradient(loss, network_model.variables)
+        optimizer.apply_gradients(grads_and_vars=zip(grads, network_model.variables))
+
+    return loss.numpy()
+
 class NetworkTrainingTuning:
     def __init__(self, z_mat, x_y_mat, network_model_class, network_model_class_kwargs, epoch,
                  learning_rate=hp.learning_rate, buffer_size=hp.buffer_size, batch_size=hp.batch_size):
@@ -324,26 +345,6 @@ class NetworkTrainingTuning:
 
         return train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet
 
-    def __train_network(self, train_ds, optimizer, network_model):
-        """
-        This private method is a helper function used in training neural network. It trains the ising_network 1 epoch on
-        the train_ds
-
-        :param train_ds: A tensorflow dataset object. This is the training data.
-        :param optimizer: A tf.keras.optimizers instance.
-        :param network_model: An instance of self.network_model_class.
-
-        :return:
-            A scalar which is the loss on that last batch of the training data.
-        """
-        for z_batch, x_y_batch in train_ds:
-            with tf.GradientTape() as tape:
-                batch_predicted_parameter_mat = network_model(z_batch)
-                loss = log_ising_likelihood(x_y_batch, batch_predicted_parameter_mat)
-            grads = tape.gradient(loss, network_model.variables)
-            optimizer.apply_gradients(grads_and_vars=zip(grads, network_model.variables))
-
-        return loss.numpy()
 
     def tuning(self, print_loss_boolean, is_null_boolean, number_of_test_samples, cut_off_radius=None,
                true_weights_array=None):
