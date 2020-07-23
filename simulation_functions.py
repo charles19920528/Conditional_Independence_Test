@@ -111,7 +111,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
                                                               network_model_class_kwargs_vet, epoch_vet):
         sample_size_result_dict = {}
         for trial_index in trial_index_vet:
-            sample_size_result_dict[trial_index] = \
+            trial_result_dict = \
                 ising_bootstrap_method(pool=pool, trial_index=trial_index, sample_size=sample_size, scenario=scenario,
                                        data_directory_name=data_directory_name,
                                        ising_simulation_result_dict_name=ising_simulation_result_dict_name,
@@ -119,10 +119,13 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
                                        network_model_class_kwargs=network_model_class_kwargs,
                                        number_of_bootstrap_samples=number_of_bootstrap_samples, epoch=epoch,
                                        learning_rate=learning_rate)
+            sample_size_result_dict[trial_index] = trial_result_dict
+
         result_dict[sample_size] = sample_size_result_dict
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 # Not in use.
 # def argmax_simulation_loop(pool, trial_index_vet, sample_size_vet, scenario, data_directory_name,
@@ -245,14 +248,14 @@ def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_direct
                                                         network_model_class_kwargs=network_model_class_kwargs,
                                                         learning_rate=learning_rate, epoch=epoch)
 
-    bootstrap_sample_vet = training_tuning_instance.bootstrap(pool=pool, test_indices_vet=test_indices_vet,
-                                                              number_of_bootstrap_samples=number_of_bootstrap_samples)
+    test_statistic_sample = training_tuning_instance.bootstrap(pool=pool, test_indices_vet=test_indices_vet,
+                                                               number_of_bootstrap_samples=number_of_bootstrap_samples)
 
-    p_value =sum(trial_test_statistic < bootstrap_sample_vet) / number_of_bootstrap_samples
+    p_value = sum(trial_test_statistic < test_statistic_sample) / number_of_bootstrap_samples
     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done. p-value: {p_value}")
 
-    return p_value
-
+    result_dict = {"p_value": p_value, "test_statistic_sample": test_statistic_sample}
+    return result_dict
 
 
 # not in use.
