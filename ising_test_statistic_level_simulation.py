@@ -30,17 +30,31 @@ max_epoch_vet = [hp.mixture_epoch_vet[1]]
 
 # Mixture datamax_epoch_vet,
 # Null data
+# start_time = time.time()
+# sf.ising_bootstrap_loop(pool=pool, data_directory_name="mixture_data", scenario="null",
+#                         ising_simulation_result_dict_name=mixture_result_dict_name,
+#                         result_dict_name="bootstrap_mixture_100",
+#                         trial_index_vet=trial_index_vet, network_model_class=gt.FullyConnectedNetwork,
+#                         network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
+#                         number_of_bootstrap_samples=hp.number_of_boostrap_samples, max_epoch_vet=max_epoch_vet,
+#                         sample_size_vet=sample_size_vet)
+#
+# print(f"Bootstrap simulation under mixture null data takes {time.time() - start_time} seconds to finish.")
+
+
+
+sample_size_vet = [hp.sample_size_vet[2]]
+max_epoch_vet = [hp.mixture_epoch_vet[2]]
 start_time = time.time()
-sf.ising_bootstrap_loop(pool=pool, data_directory_name="mixture_data", scenario="null",
+sf.ising_bootstrap_loop(pool=pool, data_directory_name="mixture_data", scenario="alt",
                         ising_simulation_result_dict_name=mixture_result_dict_name,
-                        result_dict_name="bootstrap_mixture_100",
-                        trial_index_vet=trial_index_vet, network_model_class=gt.FullyConnectedNetwork,
+                        result_dict_name="bootstrap_mixture_500",
+                        trial_index_vet=np.arange(20), network_model_class=gt.FullyConnectedNetwork,
                         network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
                         number_of_bootstrap_samples=hp.number_of_boostrap_samples, max_epoch_vet=max_epoch_vet,
                         sample_size_vet=sample_size_vet)
 
-print(f"Bootstrap simulation under mixture null data takes {time.time() - start_time} seconds to finish.")
-
+print(f"Bootstrap simulation under mixture alt data takes {time.time() - start_time} seconds to finish.")
 pool.close()
 pool.join()
 
