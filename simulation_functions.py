@@ -123,6 +123,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
             sample_size_result_dict[trial_index] = trial_result_dict
             print(f"Bootstrap, data: {data_directory_name}, scenario: {scenario}, sample_size: {sample_size}, "
                   f"trial_index: {trial_index} finished.")
+            print(f"P-value is {trial_result_dict['p_value']}")
 
         result_dict[sample_size] = sample_size_result_dict
 
