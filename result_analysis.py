@@ -123,3 +123,29 @@ ccit_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ccit_null_result_dict
                                test_statistic_one_trial=ra.ccit_one_trial,trial_index_vet=trial_index_vet)
 
 ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")
+
+
+
+#############
+# Bootstrap #
+#############
+import pickle
+from scipy.stats import probplot
+import scipy.stats.distributions as dist
+
+with open('results/result_dict/mixture_data/bootstrap_mixture_100_null_result_dict.p', 'rb') as fp:
+    bootstrap_null_result_dict = pickle.load(fp)
+with open('results/result_dict/mixture_data/bootstrap_mixture_100_alt_result_dict.p', 'rb') as fp:
+    bootstrap_alt_result_dict = pickle.load(fp)
+
+
+null_p_value_vet = []
+alt_p_value_vet = []
+for trial_index in bootstrap_null_result_dict[100].keys():
+    null_p_value_vet.append(bootstrap_null_result_dict[100][trial_index]["p_value"])
+
+for trial_index in bootstrap_alt_result_dict[100].keys():
+    alt_p_value_vet.append(bootstrap_alt_result_dict[100][trial_index]["p_value"])
+
+
+probplot(alt_p_value_vet, (0, 1), dist.uniform, plot=plt)

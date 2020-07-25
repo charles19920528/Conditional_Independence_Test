@@ -256,7 +256,6 @@ def ising_bootstrap_one_trial(_, fitted_train_p_mat, z_mat, train_indices_vet, t
     return jxy_squared_mean
 
 
-
 def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_directory_name,
                            ising_simulation_result_dict_name, network_model_class, network_model_class_kwargs,
                            number_of_bootstrap_samples, max_epoch, batch_size=hp.batch_size, buffer_size=hp.buffer_size,

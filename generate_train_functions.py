@@ -426,6 +426,7 @@ class NetworkTrainingTuning:
 
         return loss_kl_array
 
+
     def train_compute_test_statistic(self, print_loss_boolean, number_of_test_samples):
         """
         Train the ising_network on the data in the instance and compute a test statistic based on the partial data
@@ -459,15 +460,17 @@ class NetworkTrainingTuning:
 
             epoch += 1
 
-        predicted_test_parameter_mat = network_model(test_z_mat)
-        jxy_squared_vet = np.square(predicted_test_parameter_mat[:, 2])
-        jxy_squared_mean = np.mean(jxy_squared_vet)
+        predicted_parameter_mat = network_model(self.z_mat)
+        jxy_squared_vet = np.square(predicted_parameter_mat[:, 2])
 
-        fitted_train_par_mat = network_model(self.z_mat[train_indices_vet, :])
-        fitted_train_p_mat = pmf_collection(fitted_train_par_mat)
-        result_dict = {"test_statistic": jxy_squared_mean, "train_indices_vet": train_indices_vet,
-                       "test_indices_vet": test_indices_vet, "weights_vet": network_model.get_weights(),
-                       "fitted_train_p_mat": fitted_train_p_mat}
+        train_jxy_squared_mean = np.mean(jxy_squared_vet[train_indices_vet])
+        test_jxy_squared_mean = np.mean(jxy_squared_vet[test_indices_vet])
+
+        fitted_train_p_mat = pmf_collection(predicted_parameter_mat[train_indices_vet, :])
+
+        result_dict = {"test_test_statistic": test_jxy_squared_mean, "train_indices_vet": train_indices_vet,
+                       "test_indices_vet": test_indices_vet,
+                       "fitted_train_p_mat": fitted_train_p_mat, "train_test_statistic": train_jxy_squared_mean}
 
         return result_dict
 
