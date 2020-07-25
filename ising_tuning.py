@@ -63,6 +63,57 @@ for sample_size, epoch in zip(sample_size_vet, epoch_vet):
 
 # When sample size is 50 or 100, there seems to be overfitting problem.
 
+
+##################################
+# Fit null model on mixture data #
+##################################
+one_layer_null_network_kwargs_dict = {"number_forward_layers": 1, "input_dim": hp.dim_z,
+                                     "hidden_dim": 200, "output_dim": 2}
+mixture_reduced_result_dict_name = "mixture_reduced_model"
+epoch_vet = [500, 300, 150, 100]
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+it.tuning_wrapper(pool=pool, scenario="alt", data_directory_name="mixture_data",
+                  network_model_class=gt.FullyConnectedNetwork,
+                  number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=epoch_vet,
+                  trial_index_vet=trial_index_vet, result_dict_name=mixture_reduced_result_dict_name,
+                  network_model_class_kwargs=one_layer_null_network_kwargs_dict,
+                  sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
+                  weights_or_radius_kwargs={"cut_off_radius": hp.alt_cut_off_radius})
+
+
+tuning_result_dict_name = mixture_reduced_result_dict_name + "_alt"
+it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
+                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
+
+for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_reduced_result_dict_name,
+                    trial_index_vet=[0, 10, 49, 60],
+                    sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True,
+                    plot_kl_boolean=True, plot_test_loss_boolean=True)
+# Median epoch is  8.  8. 12. 21.
+
+it.tuning_wrapper(pool=pool, scenario="null", data_directory_name="mixture_data",
+                  network_model_class=gt.FullyConnectedNetwork,
+                  number_of_test_samples_vet=hp.number_of_test_samples_vet, epoch_vet=epoch_vet,
+                  trial_index_vet=trial_index_vet, result_dict_name=mixture_reduced_result_dict_name,
+                  network_model_class_kwargs=one_layer_null_network_kwargs_dict,
+                  sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
+                  weights_or_radius_kwargs={"cut_off_radius": hp.alt_cut_off_radius})
+
+tuning_result_dict_name = mixture_reduced_result_dict_name + "_null"
+it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
+                                  sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
+
+for sample_size, epoch in zip(sample_size_vet, epoch_vet):
+    it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_reduced_result_dict_name,
+                    trial_index_vet=[0, 10, 49, 60],
+                    sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True,
+                    plot_kl_boolean=True, plot_test_loss_boolean=True)
+
+# Median epoch 8.  8. 12. 18.
+
 ################################
 # Tuning for true Ising model #
 ###############################

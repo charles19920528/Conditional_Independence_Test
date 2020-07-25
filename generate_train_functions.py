@@ -337,8 +337,7 @@ class NetworkTrainingTuning:
             test_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the test data.
         """
         indices_vet = np.random.permutation(self.sample_size)
-        train_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], \
-                                                 indices_vet[:number_of_test_samples]
+        train_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], indices_vet[:number_of_test_samples]
 
         train_array_tuple = (self.z_mat[train_indices_vet, :], self.x_y_mat[train_indices_vet, :])
         test_array_tuple = (self.z_mat[test_indices_vet, :], self.x_y_mat[test_indices_vet, :])
@@ -403,7 +402,7 @@ class NetworkTrainingTuning:
 
         epoch = 0
         while epoch < self.max_epoch:
-            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer,
+            loss_on_the_last_batch = train_network(train_ds=train_ds, optimizer=optimizer,
                                                           network_model=network_model)
 
             # Compute likelihood and kl on test data.
@@ -452,8 +451,7 @@ class NetworkTrainingTuning:
         epoch = 0
         while epoch < self.max_epoch:
             # Training loop.
-            loss_on_the_last_batch = self.__train_network(train_ds=train_ds, optimizer=optimizer,
-                                                          network_model=network_model)
+            loss_on_the_last_batch = train_network(train_ds=train_ds, optimizer=optimizer, network_model=network_model)
             if epoch % 10 == 0 and print_loss_boolean:
                 print("Sample size %d, Epoch %d." % (self.sample_size, epoch))
                 print(f"The training loss is {loss_on_the_last_batch}.")
@@ -466,7 +464,7 @@ class NetworkTrainingTuning:
         train_jxy_squared_mean = np.mean(jxy_squared_vet[train_indices_vet])
         test_jxy_squared_mean = np.mean(jxy_squared_vet[test_indices_vet])
 
-        fitted_train_p_mat = pmf_collection(predicted_parameter_mat[train_indices_vet, :])
+        fitted_train_p_mat = pmf_collection(tf.gather(predicted_parameter_mat, train_indices_vet, axis=0))
 
         result_dict = {"test_test_statistic": test_jxy_squared_mean, "train_indices_vet": train_indices_vet,
                        "test_indices_vet": test_indices_vet,

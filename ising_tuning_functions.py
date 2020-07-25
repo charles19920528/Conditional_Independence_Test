@@ -45,8 +45,9 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
                          dtype=np.float32)
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt", dtype=np.float32)
 
-    network_instance = network_model_class(**network_model_class_kwargs)
-    network_train_tune_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat, network_model=network_instance,
+    network_train_tune_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
+                                                           network_model_class=network_model_class,
+                                                           network_model_class_kwargs=network_model_class_kwargs,
                                                            epoch=epoch, learning_rate=learning_rate)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
