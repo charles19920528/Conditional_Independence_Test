@@ -286,7 +286,7 @@ def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_direct
     fitted_train_p_mat = ising_simulation_loop_result_dict[sample_size][trial_index]["fitted_train_p_mat"]
     train_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["train_indices_vet"]
     test_indices_vet = ising_simulation_loop_result_dict[sample_size][trial_index]["test_indices_vet"]
-    test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_statistic"]
+    test_statistic = ising_simulation_loop_result_dict[sample_size][trial_index]["test_test_statistic"]
 
     bootstrap_test_statistic_vet = pool.map(partial(ising_bootstrap_one_trial, fitted_train_p_mat=fitted_train_p_mat,
                                                     z_mat=z_mat, train_indices_vet=train_indices_vet,
@@ -295,7 +295,7 @@ def ising_bootstrap_method(pool, trial_index, sample_size, scenario, data_direct
                                                     network_model_class_kwargs=network_model_class_kwargs,
                                                     buffer_size=buffer_size, batch_size=batch_size,
                                                     learning_rate=learning_rate, max_epoch=max_epoch),
-                                            np.arange(number_of_bootstrap_samples))
+                                                    np.arange(number_of_bootstrap_samples))
 
     p_value = sum(np.array(bootstrap_test_statistic_vet) > test_statistic) / number_of_bootstrap_samples
     result_dict = {"p_value": p_value, "bootstrap_test_statistic_vet": bootstrap_test_statistic_vet,

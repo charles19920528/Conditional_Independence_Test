@@ -127,10 +127,12 @@ def generate_x_y_mat(p_mat):
     :return:
         x_y_mat: An sample_size by 2 dimension matrix. Each column contains only 1 and -1.
     """
+    p_mat = tf.cast(p_mat, dtype=tf.float64)
     sample_size = p_mat.shape[0]
     raw_sample_mat = np.zeros((sample_size, 4))
     for i in np.arange(sample_size):
-        p_vet = p_mat[i, :]
+#        p_vet = p_mat[i, :]
+        p_vet = p_mat[i, :] / np.sum(p_mat[i, :])
         raw_sample = np.random.multinomial(1, p_vet)
         raw_sample_mat[i, :] = raw_sample
 
