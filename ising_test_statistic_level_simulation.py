@@ -6,7 +6,6 @@ import simulation_functions as sf
 import generate_train_functions as gt
 import tensorflow as tf
 import hyperparameters as hp
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 pool = mp.Pool(processes=hp.process_number)

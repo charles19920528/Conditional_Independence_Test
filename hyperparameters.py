@@ -32,6 +32,7 @@ hidden_1_out_dim = 3
 # Training epochs for samples sizes in the sample_size_vet
 ising_epoch_vet = np.array([99, 129, 131, 91])
 mixture_epoch_vet = np.array([76, 71, 130, 93])
+reduced_model_epoch_vet = np.array([8, 8, 14, 21])
 
 # buffer size for Tensorflow dataset.
 buffer_size = 1024

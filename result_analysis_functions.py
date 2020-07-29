@@ -25,7 +25,7 @@ def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
         A scalar which is the test statistics of the neural Ising model.
     """
 
-    return one_sample_size_result_dict[trial_index]["test_statistic"]
+    return one_sample_size_result_dict[trial_index]["train_test_statistic"]
 
 
 def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue):

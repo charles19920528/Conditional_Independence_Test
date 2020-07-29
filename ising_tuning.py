@@ -6,7 +6,6 @@ import hyperparameters as hp
 import os
 import pickle
 import multiprocessing as mp
-import time
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
@@ -124,7 +123,7 @@ for mixture_result_dict_name in mixture_result_dict_name_vet:
     tuning_result_dict_name = mixture_result_dict_name + "_null"
     it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
                                       sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
-
+# 8.   8.  13.5 20.5
 ################################
 # Tuning for true Ising model #
 ###############################
