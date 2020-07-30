@@ -7,7 +7,7 @@ import tensorflow as tf
 import hyperparameters as hp
 import generate_train_functions as gt
 from multiprocessing import Pool
-
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 def ising_bootstrap_one_trial(_, z_mat, x_y_mat, train_indices_vet, test_indices_vet,
                               network_model_class, network_model_class_kwargs, buffer_size, batch_size, learning_rate,
@@ -138,8 +138,8 @@ mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="mixture_data",
                      ising_simulation_result_dict_name=mixture_result_dict_name,
                      result_dict_name="bootstrap_refit_reduced_mixture",
-                     trial_index_vet=np.arange(100), network_model_class=gt.FullyConnectedNetwork,
+                     trial_index_vet=np.arange(2), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
-                     full_model_max_epoch_vet=hp.mixture_epoch_vet,
-                     reduced_model_max_epoch_vet=hp.reduced_model_epoch_vet)
+                     full_model_max_epoch_vet=[130, 76],
+                     reduced_model_max_epoch_vet=[14, 8], sample_size_vet=[500, 50])

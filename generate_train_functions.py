@@ -466,7 +466,9 @@ class NetworkTrainingTuning:
         train_jxy_squared_mean = np.mean(jxy_squared_vet[train_indices_vet])
         test_jxy_squared_mean = np.mean(jxy_squared_vet[test_indices_vet])
 
-        fitted_train_p_mat = pmf_collection(tf.gather(predicted_parameter_mat, train_indices_vet, axis=0))
+        jx_jy_train_mat = tf.gather(predicted_parameter_mat, train_indices_vet, axis=0)
+        jx_jy_train_mat = tf.gather(jx_jy_train_mat, [0, 1], axis=1)
+        fitted_train_p_mat = pmf_collection(jx_jy_train_mat)
 
         result_dict = {"test_test_statistic": test_jxy_squared_mean, "train_indices_vet": train_indices_vet,
                        "test_indices_vet": test_indices_vet,
