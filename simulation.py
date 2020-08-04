@@ -130,39 +130,6 @@ sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="ising_
 print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
 
 
-###############################################
-# Bootstrap methods for Ising test statistic. #
-##############################################3
-# Mixture data
-# Null
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-start_time = time.time()
-sf.ising_bootstrap_loop(pool=pool, data_directory_name="mixture_data", scenario="null",
-                        ising_simulation_result_dict_name=mixture_result_dict_name, result_dict_name="bootstrap",
-                        trial_index_vet=np.arange(hp.number_of_trials), network_model_class=gt.FullyConnectedNetwork,
-                        network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
-                        number_of_bootstrap_samples=hp.number_of_bootstrap_samples, epoch_vet=hp.mixture_epoch_vet)
-
-
-print(f"Bootstrap simulation under null data takes {time.time() - start_time} seconds to finish.")
-
-
-# Alternative
-np.random.seed(hp.seed_index)
-tf.random.set_seed(hp.seed_index)
-
-start_time = time.time()
-sf.ising_bootstrap_loop(pool=pool, data_directory_name="mixture_data", scenario="alt",
-                        ising_simulation_result_dict_name=mixture_result_dict_name, result_dict_name="bootstrap",
-                        trial_index_vet=np.arange(hp.number_of_trials), network_model_class=gt.FullyConnectedNetwork,
-                        network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
-                        number_of_bootstrap_samples=hp.number_of_bootstrap_samples, epoch_vet=hp.mixture_epoch_vet)
-
-
-print(f"Bootstrap simulation under alt data takes {time.time() - start_time} seconds to finish.")
-
 pool.close()
 pool.join()
 
