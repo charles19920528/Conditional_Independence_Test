@@ -130,13 +130,27 @@ ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ i
 
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="ising_data",
                      ising_simulation_result_dict_name="ising_data_true_architecture",
-                     result_dict_name="bootstrap_refit_reduced_true_architecture_50_100",
-                     trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
+                     result_dict_name="bootstrap_refit_reduced_true_architecture_500_1000",
+                     trial_index_vet=np.arange(5), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
-                     full_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
-                     reduced_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
-                     sample_size_vet=hp.sample_size_vet[0:2])
+                     full_model_max_epoch_vet=hp.ising_epoch_vet[2:4],
+                     reduced_model_max_epoch_vet=hp.ising_epoch_vet[2:4],
+                     sample_size_vet=hp.sample_size_vet[2:4])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -157,7 +171,7 @@ mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="mixture_data",
                      ising_simulation_result_dict_name=mixture_result_dict_name,
                      result_dict_name="bootstrap_refit_reduced_mixture_50_100",
-                     trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
+                     trial_index_vet=np.arange(100), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
                      full_model_max_epoch_vet=hp.mixture_epoch_vet[0:2],
