@@ -1,6 +1,8 @@
 import pickle
 import multiprocessing as mp
 import matplotlib.pyplot as plt
+from scipy.stats import probplot
+import scipy.stats.distributions as dist
 
 import result_analysis_functions as ra
 import hyperparameters as hp
@@ -20,7 +22,7 @@ with open('results/result_dict/ising_data/naive_chisq_alt_result_dict.p', 'rb') 
 naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_null_result_dict,
                                       alt_result_dict=naive_chisq_alt_result_dict,
                                       test_statistic_one_trial=ra.naive_sq_statistic_one_trial,
-                                      trial_index_vet=trial_index_vet,isPvalue=False)
+                                      trial_index_vet=trial_index_vet, isPvalue=False)
 
 ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "ising_data")
 
@@ -32,7 +34,8 @@ with open('results/result_dict/mixture_data/naive_chisq_alt_result_dict.p', 'rb'
 
 naive_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=naive_chisq_result_null_dict,
                                       alt_result_dict=naive_chisq_result_alt_dict,
-                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial, isPvalue=False)
+                                      test_statistic_one_trial=ra.naive_sq_statistic_one_trial,
+                                      trial_index_vet=trial_index_vet, isPvalue=False)
 
 ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "mixture_data")
 
@@ -48,7 +51,8 @@ with open('results/result_dict/ising_data/stratified_chisq_alt_result_dict.p', '
 
 stratified_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=stratified_chisq_result_null_dict,
                                            alt_result_dict=stratified_chisq_result_alt_dict,
-                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial)
+                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial,
+                                           trial_index_vet=trial_index_vet)
 
 ra.plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq", "ising_data")
 
@@ -60,7 +64,8 @@ with open('results/result_dict/mixture_data/stratified_chisq_alt_result_dict.p',
 
 stratified_chisq_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=stratified_chisq_result_null_dict,
                                            alt_result_dict=stratified_chisq_result_alt_dict,
-                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial)
+                                           test_statistic_one_trial=ra.stratified_sq_statistic_one_trial,
+                                           trial_index_vet=trial_index_vet)
 
 ra.plot_roc(stratified_chisq_fpr_tpr_dict, "Stratified_Chisq", "mixture_data")
 
@@ -129,23 +134,25 @@ ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")
 #############
 # Bootstrap #
 #############
-import pickle
-from scipy.stats import probplot
-import scipy.stats.distributions as dist
+with open('results/result_dict/ising_data/bootstrap_refit_reduced_true_architecture_50_100_null_result_dict.p', 'rb') \
+        as fp:
+    bootstrap_refit_true_50_100_null_dict = pickle.load(fp)
 
-with open('results/result_dict/mixture_data/bootstrap_mixture_100_null_result_dict.p', 'rb') as fp:
-    bootstrap_null_result_dict = pickle.load(fp)
-with open('results/result_dict/mixture_data/bootstrap_mixture_100_alt_result_dict.p', 'rb') as fp:
-    bootstrap_alt_result_dict = pickle.load(fp)
+null_train_p_value_vet = []
+null_test_p_value_vet = []
+for sample_size in bootstrap_refit_true_50_100_null_dict.keys():
+    sample_size_train_p_value_vet = []
+    sample_size_test_p_value_vet = []
+    for trial_index in bootstrap_refit_true_50_100_null_dict[sample_size].keys():
+        sample_size_train_p_value_vet.append(bootstrap_refit_true_50_100_null_dict[sample_size][trial_index]
+                                            ["train_p_value"])
+        sample_size_test_p_value_vet.append(bootstrap_refit_true_50_100_null_dict[sample_size][trial_index]
+                                            ["test_p_value"])
 
+    null_train_p_value_vet.append(sample_size_train_p_value_vet)
+    null_test_p_value_vet.append(sample_size_test_p_value_vet)
 
-null_p_value_vet = []
-alt_p_value_vet = []
-for trial_index in bootstrap_null_result_dict[100].keys():
-    null_p_value_vet.append(bootstrap_null_result_dict[100][trial_index]["p_value"])
+plt.scatter(null_train_p_value_vet[1], null_test_p_value_vet[1])
 
-for trial_index in bootstrap_alt_result_dict[100].keys():
-    alt_p_value_vet.append(bootstrap_alt_result_dict[100][trial_index]["p_value"])
-
-
-probplot(alt_p_value_vet, (0, 1), dist.uniform, plot=plt)
+probplot(null_train_p_value_vet[0], (0, 1), dist.uniform, plot=plt)
+probplot(null_train_p_value_vet[1], (0, 1), dist.uniform, plot=plt)

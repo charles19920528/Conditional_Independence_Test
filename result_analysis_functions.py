@@ -25,7 +25,7 @@ def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
         A scalar which is the test statistics of the neural Ising model.
     """
 
-    return one_sample_size_result_dict[trial_index]["train_test_statistic"]
+    return one_sample_size_result_dict[trial_index]["test_test_statistic"]
 
 
 def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue):
@@ -231,7 +231,7 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
     :return:
         None
     """
-    fig, ax = plt.subplots(2, 2)
+    fig, ax = plt.subplots(2, 2, figsize=(8, 8))
     sample_size = 50
     ax[0, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
     #    ax[0, 0].axvline(x=0.05, color="red")

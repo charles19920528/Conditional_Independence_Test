@@ -2,7 +2,6 @@ from functools import partial
 import pickle
 import os
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 import hyperparameters as hp
 import generate_train_functions as gt
@@ -137,7 +136,6 @@ ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="ising_data
                      full_model_max_epoch_vet=hp.ising_epoch_vet[2:4],
                      reduced_model_max_epoch_vet=hp.ising_epoch_vet[2:4],
                      sample_size_vet=hp.sample_size_vet[2:4])
-
 
 
 
