@@ -129,7 +129,7 @@ ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ i
 
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="ising_data",
                      ising_simulation_result_dict_name="ising_data_true_architecture",
-                     result_dict_name="bootstrap_refit_reduced_true_architecture_500_1000",
+                     result_dict_name="bootstrap_refit_reduced_true_architecture_500_100",
                      trial_index_vet=np.arange(5), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
