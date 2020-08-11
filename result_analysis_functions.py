@@ -232,22 +232,22 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
         None
     """
     fig, ax = plt.subplots(2, 2, figsize=(8, 8))
-    sample_size = 50
+    sample_size = hp.sample_size_vet[0]
     ax[0, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
     #    ax[0, 0].axvline(x=0.05, color="red")
     ax[0, 0].set_title(f"Sample size {sample_size}")
 
-    sample_size = 100
+    sample_size = hp.sample_size_vet[1]
     ax[0, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
     #    ax[0, 1].axvline(x=0.05, color="red")
     ax[0, 1].set_title(f"Sample size {sample_size}")
 
-    sample_size = 500
+    sample_size = hp.sample_size_vet[2]
     ax[1, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
     #    ax[1, 0].axvline(x=0.05, color="red")
     ax[1, 0].set_title(f"Sample size {sample_size}")
 
-    sample_size = 1000
+    sample_size = hp.sample_size_vet[3]
     ax[1, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
     #    ax[1, 1].axvline(x=0.05, color="red")
     ax[1, 1].set_title(f"Sample size {sample_size}")
@@ -255,3 +255,48 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
     fig.suptitle(f"RoC Curves of {title}")
     fig.show()
     fig.savefig(f"./results/plots/{result_directory_name}/{title}.png")
+
+
+def summary_roc_plot(fpr_tpr_dict_vet: list, method_name_vet: list, data_directory_name: str, result_plot_name: str):
+    """
+    Assuming there are only four sample size we are simulating. We plot RoC curves of all the methods in the
+    method_name_vet and save the plot under the directory
+    ./results/plots/{data_directory_name} with name summary_roc_{result_plot_name}.
+
+    :param fpr_tpr_dict_vet: A python list of outputs of the fpr_tpr functions.
+    :param method_name_vet: A list of strings. Each element is the name of the statistics method. The order should
+        align with the one of fpr_tpr_dict_vet.
+    :param data_directory_name: A string ('str' class) of the path towards the simulation data.
+    :param result_plot_name: A string which is used as part of the plot file name.
+
+    :return:
+        None.
+    """
+    fig, ax = plt.subplots(2, 2, figsize=(9, 9))
+
+    sample_size = hp.sample_size_vet[0]
+    for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):
+        ax[0, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=method_name)
+    ax[0, 0].set_title(f"Sample size {sample_size}")
+
+    sample_size = hp.sample_size_vet[1]
+    for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):
+        ax[0, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=method_name)
+    ax[0, 1].set_title(f"Sample size {sample_size}")
+
+    sample_size = hp.sample_size_vet[2]
+    for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):
+        ax[1, 0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=method_name)
+    ax[1, 0].set_title(f"Sample size {sample_size}")
+
+    sample_size = hp.sample_size_vet[3]
+    for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):
+        ax[1, 1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=method_name)
+    ax[1, 1].set_title(f"Sample size {sample_size}")
+
+    fig.suptitle("RoC Curves")
+    handles, labels = ax[1, 1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right')
+    fig.show()
+    fig.savefig(f"./results/plots/{data_directory_name}/summary_roc_{result_plot_name}.png")
+
