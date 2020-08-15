@@ -27,10 +27,10 @@ alt_cut_off_radius = 0.8875 * np.sqrt(dim_z)
 # Nerual network #
 ##################
 # Dimension of the hidden layer in the true network.
-hidden_1_out_dim = 3
+hidden_1_out_dim = 100
 
 # Training epochs for samples sizes in the sample_size_vet
-ising_epoch_vet = np.array([99, 129, 131, 91])
+ising_epoch_vet = np.array([1, 1, 8, 11])
 mixture_epoch_vet = np.array([76, 71, 130, 93])
 reduced_model_epoch_vet = np.array([8, 8, 14, 21])
 

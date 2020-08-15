@@ -63,5 +63,5 @@ for sample_size in hp.sample_size_vet:
     weights_dict[sample_size] = sample_size_weight_dict
 
 with open("data/ising_data/weights_dict.p", "wb") as fp:
-    pickle.dump(weights_dict, fp, protocol = pickle.HIGHEST_PROTOCOL)
+    pickle.dump(weights_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 

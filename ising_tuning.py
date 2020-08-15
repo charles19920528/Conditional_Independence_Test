@@ -152,11 +152,11 @@ it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=true_result
 
 for sample_size, epoch in zip(sample_size_vet, epoch_vet):
     it.plot_loss_kl(scenario="alt", tuning_result_dict_name=true_result_dict_name,
-                    trial_index_vet=[0, 10, 49, 60],
+                    trial_index_vet=[0, 2, 5, 19],
                     sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True, plot_kl_boolean=True,
                     plot_test_loss_boolean=True)
 
-# The median optimal epochs are  99, 129, 131, 91.
+# The median optimal epochs are  1, 1, 8, 11.
 # When sample size is 50 or 100, there seems to be overfitting problem.
 
 pool.close()
