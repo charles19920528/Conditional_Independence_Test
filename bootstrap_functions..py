@@ -122,20 +122,36 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-pool = Pool()
+pool = Pool(processes=hp.process_number-1)
 ising_network_model_class_kwargs = {"number_forward_layers": 1,
-                                      "input_dim": hp.dim_z, "hidden_dim": 2, "output_dim": 3}
+                                      "input_dim": hp.dim_z, "hidden_dim": 50, "output_dim": 3}
 ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
 
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="ising_data",
                      ising_simulation_result_dict_name="ising_data_true_architecture",
                      result_dict_name="bootstrap_refit_reduced_hidden_1_architecture_50_100",
-                     trial_index_vet=np.arange(100), network_model_class=gt.FullyConnectedNetwork,
+                     trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
                      full_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
                      reduced_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
                      sample_size_vet=hp.sample_size_vet[0:2])
+
+# True architecture
+ising_network_model_class_kwargs = {"number_forward_layers": 1,
+                                      "input_dim": hp.dim_z, "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
+ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
+
+ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="ising_data",
+                     ising_simulation_result_dict_name="ising_data_true_architecture",
+                     result_dict_name="bootstrap_refit_reduced_true_architecture_50_100",
+                     trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
+                     network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
+                     number_of_bootstrap_samples=hp.number_of_boostrap_samples,
+                     full_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
+                     reduced_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
+                     sample_size_vet=hp.sample_size_vet[0:2])
+
 
 #######################################################
 mixture_result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}"

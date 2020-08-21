@@ -100,7 +100,60 @@ sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="mixtur
 
 print("Ising simulation under null mixture data takes %s seconds to finish." % (time.time() - start_time))
 
+# Ising data
+# Alternative
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
 
+start_time = time.time()
+sf.ising_simulation_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
+                         result_dict_name=true_result_dict_name, trial_index_vet=np.arange(hp.number_of_trials),
+                         network_model_class=gt.FullyConnectedNetwork,
+                         network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
+                         epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate_mixture,
+                         sample_size_vet=hp.sample_size_vet, number_of_test_samples_vet=hp.number_of_test_samples_vet)
+
+print("Ising simulation under null Ising data takes %s seconds to finish." % (time.time() - start_time))
+
+# Null
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+start_time = time.time()
+sf.ising_simulation_loop(pool=pool, scenario="null", data_directory_name="ising_data",
+                         result_dict_name=true_result_dict_name, trial_index_vet=np.arange(hp.number_of_trials),
+                         network_model_class=gt.FullyConnectedNetwork,
+                         network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
+                         epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate_mixture,
+                         sample_size_vet=hp.sample_size_vet, number_of_test_samples_vet=hp.number_of_test_samples_vet)
+
+print("Ising simulation under alternative Ising data takes %s seconds to finish." % (time.time() - start_time))
+
+
+pool.close()
+pool.join()
+
+########
+# CCIT #
+########
+np.random.seed(hp.seed_index)
+tf.random.set_seed(hp.seed_index)
+
+process_number_ccit = 3
+ccit_pool = mp.Pool(processes=process_number_ccit)
+
+# Ising data
+start_time = time.time()
+
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="null",
+                   data_directory_name="ising_data", result_dict_name="ccit",
+                   trial_index_vet=np.arange(hp.number_of_trials))
+
+sf.simulation_loop(pool=ccit_pool, simulation_method=sf.ccit_method, scenario="alt",
+                   data_directory_name="ising_data", result_dict_name="ccit",
+                   trial_index_vet=np.arange(hp.number_of_trials))
+
+print("CCIT simulation takes %s seconds to finish." % (time.time() - start_time))
 
 # mixture data
 start_time = time.time()

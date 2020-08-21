@@ -166,7 +166,7 @@ ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=m
 #############
 # Bootstrap #
 #############
-with open('results/result_dict/ising_data/bootstrap_refit_reduced_true_architecture_50_100_null_result_dict.p', 'rb') \
+with open('results/result_dict/ising_data/bootstrap_refit_reduced_hidden_1_architecture_50_100_null_result_dict.p', 'rb') \
         as fp:
     bootstrap_refit_true_50_100_null_dict = pickle.load(fp)
 
