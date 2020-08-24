@@ -1,8 +1,9 @@
 import pickle
 import multiprocessing as mp
 import matplotlib.pyplot as plt
-from scipy.stats import probplot
+import statsmodels.api as sm
 import scipy.stats.distributions as dist
+import numpy as np
 
 import result_analysis_functions as ra
 import hyperparameters as hp
@@ -186,6 +187,7 @@ for sample_size in bootstrap_refit_true_50_100_null_dict.keys():
 
 plt.scatter(null_train_p_value_vet[1], null_test_p_value_vet[1])
 
-probplot(null_train_p_value_vet[0], (0, 1), dist.uniform, plot=plt)
-probplot(null_train_p_value_vet[1], (0, 1), dist.uniform, plot=plt)
+sm.qqplot(data=np.array(null_test_p_value_vet[0]), dist=dist.uniform, line="45")
+sm.qqplot(data=np.array(null_test_p_value_vet[1]), dist=dist.uniform, line="45")
+
 
