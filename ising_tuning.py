@@ -62,7 +62,7 @@ for sample_size, epoch in zip(sample_size_vet, epoch_vet):
 
 # When sample size is 50 or 100, there seems to be overfitting problem.
 
-# FUll model on the null data
+# Full model on the null data
 # 1 layer
 number_forward_layers = 1
 hidden_dim_mixture_vet = [200]

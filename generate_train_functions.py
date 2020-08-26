@@ -321,11 +321,11 @@ class NetworkTrainingTuning:
         self.batch_size = batch_size
         self.max_epoch = epoch
 
-        self.train_indices_vet = None
-        self.test_indices_vet = None
-        self.fitted_train_p_mat = None
-        self.test_statistic = None
-        self.result_dict = None
+        # self.train_indices_vet = None
+        # self.test_indices_vet = None
+        # self.fitted_train_p_mat = None
+        # self.test_statistic = None
+        # self.result_dict = None
 
     def train_test_split(self, number_of_test_samples):
         """
@@ -405,7 +405,7 @@ class NetworkTrainingTuning:
         epoch = 0
         while epoch < self.max_epoch:
             loss_on_the_last_batch = train_network(train_ds=train_ds, optimizer=optimizer,
-                                                          network_model=network_model)
+                                                   network_model=network_model)
 
             # Compute likelihood and kl on test data.
             predicted_test_parameter_mat = network_model(test_z_mat)
