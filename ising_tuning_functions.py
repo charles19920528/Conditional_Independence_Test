@@ -11,7 +11,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, number_of_test_samples,
                            network_model_class, network_model_class_kwargs, learning_rate=hp.learning_rate,
-                           true_weights_dict=None, cut_off_radius=None):
+                           batch_size=hp.batch_size, true_weights_dict=None, cut_off_radius=None):
     """
     Fit the neural network belongs to the {network_model_class} on {trial_index}th trial of data with sample size
     {sample_size} and record the losses and kl-divergence.
@@ -48,7 +48,8 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     network_train_tune_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
                                                            network_model_class=network_model_class,
                                                            network_model_class_kwargs=network_model_class_kwargs,
-                                                           epoch=epoch, learning_rate=learning_rate)
+                                                           epoch=epoch, learning_rate=learning_rate,
+                                                           batch_size=batch_size)
 
     assert scenario in ["null", "alt"], "scernaio has to be either null or alt."
     is_null_boolean = False

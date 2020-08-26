@@ -7,6 +7,7 @@ import os
 import pickle
 import multiprocessing as mp
 
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 trial_index_vet = np.arange(120)
@@ -18,8 +19,8 @@ else:
     process_number = hp.process_number
 
 # Tune model
-number_forward_layers = 2
-hidden_dim_mixture = 40000
+number_forward_layers = 1
+hidden_dim_mixture = 10**7
 
 null_network_kwargs_dict = {"number_forward_layers": number_forward_layers, "input_dim": hp.dim_z,
                                      "hidden_dim": hidden_dim_mixture, "output_dim": 2}
@@ -33,7 +34,7 @@ null_tuning_result = it.ising_tuning_one_trial(trial_index=0, sample_size=500, s
                                                data_directory_name="mixture_data", epoch=50, number_of_test_samples=50,
                                                network_model_class=gt.FullyConnectedNetwork,
                                                network_model_class_kwargs=null_network_kwargs_dict,
-                                               learning_rate=10**-6,
+                                               learning_rate=10**-6, batch_size=hp.batch_size,
                                                true_weights_dict=None, cut_off_radius=hp.null_cut_off_radius)
 # alt_tuning_result = it.ising_tuning_one_trial(trial_index=0, sample_size=500, scenario="null",
 #                                                data_directory_name="mixture_data", epoch=100, number_of_test_samples=50,
