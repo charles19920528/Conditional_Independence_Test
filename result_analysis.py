@@ -1,10 +1,5 @@
 import pickle
 import multiprocessing as mp
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
-import scipy.stats.distributions as dist
-import numpy as np
-
 import result_analysis_functions as ra
 import hyperparameters as hp
 
@@ -167,27 +162,5 @@ ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=m
 #############
 # Bootstrap #
 #############
-with open('results/result_dict/ising_data/bootstrap_refit_reduced_true_architecture_50_100_null_result_dict.p', 'rb') \
-        as fp:
-    bootstrap_refit_true_50_100_null_dict = pickle.load(fp)
-
-null_train_p_value_vet = []
-null_test_p_value_vet = []
-for sample_size in bootstrap_refit_true_50_100_null_dict.keys():
-    sample_size_train_p_value_vet = []
-    sample_size_test_p_value_vet = []
-    for trial_index in bootstrap_refit_true_50_100_null_dict[sample_size].keys():
-        sample_size_train_p_value_vet.append(bootstrap_refit_true_50_100_null_dict[sample_size][trial_index]
-                                            ["train_p_value"])
-        sample_size_test_p_value_vet.append(bootstrap_refit_true_50_100_null_dict[sample_size][trial_index]
-                                            ["test_p_value"])
-
-    null_train_p_value_vet.append(sample_size_train_p_value_vet)
-    null_test_p_value_vet.append(sample_size_test_p_value_vet)
-
-plt.scatter(null_train_p_value_vet[1], null_test_p_value_vet[1])
-
-sm.qqplot(data=np.array(null_test_p_value_vet[0]), dist=dist.uniform, line="45")
-sm.qqplot(data=np.array(null_test_p_value_vet[1]), dist=dist.uniform, line="45")
-
+ra.bootstrap_qqplot(data_directory_name="ising_data", scenario="null", result_dict_name="nfl:10_hd:40_50_100")
 

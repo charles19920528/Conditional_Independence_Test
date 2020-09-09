@@ -1,6 +1,9 @@
 from functools import partial
 import os
+import pickle
 import numpy as np
+import statsmodels.api as sm
+import scipy.stats.distributions as dist
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import hyperparameters as hp
@@ -215,9 +218,9 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, t
     return fpr_tpr_dict
 
 
-#############
-# PLot Roce #
-#############
+############
+# PLot Roc #
+############
 def plot_roc(fpr_tpr_dict, title, result_directory_name):
     """
     Assuming there are only four sample size we are simulating. We plot the RoC curve and save the plot under the path
@@ -300,3 +303,40 @@ def summary_roc_plot(fpr_tpr_dict_vet: list, method_name_vet: list, data_directo
     fig.show()
     fig.savefig(f"./results/plots/{data_directory_name}/summary_roc_{result_plot_name}.png")
 
+
+###########################
+# Plot Bootstrap P-values #
+###########################
+def bootstrap_qqplot(data_directory_name: str, scenario: str, result_dict_name: str):
+    """
+
+    :param data_directory_name:
+    :param scenario:
+    :param result_dict_name:
+    :return:
+    """
+    with open(f'results/result_dict/{data_directory_name}/bootstrap_refit_reduced_{result_dict_name}_{scenario}_'
+              f'result_dict.p', 'rb') as fp:
+        bootstrap_result_dict = pickle.load(fp)
+
+    train_p_value_vet = []
+    test_p_value_vet = []
+
+    for sample_size in bootstrap_result_dict.keys():
+        sample_size_train_p_value_vet = []
+        sample_size_test_p_value_vet = []
+        for trial_index in bootstrap_result_dict[sample_size].keys():
+            sample_size_train_p_value_vet.append(bootstrap_result_dict[sample_size][trial_index]["train_p_value"])
+            sample_size_test_p_value_vet.append(bootstrap_result_dict[sample_size][trial_index]["test_p_value"])
+
+        train_p_value_vet.append(sample_size_train_p_value_vet)
+        test_p_value_vet.append(sample_size_test_p_value_vet)
+
+    plt.scatter(train_p_value_vet[1], test_p_value_vet[1])
+    fig_1 = sm.qqplot(data=np.array(test_p_value_vet[0]), dist=dist.uniform, line="45")
+    plt.title("Train")
+    fig_2 = sm.qqplot(data=np.array(test_p_value_vet[1]), dist=dist.uniform, line="45")
+    plt.title("Test")
+
+    fig_1.savefig(f"results/plots/{data_directory_name}/bootstrap_refit_reduced_{result_dict_name}_train.png")
+    fig_2.savefig(f"results/plots/{data_directory_name}/bootstrap_refit_reduced_{result_dict_name}_test.png")
