@@ -4,6 +4,15 @@ import result_analysis_functions as ra
 import hyperparameters as hp
 
 pool = mp.Pool(processes=hp.process_number)
+nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
+result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_50_100" for
+                        number_forward_layers, hidden_dim in nfl_hd_vet]
+with open(f'results/result_dict/ising_data/{result_dict_name_vet[1]}_alt_'
+          f'result_dict.p', 'rb') as fp:
+    alt_result_dict = pickle.load(fp)
+ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+                        train_p_value_boolean=True, trial_index_vet=list(range(200)))
+
 trial_index_vet = list(range(hp.number_of_trials))
 
 ising_fpr_tpr_dict_vet = []
@@ -164,3 +173,12 @@ ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=m
 #############
 ra.bootstrap_qqplot(data_directory_name="ising_data", scenario="null", result_dict_name="nfl:10_hd:40_50_100")
 
+nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
+result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_50_100" for
+                        number_forward_layers, hidden_dim in nfl_hd_vet]
+
+ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+                        train_p_value_boolean=True, trial_index_vet=list(range(200)))
+
+pool.close()
+pool.join()

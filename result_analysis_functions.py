@@ -82,6 +82,27 @@ def ccit_one_trial(trial_index, one_sample_size_result_dict):
     return test_statistic
 
 
+def bootstrap_p_value_one_trial(trial_index, one_sample_size_result_dict, train_p_value_boolean):
+    """
+    Obtain the P-value produced by the Bootstrap procedure.
+
+    :param trial_index: An integer.
+    :param one_sample_size_result_dict: A dictionary which contains simulation results of trials of a particular sample
+        size.
+    :param train_p_value_boolean: A boolean. If true, the function will extract the p-value computed on the training
+        data. Otherwise, the p-value computed on the test data will be extracted.
+
+    :return:
+        A scalar between 0 and 1.
+    """
+
+    if train_p_value_boolean:
+        test_statistic_key = 'train_p_value'
+    else:
+        test_statistic_key = 'test_p_value'
+
+    return one_sample_size_result_dict[trial_index][test_statistic_key]
+
 # Not in use now.
 # def ising_residual_statistic_one_trial(trial_index, sample_size, scenario, data_directory_name,
 #                                        one_sample_size_result_dict):
@@ -340,3 +361,38 @@ def bootstrap_qqplot(data_directory_name: str, scenario: str, result_dict_name: 
 
     fig_1.savefig(f"results/plots/{data_directory_name}/bootstrap_refit_reduced_{result_dict_name}_train.png")
     fig_2.savefig(f"results/plots/{data_directory_name}/bootstrap_refit_reduced_{result_dict_name}_test.png")
+
+
+def bootstrap_roc_50_100(pool, data_directory_name, result_dict_name_vet, train_p_value_boolean, trial_index_vet):
+    architecture_name_vet = []
+    fpr_tpr_dict_vet = []
+
+    for result_dict_name in result_dict_name_vet:
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_null_'
+                  f'result_dict.p', 'rb') as fp:
+            null_result_dict = pickle.load(fp)
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_alt_'
+                  f'result_dict.p', 'rb') as fp:
+            alt_result_dict = pickle.load(fp)
+
+        fpr_tpr_dict = fpr_tpr(pool=pool, null_result_dict=null_result_dict, alt_result_dict=alt_result_dict,
+                               test_statistic_one_trial=bootstrap_p_value_one_trial, trial_index_vet=trial_index_vet,
+                               train_p_value_boolean=train_p_value_boolean)
+        fpr_tpr_dict_vet.append(fpr_tpr_dict)
+        architecture_name_vet.append(result_dict_name[:len(result_dict_name) - 7])
+
+    fig, ax = plt.subplots(1, 2, figsize=(9, 9))
+    sample_size = hp.sample_size_vet[0]
+    for fpr_tpr_dict, architecture_name in zip(fpr_tpr_dict_vet, architecture_name_vet):
+        ax[0].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=architecture_name)
+    ax[0].set_title(f"Sample size {sample_size}")
+
+    sample_size = hp.sample_size_vet[1]
+    for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, architecture_name_vet):
+        ax[1].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=method_name)
+    ax[1].set_title(f"Sample size {sample_size}")
+
+    fig.suptitle("RoC Curves")
+    handles, labels = ax[1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right')
+
