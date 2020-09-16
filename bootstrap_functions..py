@@ -123,7 +123,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-pool = Pool(processes=hp.process_number-1)
+pool = Pool(processes=hp.process_number)
 
 # Misspecified architecture on Ising data
 for scenario in ["null", "alt"]:
