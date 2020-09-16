@@ -126,26 +126,27 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
 pool = Pool(processes=hp.process_number-1)
 
 # Misspecified architecture on Ising data
-nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
-for nfl_hd in nfl_hd_vet:
-    number_forward_layers, hidden_dim = nfl_hd
+for scenario in ["null", "alt"]:
+    nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40)]
+    for nfl_hd in nfl_hd_vet:
+        number_forward_layers, hidden_dim = nfl_hd
 
-    ising_network_model_class_kwargs = {"number_forward_layers": number_forward_layers,
-                                        "input_dim": hp.dim_z, "hidden_dim": hidden_dim, "output_dim": 3}
-    ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))][
-                                           0:2]
+        ising_network_model_class_kwargs = {"number_forward_layers": number_forward_layers,
+                                            "input_dim": hp.dim_z, "hidden_dim": hidden_dim, "output_dim": 3}
+        ising_network_model_class_kwargs_vet = [ising_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))][
+                                               0:2]
 
-    ising_bootstrap_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
-                         ising_simulation_result_dict_name="ising_data_true_architecture",
-                         result_dict_name=f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500",
-                         trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
-                         network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
-                         number_of_bootstrap_samples=hp.number_of_boostrap_samples,
-                         full_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
-                         reduced_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
-                         sample_size_vet=[hp.sample_size_vet[2]])
+        ising_bootstrap_loop(pool=pool, scenario=scenario, data_directory_name="ising_data",
+                             ising_simulation_result_dict_name="ising_data_true_architecture",
+                             result_dict_name=f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500",
+                             trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
+                             network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
+                             number_of_bootstrap_samples=hp.number_of_boostrap_samples,
+                             full_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
+                             reduced_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
+                             sample_size_vet=[hp.sample_size_vet[2]])
 
-    print(f"{nfl_hd} finished.")
+        print(f"{nfl_hd} finished.")
 
 
 #######################################################
