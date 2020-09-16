@@ -25,9 +25,10 @@ def ising_bootstrap_one_trial(_, z_mat, x_y_mat, train_indices_vet, test_indices
         epoch += 1
 
     # Resample
-    fitted_par_mat = reduced_model(z_mat[train_indices_vet, :])
-    fitted_train_p_mat = gt.pmf_collection(fitted_par_mat)
-    new_train_x_y_mat = gt.generate_x_y_mat(fitted_train_p_mat)
+#    fitted_par_mat = reduced_model(z_mat[train_indices_vet, :])
+#    fitted_train_p_mat = gt.pmf_collection(fitted_par_mat)
+#    new_train_x_y_mat = gt.generate_x_y_mat(fitted_train_p_mat)
+    new_train_x_y_mat = gt.generate_x_y_mat_ising(ising_network=reduced_model, z_mat=z_mat[train_indices_vet, :])
     train_ds = tf.data.Dataset.from_tensor_slices((z_mat[train_indices_vet, :], new_train_x_y_mat))
     train_ds = train_ds.shuffle(buffer_size).batch(batch_size)
 
@@ -125,8 +126,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
 pool = Pool(processes=hp.process_number-1)
 
 # Misspecified architecture on Ising data
-# nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
-nfl_hd_vet = [(1, 100)]
+nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
 for nfl_hd in nfl_hd_vet:
     number_forward_layers, hidden_dim = nfl_hd
 
@@ -137,13 +137,13 @@ for nfl_hd in nfl_hd_vet:
 
     ising_bootstrap_loop(pool=pool, scenario="alt", data_directory_name="ising_data",
                          ising_simulation_result_dict_name="ising_data_true_architecture",
-                         result_dict_name=f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_50_100",
+                         result_dict_name=f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500",
                          trial_index_vet=np.arange(200), network_model_class=gt.FullyConnectedNetwork,
                          network_model_class_kwargs_vet=ising_network_model_class_kwargs_vet,
                          number_of_bootstrap_samples=hp.number_of_boostrap_samples,
-                         full_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
-                         reduced_model_max_epoch_vet=hp.ising_epoch_vet[0:2],
-                         sample_size_vet=hp.sample_size_vet[0:2])
+                         full_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
+                         reduced_model_max_epoch_vet=[hp.ising_epoch_vet[2]],
+                         sample_size_vet=[hp.sample_size_vet[2]])
 
     print(f"{nfl_hd} finished.")
 
