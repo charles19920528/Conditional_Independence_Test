@@ -20,7 +20,7 @@ else:
 
 # Tune model
 number_forward_layers = 1
-hidden_dim_mixture = 10**7
+hidden_dim_mixture = 100
 
 null_network_kwargs_dict = {"number_forward_layers": number_forward_layers, "input_dim": hp.dim_z,
                                      "hidden_dim": hidden_dim_mixture, "output_dim": 2}
@@ -30,8 +30,8 @@ alt_network_kwargs_dict = {"number_forward_layers": number_forward_layers, "inpu
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
-null_tuning_result = it.ising_tuning_one_trial(trial_index=0, sample_size=500, scenario="null",
-                                               data_directory_name="mixture_data", epoch=50, number_of_test_samples=50,
+null_tuning_result = it.ising_tuning_one_trial(trial_index=1, sample_size=500, scenario="null",
+                                               data_directory_name="ising_data", epoch=50, number_of_test_samples=50,
                                                network_model_class=gt.FullyConnectedNetwork,
                                                network_model_class_kwargs=null_network_kwargs_dict,
                                                learning_rate=10**-6, batch_size=hp.batch_size,

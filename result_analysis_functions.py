@@ -375,7 +375,7 @@ def bootstrap_roc_50_100(pool, data_directory_name, result_dict_name_vet, train_
                   f'result_dict.p', 'rb') as fp:
             alt_result_dict = pickle.load(fp)
 
-        fpr_tpr_dict = fpr_tpr(pool=pool, null_result_dict=null_result_dict, alt_result_dict=alt_result_dict,
+        fpr_tpr_dict = fpr_tpr(pool=pool, null_result_dict=alt_result_dict, alt_result_dict=null_result_dict,
                                test_statistic_one_trial=bootstrap_p_value_one_trial, trial_index_vet=trial_index_vet,
                                train_p_value_boolean=train_p_value_boolean)
         fpr_tpr_dict_vet.append(fpr_tpr_dict)
@@ -396,3 +396,32 @@ def bootstrap_roc_50_100(pool, data_directory_name, result_dict_name_vet, train_
     handles, labels = ax[1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')
 
+
+def bootstrap_roc_500(pool, data_directory_name, result_dict_name_vet, train_p_value_boolean, trial_index_vet):
+    architecture_name_vet = []
+    fpr_tpr_dict_vet = []
+
+    for result_dict_name in result_dict_name_vet:
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_null_'
+                  f'result_dict.p', 'rb') as fp:
+            null_result_dict = pickle.load(fp)
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_alt_'
+                  f'result_dict.p', 'rb') as fp:
+            alt_result_dict = pickle.load(fp)
+
+        # Check if it makes sense to flip.
+        fpr_tpr_dict = fpr_tpr(pool=pool, null_result_dict=alt_result_dict, alt_result_dict=null_result_dict,
+                               test_statistic_one_trial=bootstrap_p_value_one_trial, trial_index_vet=trial_index_vet,
+                               train_p_value_boolean=train_p_value_boolean)
+        fpr_tpr_dict_vet.append(fpr_tpr_dict)
+        architecture_name_vet.append(result_dict_name[:len(result_dict_name) - 7])
+
+    fig, ax = plt.subplots()
+    sample_size = 500
+    for fpr_tpr_dict, architecture_name in zip(fpr_tpr_dict_vet, architecture_name_vet):
+        ax.plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=architecture_name)
+    ax.set_title(f"Sample size {sample_size}")
+
+    fig.suptitle("RoC Curves")
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right')
