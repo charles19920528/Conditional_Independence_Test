@@ -416,7 +416,7 @@ def bootstrap_roc_500(pool, data_directory_name, result_dict_name_vet, train_p_v
         fpr_tpr_dict_vet.append(fpr_tpr_dict)
         architecture_name_vet.append(result_dict_name[:len(result_dict_name) - 7])
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(2)
     sample_size = 500
     for fpr_tpr_dict, architecture_name in zip(fpr_tpr_dict_vet, architecture_name_vet):
         ax.plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1], label=architecture_name)
@@ -425,3 +425,41 @@ def bootstrap_roc_500(pool, data_directory_name, result_dict_name_vet, train_p_v
     fig.suptitle("RoC Curves")
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')
+
+
+def power_curve(pool, data_directory_name, result_dict_name_vet, train_p_value_boolean, sample_size_int,
+                trial_index_vet):
+    rejected_proportion_vet = (np.arange(len(trial_index_vet)) + 1) / len(trial_index_vet)
+
+    fig, ax = plt.subplots(2)
+    for result_dict_name in result_dict_name_vet:
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_null_'
+                  f'result_dict.p', 'rb') as fp:
+            null_result_dict = pickle.load(fp)
+        null_result_dict = null_result_dict[sample_size_int]
+        with open(f'results/result_dict/{data_directory_name}/{result_dict_name}_alt_'
+                  f'result_dict.p', 'rb') as fp:
+            alt_result_dict = pickle.load(fp)
+        alt_result_dict = alt_result_dict[sample_size_int]
+
+        null_p_value_vet_one_sample_vet, alt_p_value_vet_one_sample_vet = \
+            test_statistic_one_sample_size(pool=pool, one_sample_size_null_result_dict=null_result_dict,
+                                           one_sample_size_alt_result_dict=alt_result_dict,
+                                           trial_index_vet=trial_index_vet,
+                                           test_statistic_one_trial=bootstrap_p_value_one_trial,
+                                           train_p_value_boolean=train_p_value_boolean)
+        splitted_name_list = result_dict_name.split("_")
+        architecture_name = splitted_name_list[3] + " " + splitted_name_list[4]
+
+        null_p_value_vet_one_sample_vet = np.sort(null_p_value_vet_one_sample_vet)
+        alt_p_value_vet_one_sample_vet = np.sort(alt_p_value_vet_one_sample_vet)
+
+        ax[0].plot(null_p_value_vet_one_sample_vet, rejected_proportion_vet, label=architecture_name)
+        ax[1].plot(alt_p_value_vet_one_sample_vet, rejected_proportion_vet, label=architecture_name)
+
+    ax[0].set_title("Null")
+    ax[1].set_title("Alt")
+    fig.suptitle(f"Power Curves for Sample Size {sample_size_int}")
+    handles, labels = ax[1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right')
+

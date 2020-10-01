@@ -162,6 +162,7 @@ ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=m
 #############
 # Bootstrap #
 #############
+trial_index_vet = list(range(200))
 ra.bootstrap_qqplot(data_directory_name="ising_data", scenario="null", result_dict_name="nfl:10_hd:40_50_100")
 
 nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
@@ -169,14 +170,19 @@ result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd
                         number_forward_layers, hidden_dim in nfl_hd_vet]
 
 ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
-                        train_p_value_boolean=True, trial_index_vet=list(range(200)))
+                        train_p_value_boolean=True, trial_index_vet=trial_index_vet)
 
+ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+               sample_size_int=100, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
 
-nfl_hd_vet = [(1, 10), (1, 100)]
+nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40)]
 result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500" for
                         number_forward_layers, hidden_dim in nfl_hd_vet]
 ra.bootstrap_roc_500(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet[0:2],
-                        train_p_value_boolean=True, trial_index_vet=list(range(200)))
+                        train_p_value_boolean=True, trial_index_vet=trial_index_vet)
+
+ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+               sample_size_int=500, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
 
 pool.close()
 pool.join()
