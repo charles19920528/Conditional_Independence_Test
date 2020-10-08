@@ -175,12 +175,13 @@ ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict
 ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
                sample_size_int=100, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
 
-nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40)]
+nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40), (10, 100)]
 result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500" for
                         number_forward_layers, hidden_dim in nfl_hd_vet]
 ra.bootstrap_roc_500(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet[0:2],
                         train_p_value_boolean=True, trial_index_vet=trial_index_vet)
-g
+ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+               sample_size_int=500, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
 
 
 pool.close()
