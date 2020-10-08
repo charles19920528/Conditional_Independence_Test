@@ -127,7 +127,7 @@ pool = Pool(processes=hp.process_number)
 
 # Misspecified architecture on Ising data
 for scenario in ["null", "alt"]:
-    nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40)]
+    nfl_hd_vet = [(10, 100)]
     for nfl_hd in nfl_hd_vet:
         number_forward_layers, hidden_dim = nfl_hd
 
