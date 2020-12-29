@@ -539,7 +539,7 @@ class ForwardLayer(tf.keras.layers.Layer):
             units=hidden_dim,
             input_shape=(input_dim,)
         )
-        self.layernorm = tf.keras.layers.LayerNormalization()
+#        self.layernorm = tf.keras.layers.LayerNormalization()
 
     def call(self, inputs):
         output = self.linear(inputs)
@@ -577,6 +577,8 @@ class FullyConnectedNetwork(tf.keras.Model):
             output = self.final_linear(output)
 
         return output
+
+
 
 # Not in use now.
 ####################################################################
