@@ -1,9 +1,19 @@
+from pathlib import Path
 import numpy as np
 import generate_train_functions as gt
 import tensorflow as tf
 import pickle
-from sklearn.datasets.samples_generator import make_blobs
+from sklearn.datasets import make_blobs
 import hyperparameters as hp
+
+####################
+# Create Directory #
+####################
+for data in ["ising_date", "mixture_data"]:
+    Path(f"./data/{data}/z_mat").mkdir( parents=True, exist_ok=True)
+    for hypothesis in ["null", "alt"]:
+        Path(f"./data/{data}/{hypothesis}").mkdir(parents=True, exist_ok=True)
+
 
 seed_index = 1
 
