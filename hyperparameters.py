@@ -17,11 +17,14 @@ number_of_trials = 1000
 sample_size_vet = np.array([50, 100, 500, 1000])
 
 # The radius we use for dividing z in to two groups under the mixture data scenario.
-# When dim_z = 3, the null_cut_off_radius will make P(x = -y) approximately 0.3252 and p(x = y) approximately 0.675.
-# When dim_z = 3, the alt_cut_off_radius will make P(norm(z) < alt_cut_off_radius) roughly 0.5.
+# When dim_z = 3, the null_cut_off_radius will make P(norm(z) < alt_cut_off_radius) is roughly 0.65.
+# When dim_z = 3, the alt_cut_off_radius will make P(norm(z) < alt_cut_off_radius) is roughly 0.5.
 null_cut_off_radius = 1.046 * np.sqrt(dim_z)
 alt_cut_off_radius = 0.8875 * np.sqrt(dim_z)
 
+p_null_norm_less = 0.65
+p_g = 0.4
+p_l = 0.8
 
 ##################
 # Nerual network #

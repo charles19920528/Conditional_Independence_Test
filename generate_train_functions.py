@@ -227,9 +227,11 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
     sample_size = z_mat.shape[0]
     if is_null_boolean:
-        p_mat = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
-        helper_pmf_vet = np.array([0.5, 0, 0, 0.5]).reshape(1, 4)
-        p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
+        p_g = hp.p_g
+        p_l = hp.p_l
+        p_mat = np.tile(np.array([p_g**2, p_g * (1 - p_g), p_g * (1 - p_g), (1 - p_g)**2]), (sample_size, 1))
+        helper_pmf_vet = np.array([p_l**2, p_l * (1 - p_l), p_l * (1 - p_l), (1 - p_l)**2]).reshape(1, 4)
+        p_mat[less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(less_than_cut_off_boolean), 1))
 
         return p_mat
     else:
