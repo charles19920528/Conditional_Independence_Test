@@ -106,21 +106,23 @@ ra.plot_roc(ising_fpr_tpr_dict, f"True_Ising_Model", "ising_data")
 ######################################################
 # Analyze the Ising model fitted on the mixture data #
 ######################################################
-result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}"
+plot_title = "ising_model_mixture_data"
 
-with open(f'results/result_dict/mixture_data/{result_dict_name }_null_result_dict.p', 'rb') as fp:
-    ising_mixture_null_result_dict = pickle.load(fp)
-with open(f'results/result_dict/mixture_data/{result_dict_name }_alt_result_dict.p', 'rb') as fp:
-    ising_mixture_alt_result_dict = pickle.load(fp)
+with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
+          f'{hp.mixture_hidden_dim_null}_null_result_dict.p', 'rb') as fp:
+    null_ising_mixture_result_dict = pickle.load(fp)
+with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
+          f'{hp.mixture_hidden_dim_alt}_alt_result_dict.p', 'rb') as fp:
+    alt_ising_mixture_result_dict = pickle.load(fp)
 
-ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_mixture_null_result_dict,
-                                alt_result_dict=ising_mixture_alt_result_dict,
-                                test_statistic_one_trial=ra.ising_test_statistic_one_trial,
-                                trial_index_vet=trial_index_vet)
+ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
+                                        alt_result_dict=alt_ising_mixture_result_dict,
+                                        test_statistic_one_trial=ra.ising_test_statistic_one_trial,
+                                        trial_index_vet=trial_index_vet)
 
 mixture_fpr_tpr_dict_vet.append(ising_mixture_fpr_tpr_dict)
 
-ra.plot_roc(ising_mixture_fpr_tpr_dict, result_dict_name, "mixture_data")
+ra.plot_roc(ising_mixture_fpr_tpr_dict, plot_title, "mixture_data")
 
 
 ####################

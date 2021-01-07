@@ -34,7 +34,8 @@ hidden_1_out_dim = 100
 
 # Training epochs for samples sizes in the sample_size_vet
 ising_epoch_vet = np.array([1, 1, 8, 11])
-mixture_epoch_vet = np.array([76, 71, 130, 93])
+mixture_epoch_vet_alt = np.array([76, 71, 130, 93])
+mixture_epoch_vet_null = np.array([171, 29, 45, 52])
 reduced_model_epoch_vet = np.array([8, 8, 14, 21])
 
 # buffer size for Tensorflow dataset.
@@ -51,8 +52,11 @@ learning_rate_mixture = 0.01
 ####################################
 # Architecture on the mixture data #
 ####################################
-mixture_number_forward_layer = 1
-mixture_hidden_dim = 200
+mixture_number_forward_layer_null = 12
+mixture_hidden_dim_null = 160
+
+mixture_number_forward_layer_alt = 1
+mixture_hidden_dim_alt = 200
 
 
 ############
