@@ -9,7 +9,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, number_of_test_samples,
+def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, test_sample_prop,
                            network_model_class, network_model_class_kwargs, learning_rate=hp.learning_rate,
                            batch_size=hp.batch_size, true_weights_dict=None, cut_off_radius=None):
     """
@@ -23,7 +23,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     :param data_directory_name: It should either be "ising_data" or "mixture_data" depending on if the data is generated
         under the Ising or mixture model.
     :param epoch: An integer indicating the number of times training process pass through the data set.
-    :param number_of_test_samples: An integer which is the number of samples used as validation set.
+    :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
         neural network to fit on the data.
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
@@ -31,6 +31,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
     :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating
             the mixture data.
+    :param batch_size:
     :param true_weights_dict: If supplied, it should be the dictionary containing all true weights arrays of the data
         generating Ising network.
 
@@ -59,11 +60,11 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     if true_weights_dict is not None:
         true_weights_array = true_weights_dict[sample_size][trial_index]
         loss_kl_array = network_train_tune_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
-                                                           number_of_test_samples=number_of_test_samples,
+                                                           test_sample_prop=test_sample_prop,
                                                            true_weights_array=true_weights_array)
     else:
         loss_kl_array = network_train_tune_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
-                                                           number_of_test_samples=number_of_test_samples,
+                                                           test_sample_prop=test_sample_prop,
                                                            cut_off_radius=cut_off_radius)
 
     print(f"Scenario: {scenario}, sample size: {sample_size}, trial: {trial_index} finished.")
@@ -72,7 +73,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
 
 
 def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, network_model_class_kwargs,
-                   weights_or_radius_kwargs, number_of_test_samples_vet, epoch_vet,
+                   weights_or_radius_kwargs, test_sample_prop, epoch_vet,
                    trial_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet,
                    learning_rate=hp.learning_rate):
     """
@@ -89,7 +90,7 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, net
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
         network_model_class.
     :param weights_or_radius_kwargs: A dictionary whose key should either be "true_weights_dict" or "cut_off_radius".
-    :param number_of_test_samples_vet: An array of integers which contains the sample size of data used.
+    :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
     :param epoch_vet: An array of integers. It should have the same length as the sample_size_vet does.
     :param trial_index_vet: An array of integers which contains the trial indices of data used.
     :param result_dict_name: A string ('str' class). The name of the result dictionary.
@@ -101,17 +102,18 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, net
         containing the loss_kl_array of each trial.
     """
     result_dict = dict()
-    for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet, number_of_test_samples_vet):
+    for sample_size, epoch, in zip(sample_size_vet, epoch_vet):
         pool_result_vet = pool.map(partial(ising_tuning_one_trial, scenario=scenario, sample_size=sample_size,
                                            data_directory_name=data_directory_name, epoch=epoch,
-                                           number_of_test_samples=number_of_test_samples,
+                                           test_sample_prop=test_sample_prop,
                                            network_model_class=network_model_class,
                                            network_model_class_kwargs=network_model_class_kwargs,
                                            learning_rate=learning_rate, **weights_or_radius_kwargs), trial_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
-    with open(f"tuning/raw_result_dict/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
+    with open(f"tuning/raw_result_dict/{result_dict_name}_{scenario}_result_dict.p",
+              "wb") as fp:
         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -130,7 +132,7 @@ def optimal_epoch_kl_one_trial(trial_result_array):
     """
     trial_kl_array = trial_result_array[2, :]
 
-    return [np.argmin(trial_kl_array), np.min(trial_kl_array)]
+    return [np.nanargmin(trial_kl_array), np.nanmin(trial_kl_array)]
 
 
 def optimal_epoch_kl_one_sample_size(sample_size, trial_index_vet, tuning_result_dict):
@@ -238,8 +240,6 @@ def process_plot_epoch_kl_raw_dict(pool, tuning_result_dict_name, sample_size_ve
     :return:
         None
     """
-
-
     optimal_epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet,
                                                  trial_index_vet=trial_index_vet,
                                                  tuning_result_dict_name=tuning_result_dict_name)
@@ -291,3 +291,10 @@ def plot_loss_kl(scenario, tuning_result_dict_name, trial_index_vet, sample_size
 
     fig.suptitle(f"{scenario}, sample size {sample_size}")
     fig.show()
+
+import multiprocessing as mp
+import hyperparameters as hp
+pool = mp.Pool(processes=1)
+
+# optimal_epoch_kl(pool, sample_size_vet=hp.sample_size_vet, trial_index_vet=np.arange(120),
+#                  tuning_result_dict_name="mixture_reduced_model_96_160_0.01_null")

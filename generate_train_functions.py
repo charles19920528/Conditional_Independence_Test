@@ -213,8 +213,8 @@ def data_generate_network(weights_distribution_string, dim_z=hp.dim_z, hidden_1_
 ########################
 def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     """
-    Compute the conditoinal pmf for the mixture data. Under the null, if norm(z) is less than the cut_off_radius,
-    X and Y are independent Bernoulli random variables, otherwise, X = Y. Under the alternative, X is Bernoulli0.5),
+    Compute the conditoinal pmf for the mixture data. Under the null, X and Y are independent Bernoulli random
+    variables. P is given by the expit function. Under the alternative, X is Bernoulli0.5),
     if norm(z) is less than the cut_off_radius, y = -x. Otherwise, Y = X.
 
     :param z_mat: An n by p dimension numpy array or tensor. n is the sample size. This is the data we condition on.
@@ -224,15 +224,17 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     :return: p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1)
         and P(X = -1, Y = -1).
     """
-    less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
+    z_norm_array = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat)
+    less_than_cut_off_boolean = z_norm_array < cut_off_radius
     sample_size = z_mat.shape[0]
     if is_null_boolean:
-        p_g = hp.p_g
-        p_l = hp.p_l
-        p_mat = np.tile(np.array([p_g**2, p_g * (1 - p_g), p_g * (1 - p_g), (1 - p_g)**2]), (sample_size, 1))
-        helper_pmf_vet = np.array([p_l**2, p_l * (1 - p_l), p_l * (1 - p_l), (1 - p_l)**2]).reshape(1, 4)
-        p_mat[less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(less_than_cut_off_boolean), 1))
-
+        # p_g = hp.p_g
+        # p_l = hp.p_l
+        # p_mat = np.tile(np.array([p_g**2, p_g * (1 - p_g), p_g * (1 - p_g), (1 - p_g)**2]), (sample_size, 1))
+        # helper_pmf_vet = np.array([p_l**2, p_l * (1 - p_l), p_l * (1 - p_l), (1 - p_l)**2]).reshape(1, 4)
+        # p_mat[less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(less_than_cut_off_boolean), 1))
+        p_array = 1 / (1 + np.exp(-z_norm_array))
+        p_mat = np.stack([p_array**2, p_array * (1 - p_array), p_array * (1 - p_array), (1 - p_array)**2], axis=1)
         return p_mat
     else:
         p_mat = np.tile([0, 0.5, 0.5, 0], (sample_size, 1))
@@ -349,7 +351,7 @@ class NetworkTrainingTuning:
         return train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet
 
 
-    def tuning(self, print_loss_boolean, is_null_boolean, number_of_test_samples, cut_off_radius=None,
+    def tuning(self, print_loss_boolean, is_null_boolean, test_sample_prop, cut_off_radius=None,
                true_weights_array=None):
         """
         The function is used for (hyper)parameter tuning of neural network based on the data generated either by the
@@ -358,7 +360,7 @@ class NetworkTrainingTuning:
         assume the data is generated under the Ising model.
 
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :param number_of_test_samples: An integer which is the number of samples used as validation set.
+        :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
         :param is_null_boolean: A boolean value to indicate if we compute the data is generated under the conditional
             independence assumption (H0).
         :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating
@@ -377,6 +379,7 @@ class NetworkTrainingTuning:
             "Neither cut_off_radius nor true_weights_array are supplied."
 
         # Prepare training and test data.
+        number_of_test_samples = int(np.ceil(test_sample_prop * self.sample_size))
         train_array_tuple, test_array_tuple, _ , _= self.train_test_split(number_of_test_samples=number_of_test_samples)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
@@ -430,13 +433,13 @@ class NetworkTrainingTuning:
         return loss_kl_array
 
 
-    def train_compute_test_statistic(self, print_loss_boolean, number_of_test_samples):
+    def train_compute_test_statistic(self, print_loss_boolean, test_sample_prop):
         """
         Train the ising_network on the data in the instance and compute a test statistic based on the partial data
         (test data).
 
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :param number_of_test_samples: An integer which is the number of samples used as validation set.
+        :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
 
         :return:
             result_dict: A dictionary. result_dict["test_statistic] is a scalar which is the test statistic computed on
@@ -444,6 +447,7 @@ class NetworkTrainingTuning:
             result_dict["test_indices_vet"] is an array containing indices of samples which are used as validation set.
         """
         # Prepare training and test data.
+        number_of_test_samples = int(np.ceil(test_sample_prop * self.sample_size))
         train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet = \
             self.train_test_split(number_of_test_samples=number_of_test_samples)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)

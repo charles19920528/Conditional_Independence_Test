@@ -150,21 +150,21 @@ for scenario in ["null", "alt"]:
 
 
 #######################################################
-mixture_result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer}_{hp.mixture_hidden_dim}"
-mixture_network_model_class_kwargs = {"number_forward_layers": hp.mixture_number_forward_layer,
-                                      "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim, "output_dim": 3}
+mixture_result_dict_name = f"mixture_data_{hp.mixture_number_forward_layer_null}_{hp.mixture_hidden_dim_null}"
+mixture_network_model_class_kwargs = {"number_forward_layers": hp.mixture_number_forward_layer_null,
+                                      "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim_null, "output_dim": 3}
 mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
 
 
 ising_bootstrap_loop(pool=pool, scenario="null", data_directory_name="mixture_data",
                      ising_simulation_result_dict_name=mixture_result_dict_name,
-                     result_dict_name="bootstrap_refit_reduced_mixture_50_100",
+                     result_dict_name="bootstrap_refit_reduced_mixture_100_300",
                      trial_index_vet=np.arange(100), network_model_class=gt.FullyConnectedNetwork,
                      network_model_class_kwargs_vet=mixture_network_model_class_kwargs_vet,
                      number_of_bootstrap_samples=hp.number_of_boostrap_samples,
-                     full_model_max_epoch_vet=hp.mixture_epoch_vet[0:2],
-                     reduced_model_max_epoch_vet=hp.reduced_model_epoch_vet[0:2],
-                     sample_size_vet=hp.sample_size_vet[0:2])
+                     full_model_max_epoch_vet=hp.mixture_epoch_vet_null[2:3],
+                     reduced_model_max_epoch_vet=hp.reduced_model_epoch_vet[2:3],
+                     sample_size_vet=hp.sample_size_vet[2:3])
 
 pool.close()
 pool.join()

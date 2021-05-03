@@ -9,7 +9,7 @@ import hyperparameters as hp
 ####################
 # Create Directory #
 ####################
-for data in ["ising_date", "mixture_data"]:
+for data in ["ising_data", "mixture_data"]:
     Path(f"./data/{data}/z_mat").mkdir( parents=True, exist_ok=True)
     for hypothesis in ["null", "alt"]:
         Path(f"./data/{data}/{hypothesis}").mkdir(parents=True, exist_ok=True)
