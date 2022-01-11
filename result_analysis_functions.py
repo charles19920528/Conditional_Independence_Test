@@ -4,8 +4,10 @@ import pickle
 import numpy as np
 import statsmodels.api as sm
 import scipy.stats.distributions as dist
+import tensorflow as tf
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import generate_train_functions as gt
 import hyperparameters as hp
 
 # Only run on CPU
@@ -27,8 +29,39 @@ def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     :return:
         A scalar which is the test statistics of the neural Ising model.
     """
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"]
+    test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    one_mat = np.array([
+        [-1., -1., -1.],
+        [-1, 1, 1],
+        [1, -1, 1],
+        [1, 1, -1]
+    ], dtype=np.float32)
 
-    return one_sample_size_result_dict[trial_index]["test_test_statistic"]
+    log_sum_exp_vet, reduced_log_sum_exp_vet = [], []
+    for i in test_indices_vet:
+        parameter_vet = predicted_parameter_mat[i, :]
+
+        exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
+        log_sum_exp_vet.append(tf.reduce_logsumexp(exponent_vet).numpy())
+
+        reduced_exponent_vet = tf.reduce_sum(parameter_vet[:2] * one_mat[:, :2], axis=1)
+        reduced_log_sum_exp_vet.append(tf.reduce_logsumexp(reduced_exponent_vet).numpy())
+
+    log_sum_exp_vet = np.array(log_sum_exp_vet)
+    reduced_log_sum_exp_vet = np.array(reduced_log_sum_exp_vet)
+
+    test_statistics_vet = np.tanh(predicted_parameter_mat[test_indices_vet, 0]) * \
+                          np.tanh(predicted_parameter_mat[test_indices_vet, 1]) * \
+                          predicted_parameter_mat[test_indices_vet, 2] + log_sum_exp_vet - reduced_log_sum_exp_vet
+
+    # predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"]
+    # test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    # test_statistics = gt.kl_divergence_ising(true_parameter_mat=predicted_parameter_mat[test_indices_vet, :2],
+    #                                          predicted_parameter_mat=predicted_parameter_mat[test_indices_vet],
+    #                                          isAverage=True)
+
+    return np.mean(test_statistics_vet)
 
 
 def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue):
@@ -102,6 +135,7 @@ def bootstrap_p_value_one_trial(trial_index, one_sample_size_result_dict, train_
         test_statistic_key = 'test_p_value'
 
     return one_sample_size_result_dict[trial_index][test_statistic_key]
+
 
 # Not in use now.
 # def ising_residual_statistic_one_trial(trial_index, sample_size, scenario, data_directory_name,
@@ -463,3 +497,27 @@ def power_curve(pool, data_directory_name, result_dict_name_vet, train_p_value_b
     handles, labels = ax[1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')
 
+
+
+acquarium = 199.8
+morro_bay = 408.76
+gas = 44.79 + 19.82 + 38.22 + 39.88 + 43.42
+parking = 3 + 0.75 + 20
+dumpling = 110
+
+sophie = (gas + parking + dumpling + morro_bay) / 5
+others = sophie + acquarium / 4
+
+sophie
+others
+
+
+
+sophie_food = 81.52
+somi = 7.45
+breakfast = 29.05 + 9.48
+rental = 330 - 385
+hotel = 408.82
+
+yuanyuan = others + (sophie_food + somi + breakfast + rental + hotel) / 2
+yuanyuan

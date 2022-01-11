@@ -466,19 +466,23 @@ class NetworkTrainingTuning:
 
             epoch += 1
 
-        predicted_parameter_mat = network_model(self.z_mat)
-        jxy_squared_vet = np.square(predicted_parameter_mat[:, 2])
+        predicted_parameter_mat = network_model(self.z_mat).numpy()
+        # jxy_squared_vet = np.square(predicted_parameter_mat[:, 2])
 
-        train_jxy_squared_mean = np.mean(jxy_squared_vet[train_indices_vet])
-        test_jxy_squared_mean = np.mean(jxy_squared_vet[test_indices_vet])
+        # train_test_statistic = np.mean(jxy_squared_vet[train_indices_vet])
+        # test_test_statistics = np.mean(jxy_squared_vet[test_indices_vet])
+        # train_test_statistic = kl_divergence_ising(true_parameter_mat=predicted_parameter_mat[train_indices_vet, ],
+        #                                            predicted_parameter_mat=predicted_parameter_mat[train_indices_vet, : 2],
+        #                                            isAverage=True)
+        # test_test_statistics = kl_divergence_ising(true_parameter_mat=predicted_parameter_mat[test_indices_vet, ],
+        #                                            predicted_parameter_mat=predicted_parameter_mat[test_indices_vet, : 2],
+        #                                            isAverage=True)
 
-        jx_jy_train_mat = tf.gather(predicted_parameter_mat, train_indices_vet, axis=0)
-        jx_jy_train_mat = tf.gather(jx_jy_train_mat, [0, 1], axis=1)
-        fitted_train_p_mat = pmf_collection(jx_jy_train_mat)
-
-        result_dict = {"test_test_statistic": test_jxy_squared_mean, "train_indices_vet": train_indices_vet,
-                       "test_indices_vet": test_indices_vet,
-                       "fitted_train_p_mat": fitted_train_p_mat, "train_test_statistic": train_jxy_squared_mean}
+        # jx_jy_train_mat = tf.gather(predicted_parameter_mat, train_indices_vet, axis=0)
+        # jx_jy_train_mat = tf.gather(jx_jy_train_mat, [0, 1], axis=1)
+        # fitted_train_p_mat = pmf_collection(jx_jy_train_mat)
+        result_dict = {"test_indices_vet": test_indices_vet,
+                       "predicted_parameter_mat": predicted_parameter_mat}
 
         return result_dict
 

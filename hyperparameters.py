@@ -66,7 +66,7 @@ mixture_hidden_dim_alt = 40
 # Training #
 ############
 test_sample_prop = 0.1
-test_prop_list = [0.01, 0.05, 0.1, 0.2, 0.3]
+test_prop_list = [0.01, 0.05, 0.1, 0.4]
 
 ################
 # Multiprocess #
