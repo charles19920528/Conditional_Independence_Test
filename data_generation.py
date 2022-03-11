@@ -2,8 +2,16 @@ import numpy as np
 import generate_train_functions as gt
 import tensorflow as tf
 import pickle
-from sklearn.datasets.samples_generator import make_blobs
+from sklearn.datasets import make_blobs
 import hyperparameters as hp
+
+import pathlib
+
+path_list = ["./data/mixture_data/z_mat", "./data/mixture_data/null", "./data/mixture_data/alt",
+             "./data/ising_data/z_mat", "./data/ising_data/null", "./data/ising_data/alt"]
+for path_name in path_list:
+    path = pathlib.Path(path_name)
+    path.mkdir(parents=True, exist_ok=True)
 
 seed_index = 1
 
@@ -34,6 +42,8 @@ for sample_size in hp.sample_size_vet:
         np.savetxt(f"./data/mixture_data/null/x_y_mat_{sample_size}_{trial_index}.txt", null_x_y_mat)
         np.savetxt(f"./data/mixture_data/alt/x_y_mat_{sample_size}_{trial_index}.txt", alt_x_y_mat)
 
+    print(f"Mixture data. Sample size {sample_size} Done")
+
 
 ########################
 # Use the Ising model. #
@@ -62,6 +72,8 @@ for sample_size in hp.sample_size_vet:
 
     weights_dict[sample_size] = sample_size_weight_dict
 
+    print(f"Ising data. Sample size {sample_size} Done")
+
 with open("data/ising_data/weights_dict.p", "wb") as fp:
-    pickle.dump(weights_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    pickle.dump(weights_dict, fp, protocol=4)
 

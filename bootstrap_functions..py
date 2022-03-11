@@ -120,7 +120,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
         result_dict[sample_size] = sample_size_result_dict
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(result_dict, fp, protocol=4)
 
 
 pool = Pool(processes=hp.process_number)

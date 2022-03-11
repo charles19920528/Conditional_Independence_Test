@@ -112,7 +112,7 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, net
         result_dict[sample_size] = dict(pool_result_vet)
 
     with open(f"tuning/raw_result_dict/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(result_dict, fp, protocol=4)
 
 
 ###################
@@ -247,7 +247,7 @@ def process_plot_epoch_kl_raw_dict(pool, tuning_result_dict_name, sample_size_ve
     plot_optimal_epoch_kl(optimal_epoch_kl_mat_dict, figure_name=tuning_result_dict_name)
 
     with open(f"./tuning/optimal_epoch/{tuning_result_dict_name}_epoch_kl_mat_dict.p", "wb") as fp:
-        pickle.dump(optimal_epoch_kl_mat_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(optimal_epoch_kl_mat_dict, fp, protocol=4)
 
 
 def plot_loss_kl(scenario, tuning_result_dict_name, trial_index_vet, sample_size, end_epoch, start_epoch=0,
