@@ -84,7 +84,7 @@ network_tt_instance = gt.NetworkTrainingTuning(z_mat=z_mat, x_y_mat=x_y_mat,
 loss_kl_array = network_tt_instance.tuning(print_loss_boolean=True, is_null_boolean=True, number_of_test_samples=5,
                                            cut_off_radius=hp.null_cut_off_radius)
 
-network_tt_instance.train_compute_test_statistic(print_loss_boolean=True, number_of_test_samples=5)
+network_tt_instance.train_compute_parameters(print_loss_boolean=True, number_of_test_samples=5)
 
 pool = Pool(processes=4)
 network_tt_instance.bootstrap(pool=pool, number_of_bootstrap_samples=5)

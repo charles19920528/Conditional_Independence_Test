@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from functools import partial
-import sys
+from scipy.optimize import fsolve
 import hyperparameters as hp
 
 
@@ -433,7 +432,7 @@ class NetworkTrainingTuning:
         return loss_kl_array
 
 
-    def train_compute_test_statistic(self, print_loss_boolean, test_sample_prop):
+    def train_compute_parameters(self, print_loss_boolean, test_sample_prop):
         """
         Train the ising_network on the data in the instance and compute a test statistic based on the partial data
         (test data).
@@ -487,6 +486,61 @@ class NetworkTrainingTuning:
         return result_dict
 
 
+def i_projection_equations(unknown_j_array, j_hat_array):
+    """
+
+    :param unknown_j_array: array of length 2
+    :param j_hat_array: array of length 3, j_x, j_y, j_xy
+    :return:
+    """
+
+    return [unknown_j_array[0] - j_hat_array[0] + np.tanh(j_hat_array[1]) * j_hat_array[2],
+            unknown_j_array[1] - j_hat_array[1] + np.tanh(j_hat_array[0]) * j_hat_array[2]]
+
+
+def compute_test_statistic(predicted_parameter_mat):
+    """
+    Compute the KL test statistic.
+
+    :param predicted_parameter_mat: An n by 3 tensor.
+
+    :return:
+        A non-negative scalar.
+    """
+
+    i_projection_par_array_list = []
+    for i in range(predicted_parameter_mat.shape[0]):
+        i_projection_par_array_list.append(fsolve(func=i_projection_equations, x0=predicted_parameter_mat[i, :2],
+                                                  args=(predicted_parameter_mat[i, :])))
+
+    i_projection_parameter_mat = np.vstack(i_projection_par_array_list)
+
+    return kl_divergence_ising(true_parameter_mat=i_projection_parameter_mat,
+                               predicted_parameter_mat=predicted_parameter_mat, isAverage=True)
+    # one_mat = np.array([
+    #     [-1., -1., -1.],
+    #     [-1, 1, 1],
+    #     [1, -1, 1],
+    #     [1, 1, -1]
+    # ], dtype=np.float32)
+    #
+    # log_sum_exp_vet, reduced_log_sum_exp_vet = [], []
+    # for i in range(predicted_parameter_mat.shape[0]):
+    #     parameter_vet = predicted_parameter_mat[i, :]
+    #
+    #     exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
+    #     log_sum_exp_vet.append(tf.reduce_logsumexp(exponent_vet).numpy())
+    #
+    #     reduced_exponent_vet = tf.reduce_sum(parameter_vet[:2] * one_mat[:, :2], axis=1)
+    #     reduced_log_sum_exp_vet.append(tf.reduce_logsumexp(reduced_exponent_vet).numpy())
+    #
+    # log_sum_exp_vet = np.array(log_sum_exp_vet)
+    # reduced_log_sum_exp_vet = np.array(reduced_log_sum_exp_vet)
+    #
+    # test_statistics_vet = np.tanh(predicted_parameter_mat[:, 0]) * np.tanh(predicted_parameter_mat[:, 1]) * \
+    #                       predicted_parameter_mat[:, 2] + log_sum_exp_vet - reduced_log_sum_exp_vet
+    #
+    # return np.mean(test_statistics_vet)
 
 
 # def __ising_bootstrap_one_trial(_, fitted_train_p_mat, z_mat, train_indices_vet, ,
@@ -526,7 +580,7 @@ class NetworkTrainingTuning:
 #
 #     def bootstrap(self, pool, number_of_bootstrap_samples):
 #         if self.result_dict is None:
-#             sys.exit("train_compute_test_statistic method needs to be called before running bootstrap method")
+#             sys.exit("train_compute_parameters method needs to be called before running bootstrap method")
 #
 #         print("Boostrap begins.")
 #         bootstrap_test_statistic_vet = pool.map(self.bootstrap_one_trial, np.arange(number_of_bootstrap_samples))
@@ -535,6 +589,7 @@ class NetworkTrainingTuning:
 #         self.result_dict["bootstrap_test_statistic_vet"] = bootstrap_test_statistic_vet
 #         p_value = sum(bootstrap_test_statistic_vet > self.test_statistic) / number_of_bootstrap_samples
 #         self.result_dict["p_value"] = p_value
+
 
 
 #####################################################
@@ -587,6 +642,45 @@ class FullyConnectedNetwork(tf.keras.Model):
             output = self.final_linear(output)
 
         return output
+
+
+# def i_projection_equations(unknown_j_array, j_hat_array):
+#     """
+#
+#     :param unknown_j_array: n by 2
+#     :param j_hat_array: n by 3, j_x, j_y, j_xy
+#     :return:
+#     """
+#     if len(j_hat_array.shape) == 1:
+#         j_hat_array = j_hat_array.reshape((-1, j_hat_array.shape[0]))
+#     if len(unknown_j_array.shape) == 1:
+#         unknown_j_array = unknown_j_array.reshape((-1, unknown_j_array.shape[0]))
+#
+#     return [unknown_j_array[:, 0] - j_hat_array[:, 0] + np.tanh(j_hat_array[:, 1]) * j_hat_array[:, 2],
+#             unknown_j_array[:, 1] - j_hat_array[:, 1] + np.tanh(j_hat_array[:, 0]) * j_hat_array[:, 2]]
+#
+# def i_projection_equations(unknown_j_array, j_hat_array):
+#     """
+#
+#     :param unknown_j_array: array of length 2
+#     :param j_hat_array: array of length 3, j_x, j_y, j_xy
+#     :return:
+#     """
+#
+#     return [unknown_j_array[0] - j_hat_array[0] + np.tanh(j_hat_array[1]) * j_hat_array[2],
+#             unknown_j_array[1] - j_hat_array[1] + np.tanh(j_hat_array[0]) * j_hat_array[2]]
+#
+# j_hat = np.array([[1, 2, 0.3], [-4, -2, 0.3]])
+# j = np.array([[1, 2], [-4, -2]])
+#
+#
+# j_hat = np.array([1, 2, 0.3])
+# j = np.array([1, 2])
+#
+# import time
+# t1 = time.time()
+# fsolve(func=i_projection_equations, x0=j, args=(j_hat))
+# t2 = time.time()
 
 
 

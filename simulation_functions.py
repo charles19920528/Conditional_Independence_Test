@@ -196,7 +196,7 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
 
     :return:
-        A tuple (trial_index, result_vet). The result_vet is the output of the class method train_compute_test_statistic
+        A tuple (trial_index, result_vet). The result_vet is the output of the class method train_compute_parameters
         of the gt.NetworkTrainingTuning class.
     """
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
@@ -208,7 +208,7 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
                                                         network_model_class_kwargs=network_model_class_kwargs,
                                                         learning_rate=learning_rate, epoch=epoch)
 
-    result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
+    result_dict = training_tuning_instance.train_compute_parameters(print_loss_boolean=False,
                                                                         test_sample_prop=test_sample_prop)
 
     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done.")
