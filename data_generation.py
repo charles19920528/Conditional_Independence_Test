@@ -76,4 +76,3 @@ for sample_size in hp.sample_size_vet:
 
 with open("data/ising_data/weights_dict.p", "wb") as fp:
     pickle.dump(weights_dict, fp, protocol=4)
-

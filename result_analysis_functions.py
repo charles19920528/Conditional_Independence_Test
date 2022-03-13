@@ -2,10 +2,12 @@ from functools import partial
 import os
 import pickle
 import numpy as np
+import tensorflow as tf
 import statsmodels.api as sm
 import scipy.stats.distributions as dist
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import generate_train_functions as gt
 import hyperparameters as hp
 
 # Only run on CPU
@@ -15,7 +17,100 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 #####################################
 # Get test statistic for one trial. #
 #####################################
+# Wald Test
+def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
+    sample_size = x_y_mat.shape[0]
+
+    # calculate under h_0
+    if not perturb_boolean:
+        parameter_mat[:, 2] = 0
+    parameter_mat = tf.Variable(parameter_mat)
+
+    with tf.GradientTape() as t2:
+        with tf.GradientTape() as t1:
+            ln = gt.log_ising_likelihood(x_y_mat=x_y_mat, parameter_mat=parameter_mat)
+        dl_dj = t1.gradient(ln, parameter_mat)
+    hessian = np.diag(t2.jacobian(dl_dj, parameter_mat)[:, 2, :, 2])
+
+    if perturb_boolean:
+        sn = np.sum(dl_dj[:, 2] * np.random.normal(size=sample_size)) / np.sqrt(sample_size)
+    else:
+        sn = np.sum(dl_dj[:, 2]) / np.sqrt(sample_size)
+    an = - 1 / hessian * dl_dj[:, 2] * sample_size
+    tn = an * sn
+
+    return tf.reduce_sum(tf.square(tn)).numpy()
+
+
+def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
+                                        data_directory_name):
+    test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
+    x_y_mat = x_y_mat[test_indices_vet, :]
+
+    test_statistics = wald_test_statistics(parameter_mat=predicted_parameter_mat, x_y_mat=x_y_mat,
+                                           perturb_boolean=False)
+
+    return test_statistics
+
+
 # Method specific functions to obtain test statistic for one trial.
+def ising_powerful_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
+                                            data_directory_name):
+    """
+    Extract the test statistic computed based on data of {trial_index}th trial.
+
+    :param trial_index: An integer.
+    :param one_sample_size_result_dict: A dictionary which contains simulation results of trials of a particular sample
+        size.
+
+    :return:
+        A scalar which is the test statistics of the neural Ising model.
+    """
+    test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
+    x_y_mat = x_y_mat[test_indices_vet, :]
+    x_neq_1_boolean_vet = x_y_mat[:, 0] == -1
+    y_neq_1_boolean_vet = x_y_mat[:, 1] == -1
+
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    predicted_pmf_mat = gt.pmf_collection(parameter_mat=predicted_parameter_mat).numpy()
+
+    # calculate and extract pmf of x|z [p(x = 1 | z), p(x = -1 | z)]
+    pmf_x_z_mat = np.vstack([predicted_pmf_mat[:, :2].sum(axis=1), predicted_pmf_mat[:, 2:].sum(axis=1)]).T
+    pmf_x_z_vet = pmf_x_z_mat[:, 0]
+    pmf_x_z_vet[x_neq_1_boolean_vet] = pmf_x_z_mat[x_neq_1_boolean_vet, 1]
+
+    # Extract relevant p(x, y | z)
+
+    index_vet = np.zeros(len(test_indices_vet), dtype=int)
+    index_vet[(~x_neq_1_boolean_vet) & y_neq_1_boolean_vet] = 1
+    index_vet[x_neq_1_boolean_vet & (~y_neq_1_boolean_vet)] = 2
+    index_vet[x_neq_1_boolean_vet & y_neq_1_boolean_vet] = 3
+
+    pmf_y_x_z_vet = predicted_pmf_mat[np.arange(len(test_indices_vet)), index_vet]
+
+    test_statistics = (np.log(pmf_y_x_z_vet) - np.log(pmf_x_z_vet)).sum()
+
+    return test_statistics
+
+
+# import pickle
+# sample_size = 50
+# with open("results/result_dict/mixture_data/mixture_data_16_40_breg_alt_test_prop:0.05_result_dict.p", 'rb')  as f:
+#     one_sample_size_result_dict = pickle.load(f)[sample_size]
+#
+# trial_index = 2
+# scenario = "alt"
+# data_directory_name = "mixture_data"
+# test = ising_powerful_test_statistic_one_trial(trial_index=trial_index,
+#                                                one_sample_size_result_dict=one_sample_size_result_dict,
+#                                                sample_size=sample_size, scenario=scenario,
+#                                                data_directory_name=data_directory_name)
+
 def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
     Extract the test statistic computed based on data of {trial_index}th trial.
@@ -28,7 +123,40 @@ def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
         A scalar which is the test statistics of the neural Ising model.
     """
 
-    return one_sample_size_result_dict[trial_index]["test_test_statistic"]
+    test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    test_statistics = gt.compute_test_statistic(predicted_parameter_mat=predicted_parameter_mat)
+    # one_mat = np.array([
+    #     [-1., -1., -1.],
+    #     [-1, 1, 1],
+    #     [1, -1, 1],
+    #     [1, 1, -1]
+    # ], dtype=np.float32)
+    #
+    # log_sum_exp_vet, reduced_log_sum_exp_vet = [], []
+    # for i in test_indices_vet:
+    #     parameter_vet = predicted_parameter_mat[i, :]
+    #
+    #     exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
+    #     log_sum_exp_vet.append(tf.reduce_logsumexp(exponent_vet).numpy())
+    #
+    #     reduced_exponent_vet = tf.reduce_sum(parameter_vet[:2] * one_mat[:, :2], axis=1)
+    #     reduced_log_sum_exp_vet.append(tf.reduce_logsumexp(reduced_exponent_vet).numpy())
+    #
+    # log_sum_exp_vet = np.array(log_sum_exp_vet)
+    # reduced_log_sum_exp_vet = np.array(reduced_log_sum_exp_vet)
+    #
+    # test_statistics_vet = np.tanh(predicted_parameter_mat[test_indices_vet, 0]) * \
+    #                       np.tanh(predicted_parameter_mat[test_indices_vet, 1]) * \
+    #                       predicted_parameter_mat[test_indices_vet, 2] + log_sum_exp_vet - reduced_log_sum_exp_vet
+
+    # predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"]
+    # test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    # test_statistics = gt.kl_divergence_ising(true_parameter_mat=predicted_parameter_mat[test_indices_vet, :2],
+    #                                          predicted_parameter_mat=predicted_parameter_mat[test_indices_vet],
+    #                                          isAverage=True)
+
+    return test_statistics
 
 
 def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue):
@@ -103,6 +231,7 @@ def bootstrap_p_value_one_trial(trial_index, one_sample_size_result_dict, train_
 
     return one_sample_size_result_dict[trial_index][test_statistic_key]
 
+
 # Not in use now.
 # def ising_residual_statistic_one_trial(trial_index, sample_size, scenario, data_directory_name,
 #                                        one_sample_size_result_dict):
@@ -167,14 +296,28 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
         2. alt_test_statistic_vet_one_sample_vet: An array of scalars which are test statistics computed based on
             trials which are of the sample size and generated under the alt.
     """
-    null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
-                                                              one_sample_size_result_dict=
-                                                              one_sample_size_null_result_dict, **kwargs),
-                                                      trial_index_vet)
-    alt_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
-                                                             one_sample_size_result_dict=
-                                                             one_sample_size_alt_result_dict, **kwargs),
-                                                     trial_index_vet)
+    if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
+        null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
+                                                                  one_sample_size_result_dict=
+                                                                  one_sample_size_null_result_dict,
+                                                                  scenario="null",
+                                                                  **kwargs),
+                                                          trial_index_vet)
+        alt_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
+                                                                 one_sample_size_result_dict=
+                                                                 one_sample_size_alt_result_dict,
+                                                                 scenario="alt",
+                                                                 **kwargs),
+                                                         trial_index_vet)
+    else:
+        null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
+                                                                  one_sample_size_result_dict=
+                                                                  one_sample_size_null_result_dict, **kwargs),
+                                                          trial_index_vet)
+        alt_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
+                                                                 one_sample_size_result_dict=
+                                                                 one_sample_size_alt_result_dict, **kwargs),
+                                                         trial_index_vet)
 
     return null_test_statistic_vet_one_sample_vet, alt_test_statistic_vet_one_sample_vet
 
@@ -223,14 +366,23 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, t
         one_sample_size_null_result_dict = null_result_dict[sample_size]
         one_sample_size_alt_result_dict = alt_result_dict[sample_size]
 
-        test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(pool=pool,
-                                                                              one_sample_size_null_result_dict=
-                                                                              one_sample_size_null_result_dict,
-                                                                              one_sample_size_alt_result_dict=
-                                                                              one_sample_size_alt_result_dict,
-                                                                              trial_index_vet=trial_index_vet,
-                                                                              test_statistic_one_trial=
-                                                                              test_statistic_one_trial, **kwargs)
+        # test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(pool=pool,
+        #                                                                       one_sample_size_null_result_dict=
+        #                                                                       one_sample_size_null_result_dict,
+        #                                                                       one_sample_size_alt_result_dict=
+        #                                                                       one_sample_size_alt_result_dict,
+        #                                                                       trial_index_vet=trial_index_vet,
+        #                                                                       test_statistic_one_trial=
+        #                                                                       test_statistic_one_trial, **kwargs)
+        test_statistic_one_sample_size_fun_arg_dict = {
+            "pool": pool, "one_sample_size_null_result_dict": one_sample_size_null_result_dict,
+            "one_sample_size_alt_result_dict": one_sample_size_alt_result_dict, "trial_index_vet": trial_index_vet,
+            "test_statistic_one_trial": test_statistic_one_trial
+        }
+        if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
+            test_statistic_one_sample_size_fun_arg_dict["sample_size"] = sample_size
+        test_statistic_one_sample_size_tuple = \
+            test_statistic_one_sample_size(**test_statistic_one_sample_size_fun_arg_dict, **kwargs)
 
         fpr, tpr = fpr_tpr_one_sample_size(test_statistic_one_sample_size_tuple, trial_index_vet)
 
@@ -246,12 +398,12 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
     """
     Assuming there are only four sample size we are simulating. We plot the RoC curve and save the plot under the path
     ./results/plots/{result_directory_name} with name {model_for_main_title}.png.
-    
+
     :param fpr_tpr_dict: A dictionary which is the output of the fpr_tpr function.
     :param title: A string ('str' class) which we use to name the graph and to save the image as
         {title}.png.
     :param result_directory_name: A string ('str' class) which is the name of the directory to store the plot.
-    
+
     :return:
         None
     """
@@ -462,4 +614,3 @@ def power_curve(pool, data_directory_name, result_dict_name_vet, train_p_value_b
     fig.suptitle(f"Power Curves for Sample Size {sample_size_int}")
     handles, labels = ax[1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')
-

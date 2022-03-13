@@ -50,12 +50,12 @@ def simulation_loop(pool, simulation_method, scenario, data_directory_name, resu
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=4)
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name, trial_index_vet, network_model_class,
                           network_model_class_kwargs_vet, epoch_vet, learning_rate, sample_size_vet=hp.sample_size_vet,
-                          number_of_test_samples_vet=hp.number_of_test_samples_vet):
+                          test_sample_prop=hp.test_sample_prop):
     """
     A wrapper function uses the multiprocessing Pool function to use tbe ising_simulation_method on multiple data in
     parallel. The function will save the result dictionary in a pickle file under the path
@@ -77,29 +77,28 @@ def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name,
         Each entry specifies the number of epochs we train the network on data with the corresponding sample size.
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
     :param sample_size_vet: A python list of integers. It contains all the sample size we simulated.
-    :param number_of_test_samples_vet: An array of integers which contains the sample size of data used.
+    :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
 
     :return:
         None
     """
     result_dict = dict()
 
-    for sample_size, number_of_test_samples, epoch, network_model_class_kwargs in zip(sample_size_vet,
-                                                                                      number_of_test_samples_vet,
-                                                                                      epoch_vet,
-                                                                                      network_model_class_kwargs_vet):
+    for sample_size, epoch, network_model_class_kwargs in zip(sample_size_vet, epoch_vet,
+                                                              network_model_class_kwargs_vet):
         pool_result_vet = pool.map(partial(ising_simulation_method, sample_size=sample_size, scenario=scenario,
                                            data_directory_name=data_directory_name, epoch=epoch,
                                            network_model_class=network_model_class,
-                                           number_of_test_samples=number_of_test_samples, learning_rate=learning_rate,
+                                           test_sample_prop=test_sample_prop, learning_rate=learning_rate,
                                            network_model_class_kwargs=network_model_class_kwargs), trial_index_vet)
 
         result_dict[sample_size] = dict(pool_result_vet)
 
         print(f"{result_dict_name}, {scenario}, sample size: {sample_size} finished")
 
-    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=4)
+    with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_test_prop:{test_sample_prop}"
+              f"_result_dict.p", "wb") as fp:
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_result_dict_name, result_dict_name,
@@ -128,7 +127,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
         result_dict[sample_size] = sample_size_result_dict
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=4)
+        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # Not in use.
@@ -165,7 +164,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
 #         result_dict[sample_size] = sample_size_result_dict
 #
 #     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-#         pickle.dump(result_dict, fp, protocol=4)
+#         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 #
 #     return result_dict
 
@@ -175,7 +174,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
 #####################
 # Ising simulation
 def ising_simulation_method(trial_index, sample_size, scenario, data_directory_name, epoch, network_model_class,
-                            network_model_class_kwargs, number_of_test_samples, learning_rate=hp.learning_rate):
+                            network_model_class_kwargs, test_sample_prop, learning_rate=hp.learning_rate):
     """
     This function fit a Neural Ising model to compute the test statistic and record the indices of test samples
     on {trial_index}th trial with sample size {sample_size} under the {scenario} hypothesis.
@@ -193,11 +192,11 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
         neural network to fit on the data.
     :param network_model_class_kwargs: Keyword arguments to be passed in to the constructor of the network_model_class.
-    :param number_of_test_samples: An integer which is the number of samples used as the test data.
+    :param test_sample_prop: A numeric between 0 and 1. The proportion of samples used for test data.
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
 
     :return:
-        A tuple (trial_index, result_vet). The result_vet is the output of the class method train_compute_test_statistic
+        A tuple (trial_index, result_vet). The result_vet is the output of the class method train_compute_parameters
         of the gt.NetworkTrainingTuning class.
     """
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt",
@@ -209,8 +208,8 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
                                                         network_model_class_kwargs=network_model_class_kwargs,
                                                         learning_rate=learning_rate, epoch=epoch)
 
-    result_dict = training_tuning_instance.train_compute_test_statistic(print_loss_boolean=False,
-                                                                        number_of_test_samples=number_of_test_samples)
+    result_dict = training_tuning_instance.train_compute_parameters(print_loss_boolean=False,
+                                                                        test_sample_prop=test_sample_prop)
 
     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done.")
 

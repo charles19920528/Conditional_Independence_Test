@@ -122,7 +122,7 @@ def optimal_epoch_kl_one_trial(trial_result_array):
     """
     Extra the epoch which gives the minimum kl-divergence on the test set along with minimum kl-divergence on one trial
     result.
-    
+
     :param trial_result_array: An array which is the output of the tuning method of the NetworkTrainingTuning class.
 
     :return:
@@ -238,7 +238,6 @@ def process_plot_epoch_kl_raw_dict(pool, tuning_result_dict_name, sample_size_ve
     :return:
         None
     """
-
 
     optimal_epoch_kl_mat_dict = optimal_epoch_kl(pool=pool, sample_size_vet=sample_size_vet,
                                                  trial_index_vet=trial_index_vet,
