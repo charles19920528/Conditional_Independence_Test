@@ -76,7 +76,7 @@ def pmf_collection(parameter_mat):
     return prob_mat
 
 
-def log_ising_likelihood(x_y_mat, parameter_mat):
+def log_ising_likelihood(x_y_mat, parameter_mat, reduce_boolean=True):
     """
     Compute negative log likelihood of the Ising model. The function can be used as the loss function for
     model training.
@@ -84,8 +84,10 @@ def log_ising_likelihood(x_y_mat, parameter_mat):
     :param x_y_mat: An n by 2 tensor which stores observed x's any y's.
     :param parameter_mat: A tensor of shape [n, 2] or [n, 3]. It should be the output of an object of class
         IsingNetwork. Columns of the matrices are Jx, Jy and Jxy respectively.
+    :param reduce_boolean: A boolean. If true, return sum of negative_log_likelihood across all samples. Otherwise,
+        return negative_log_likelihood of each individual sample.
 
-    :return: negative_log_likelihood
+    :return: A numeric or a list. negative_log_likelihood
     """
     sample_size = tf.shape(parameter_mat)[0]
     parameter_mat = tf.cast(parameter_mat, tf.float32)
@@ -97,23 +99,36 @@ def log_ising_likelihood(x_y_mat, parameter_mat):
     x_times_y = tf.reshape(x_times_y, (-1, 1))
     x_y_xy_mat = tf.concat(values=[x_y_mat, x_times_y], axis=1)
     x_y_xy_mat = tf.dtypes.cast(x_y_xy_mat, tf.float32)
-    dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
+    if reduce_boolean:
+        dot_product_sum = tf.reduce_sum(x_y_xy_mat * parameter_mat)
+    else:
+        dot_product_sum_tensor = tf.reduce_sum(x_y_xy_mat * parameter_mat, axis=1)
 
-    normalizing_constant = tf.constant(0., dtype=tf.float32)
     one_mat = tf.constant([
         [-1., -1., -1.],
         [-1, 1, 1],
         [1, -1, 1],
         [1, 1, -1]
     ], dtype=tf.float32)
+    if reduce_boolean:
+        normalizing_constant = tf.constant(0., dtype=tf.float32)
+    else:
+        normalizing_constant_tensorarray =tf.TensorArray(tf.float32, size=sample_size, dynamic_size=True,
+                                                         clear_after_read=False)
+
     for i in tf.range(sample_size):
         parameter_vet = parameter_mat[i, :]
         exponent_vet = tf.reduce_sum(parameter_vet * one_mat, axis=1)
         log_sum_exp = tf.reduce_logsumexp(exponent_vet)
-        normalizing_constant += log_sum_exp
+        if reduce_boolean:
+            normalizing_constant += log_sum_exp
+        else:
+            normalizing_constant_tensorarray = normalizing_constant_tensorarray.write(i, log_sum_exp)
 
-    negative_log_likelihood = dot_product_sum + normalizing_constant
-    return negative_log_likelihood
+    if reduce_boolean:
+        return dot_product_sum + normalizing_constant
+    else:
+        return dot_product_sum_tensor + normalizing_constant_tensorarray.stack()
 
 
 def generate_x_y_mat(p_mat):
