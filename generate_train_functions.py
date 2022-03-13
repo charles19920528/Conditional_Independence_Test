@@ -480,8 +480,11 @@ class NetworkTrainingTuning:
         # jx_jy_train_mat = tf.gather(predicted_parameter_mat, train_indices_vet, axis=0)
         # jx_jy_train_mat = tf.gather(jx_jy_train_mat, [0, 1], axis=1)
         # fitted_train_p_mat = pmf_collection(jx_jy_train_mat)
+
+        network_weights = [weights.numpy() for weights in network_model.weights]
         result_dict = {"test_indices_vet": test_indices_vet,
-                       "predicted_parameter_mat": predicted_parameter_mat}
+                       "predicted_parameter_mat": predicted_parameter_mat,
+                       "network_weights": network_weights}
 
         return result_dict
 
