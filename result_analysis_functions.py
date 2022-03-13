@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import statsmodels.api as sm
 import scipy.stats.distributions as dist
+from scipy.optimize import fsolve
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import generate_train_functions as gt
@@ -33,10 +34,10 @@ def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
     hessian = np.diag(t2.jacobian(dl_dj, parameter_mat)[:, 2, :, 2])
 
     if perturb_boolean:
-        sn = np.sum(dl_dj[:, 2] * np.random.normal(size=sample_size)) / np.sqrt(sample_size)
+        sn = dl_dj[:, 2] * np.random.normal(size=sample_size) / np.sqrt(sample_size)
     else:
-        sn = np.sum(dl_dj[:, 2]) / np.sqrt(sample_size)
-    an = - 1 / hessian * dl_dj[:, 2] * sample_size
+        sn = dl_dj[:, 2] / np.sqrt(sample_size)
+    an = - sample_size / hessian
     tn = an * sn
 
     return tf.reduce_sum(tf.square(tn)).numpy()
@@ -45,13 +46,17 @@ def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
 def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
                                         data_directory_name):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
-    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    # predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    network_weights = one_sample_size_result_dict[trial_index]["network_weights"]
 
-    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
-    x_y_mat = x_y_mat[test_indices_vet, :]
-
-    test_statistics = wald_test_statistics(parameter_mat=predicted_parameter_mat, x_y_mat=x_y_mat,
-                                           perturb_boolean=False)
+    # x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
+    # x_y_mat = x_y_mat[test_indices_vet, :]
+    #
+    # test_statistics = wald_test_statistics(parameter_mat=predicted_parameter_mat, x_y_mat=x_y_mat,
+    #                                        perturb_boolean=False)
+    # test_statistics = np.sum(predicted_parameter_mat[: 2]**2) * len(test_indices_vet)
+    weights_vet = np.concatenate([network_weights[-2][:, 2], network_weights[-1]])
+    test_statistics = np.sum(weights_vet ** 2) * (sample_size - len(test_indices_vet))
 
     return test_statistics
 
@@ -111,6 +116,20 @@ def ising_powerful_test_statistic_one_trial(trial_index, one_sample_size_result_
 #                                                sample_size=sample_size, scenario=scenario,
 #                                                data_directory_name=data_directory_name)
 
+def i_projection_equations(x, predicted_parameter_list):
+    return [predicted_parameter_list[0] - x[0] + np.tanh(x[1]) * predicted_parameter_list[2],
+            predicted_parameter_list[1] - x[1] + np.tanh(x[0]) * predicted_parameter_list[2]]
+
+
+def i_projection(predicted_parameter_mat):
+    sample_size = predicted_parameter_mat.shape[0]
+    projected_parameter_mat = np.zeros((sample_size, 2))
+    for i in range(sample_size):
+        projected_parameter_mat[i, :] = fsolve(func=i_projection_equations, x0=predicted_parameter_mat[i, :2],
+                                               args=(predicted_parameter_mat[i, :]))
+
+    return projected_parameter_mat
+
 def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
     Extract the test statistic computed based on data of {trial_index}th trial.
@@ -125,7 +144,9 @@ def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
 
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
     predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
-    test_statistics = gt.compute_test_statistic(predicted_parameter_mat=predicted_parameter_mat)
+    projected_parameter_mat = i_projection(predicted_parameter_mat=predicted_parameter_mat)
+    test_statistics = gt.kl_divergence_ising(true_parameter_mat=projected_parameter_mat,
+                                             predicted_parameter_mat=predicted_parameter_mat, isAverage=True)
     # one_mat = np.array([
     #     [-1., -1., -1.],
     #     [-1, 1, 1],

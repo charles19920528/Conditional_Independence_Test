@@ -254,7 +254,6 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
 
         return p_mat
 
-
 ##################################
 # Functions for parameter tuning #
 ##################################
