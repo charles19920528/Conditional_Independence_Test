@@ -46,8 +46,8 @@ def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
 def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
                                         data_directory_name):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
-    # predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
-    network_weights = one_sample_size_result_dict[trial_index]["network_weights"]
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    network_weights_vet = one_sample_size_result_dict[trial_index]["network_weights_vet"]
 
     # x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     # x_y_mat = x_y_mat[test_indices_vet, :]
@@ -55,9 +55,22 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
     # test_statistics = wald_test_statistics(parameter_mat=predicted_parameter_mat, x_y_mat=x_y_mat,
     #                                        perturb_boolean=False)
     # test_statistics = np.sum(predicted_parameter_mat[: 2]**2) * len(test_indices_vet)
-    weights_vet = np.concatenate([network_weights[-2][:, 2], network_weights[-1]])
-    test_statistics = np.sum(weights_vet ** 2) * (sample_size - len(test_indices_vet))
+    # weights_vet = np.concatenate([network_weights_vet[-2][:, 2], network_weights_vet[-1]])
+    # test_statistics = np.sum(weights_vet ** 2) * (sample_size - len(test_indices_vet))
+    test_statistics = np.mean(predicted_parameter_mat[: 2] ** 2)
+    return test_statistics
 
+
+def ising_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, jxy_boolean):
+    test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    network_weights_vet = one_sample_size_result_dict[trial_index]["network_weights_vet"]
+
+    if jxy_boolean:
+        test_statistics = np.sum(predicted_parameter_mat[: 2] ** 2)
+    else:
+        weights_vet = np.concatenate([network_weights_vet[-2][:, 2], [network_weights_vet[-1][-1]]])
+        test_statistics = np.sum(weights_vet ** 2)
     return test_statistics
 
 
@@ -318,6 +331,7 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
             trials which are of the sample size and generated under the alt.
     """
     if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
+    # if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial}:
         null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
                                                                   one_sample_size_result_dict=
                                                                   one_sample_size_null_result_dict,

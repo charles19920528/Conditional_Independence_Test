@@ -341,18 +341,23 @@ class NetworkTrainingTuning:
         # self.test_statistic = None
         # self.result_dict = None
 
-    def train_test_split(self, number_of_test_samples):
+    def train_test_split(self, test_sample_prop):
         """
         Create and split the full data into the training data and the test data. number_of_test_samples samples are used
         as the test data.
 
-        :param number_of_test_samples: An integer which is the number of samples used as validation set.
+        :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set.
 
         :return:
         train_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the training data
             test_array_tuple: A tuple of length 2 containing z_mat and x_y_mat for the test data.
         """
         indices_vet = np.random.permutation(self.sample_size)
+
+        number_of_test_samples = np.int(np.floor(self.sample_size * test_sample_prop))
+        if number_of_test_samples == 0:
+            number_of_test_samples = 1
+
         train_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], indices_vet[:number_of_test_samples]
 
         train_array_tuple = (self.z_mat[train_indices_vet, :], self.x_y_mat[train_indices_vet, :])
@@ -361,7 +366,7 @@ class NetworkTrainingTuning:
         return train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet
 
 
-    def tuning(self, print_loss_boolean, is_null_boolean, number_of_test_samples, cut_off_radius=None,
+    def tuning(self, print_loss_boolean, is_null_boolean, test_sample_prop, cut_off_radius=None,
                true_weights_array=None):
         """
         The function is used for (hyper)parameter tuning of neural network based on the data generated either by the
@@ -370,7 +375,7 @@ class NetworkTrainingTuning:
         assume the data is generated under the Ising model.
 
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :param number_of_test_samples: An integer which is the number of samples used as validation set.
+        :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set.
         :param is_null_boolean: A boolean value to indicate if we compute the data is generated under the conditional
             independence assumption (H0).
         :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating
@@ -389,7 +394,7 @@ class NetworkTrainingTuning:
             "Neither cut_off_radius nor true_weights_array are supplied."
 
         # Prepare training and test data.
-        train_array_tuple, test_array_tuple, _ , _= self.train_test_split(number_of_test_samples=number_of_test_samples)
+        train_array_tuple, test_array_tuple, _ , _= self.train_test_split(test_sample_prop=test_sample_prop)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, test_x_y_mat = test_array_tuple
@@ -441,14 +446,13 @@ class NetworkTrainingTuning:
 
         return loss_kl_array
 
-
-    def train_compute_test_statistic(self, print_loss_boolean, number_of_test_samples):
+    def train_compute_parameters(self, print_loss_boolean, test_sample_prop):
         """
         Train the ising_network on the data in the instance and compute a test statistic based on the partial data
         (test data).
 
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :param number_of_test_samples: An integer which is the number of samples used as validation set.
+        :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set.
 
         :return:
             result_dict: A dictionary. result_dict["test_statistic] is a scalar which is the test statistic computed on
@@ -457,7 +461,7 @@ class NetworkTrainingTuning:
         """
         # Prepare training and test data.
         train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet = \
-            self.train_test_split(number_of_test_samples=number_of_test_samples)
+            self.train_test_split(test_sample_prop=test_sample_prop)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, _ = test_array_tuple
@@ -474,19 +478,12 @@ class NetworkTrainingTuning:
 
             epoch += 1
 
-        predicted_parameter_mat = network_model(self.z_mat)
-        jxy_squared_vet = np.square(predicted_parameter_mat[:, 2])
-
-        train_jxy_squared_mean = np.mean(jxy_squared_vet[train_indices_vet])
-        test_jxy_squared_mean = np.mean(jxy_squared_vet[test_indices_vet])
-
-        jx_jy_train_mat = tf.gather(predicted_parameter_mat, train_indices_vet, axis=0)
-        jx_jy_train_mat = tf.gather(jx_jy_train_mat, [0, 1], axis=1)
-        fitted_train_p_mat = pmf_collection(jx_jy_train_mat)
-
-        result_dict = {"test_test_statistic": test_jxy_squared_mean, "train_indices_vet": train_indices_vet,
-                       "test_indices_vet": test_indices_vet,
-                       "fitted_train_p_mat": fitted_train_p_mat, "train_test_statistic": train_jxy_squared_mean}
+        predicted_parameter_mat = network_model(self.z_mat).numpy()
+        network_weights_vet = network_model.weights
+        network_weights_vet = [network_weights.numpy() for network_weights in network_weights_vet]
+        result_dict = {"test_indices_vet": test_indices_vet,
+                       "predicted_parameter_mat": predicted_parameter_mat,
+                       "network_weights_vet": network_weights_vet}
 
         return result_dict
 

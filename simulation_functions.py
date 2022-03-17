@@ -209,7 +209,7 @@ def ising_simulation_method(trial_index, sample_size, scenario, data_directory_n
                                                         learning_rate=learning_rate, epoch=epoch)
 
     result_dict = training_tuning_instance.train_compute_parameters(print_loss_boolean=False,
-                                                                        test_sample_prop=test_sample_prop)
+                                                                    test_sample_prop=test_sample_prop)
 
     print(f"Scenario: {scenario} Sample size: {sample_size} trial: {trial_index} is done.")
 
