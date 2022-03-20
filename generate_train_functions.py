@@ -542,22 +542,52 @@ class NetworkTrainingTuning:
 # Class for n layers fully connected neural network #
 #####################################################
 # This the neural network model we are going to use to fit on the data.
-class ForwardLayer(tf.keras.layers.Layer):
-    def __init__(self, input_dim, hidden_dim):
-        super(ForwardLayer, self).__init__()
-
-        self.linear = tf.keras.layers.Dense(
-            units=hidden_dim,
-            input_shape=(input_dim,)
-        )
-#        self.layernorm = tf.keras.layers.LayerNormalization()
-
-    def call(self, inputs):
-        output = self.linear(inputs)
-        output = tf.keras.activations.elu(output)
-
-        return output
-
+# class ForwardLayer(tf.keras.layers.Layer):
+#     def __init__(self, input_dim, hidden_dim):
+#         super(ForwardLayer, self).__init__()
+#
+#         self.linear = tf.keras.layers.Dense(
+#             units=hidden_dim,
+#             input_shape=(input_dim,)
+#         )
+# #        self.layernorm = tf.keras.layers.LayerNormalization()
+#
+#     def call(self, inputs):
+#         output = self.linear(inputs)
+#         output = tf.keras.activations.elu(output)
+#
+#         return output
+#
+#
+# class FullyConnectedNetwork(tf.keras.Model):
+#     # This is the class network we fit on the data.
+#     def __init__(self, number_forward_layers, input_dim, hidden_dim, output_dim):
+#         super(FullyConnectedNetwork, self).__init__()
+#
+#         self.input_dim = input_dim
+#         self.number_forward_elu_layers = number_forward_layers
+#
+#         self.initial_block = ForwardLayer(input_dim=input_dim, hidden_dim=hidden_dim)
+#
+#         if number_forward_layers > 1:
+#             self.feed_forward_rest_vet = [ForwardLayer(input_dim=hidden_dim, hidden_dim=hidden_dim) for _ in
+#                                           np.arange(number_forward_layers - 1)]
+#
+#         self.final_linear = tf.keras.layers.Dense(
+#             units=output_dim,
+#             input_shape=(hidden_dim,)
+#         )
+#
+#     def call(self, inputs):
+#         output = self.initial_block(inputs)
+#         if self.number_forward_elu_layers == 1:
+#             output = self.final_linear(output)
+#         else:
+#             for i in np.arange(self.number_forward_elu_layers - 1):
+#                 output = self.feed_forward_rest_vet[i](output)
+#             output = self.final_linear(output)
+#
+#         return output
 
 class FullyConnectedNetwork(tf.keras.Model):
     # This is the class network we fit on the data.
@@ -565,31 +595,72 @@ class FullyConnectedNetwork(tf.keras.Model):
         super(FullyConnectedNetwork, self).__init__()
 
         self.input_dim = input_dim
-        self.number_forward_elu_layers = number_forward_layers
+        self.number_forward_layers = number_forward_layers
 
-        self.initial_block = ForwardLayer(input_dim=input_dim, hidden_dim=hidden_dim)
+        self.initial_block = tf.keras.layers.Dense(
+            units=hidden_dim,
+            input_dim=(input_dim, ),
+            activation="elu"
+        )
 
         if number_forward_layers > 1:
-            self.feed_forward_rest_vet = [ForwardLayer(input_dim=hidden_dim, hidden_dim=hidden_dim) for _ in
-                                          np.arange(number_forward_layers - 1)]
+            self.feed_forward_rest_vet = [tf.keras.layers.Dense(
+                units=hidden_dim, input_dim=(hidden_dim,), activation="elu"
+            ) for _ in np.arange(number_forward_layers - 1)]
 
         self.final_linear = tf.keras.layers.Dense(
             units=output_dim,
             input_shape=(hidden_dim,)
         )
 
+
     def call(self, inputs):
         output = self.initial_block(inputs)
-        if self.number_forward_elu_layers == 1:
+        if self.number_forward_layers == 1:
             output = self.final_linear(output)
         else:
-            for i in np.arange(self.number_forward_elu_layers - 1):
+            for i in np.arange(self.number_forward_layers - 1):
                 output = self.feed_forward_rest_vet[i](output)
             output = self.final_linear(output)
 
         return output
 
 
+class FullyConnectedNetworkTest(tf.keras.Model):
+    # This is the class network we fit on the data.
+    def __init__(self, number_forward_layers, input_dim, hidden_dim, output_dim):
+        super(FullyConnectedNetworkTest, self).__init__()
+
+        self.input_dim = input_dim
+        self.number_forward_layers = number_forward_layers
+
+        self.initial_block = tf.keras.layers.Dense(
+            units=hidden_dim,
+            input_dim=(input_dim,),
+            activation="elu"
+        )
+
+        if number_forward_layers > 1:
+            self.feed_forward_rest_vet = [tf.keras.layers.Dense(
+                units=hidden_dim, input_dim=(hidden_dim,), activation="elu"
+            ) for _ in np.arange(number_forward_layers - 1)]
+
+        self.final_linear = tf.keras.layers.Dense(
+            units=output_dim,
+            input_shape=(hidden_dim,)
+        )
+
+        self.final_linear_input_mat = None
+
+    def call(self, inputs):
+        output = self.initial_block(inputs)
+        if self.number_forward_layers != 1:
+            for i in np.arange(self.number_forward_layers - 1):
+                output = self.feed_forward_rest_vet[i](output)
+        self.final_linear_input_mat = output.numpy()
+        output = self.final_linear(output)
+
+        return output
 
 # Not in use now.
 ####################################################################
