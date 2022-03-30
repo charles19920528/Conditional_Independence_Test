@@ -1,5 +1,6 @@
 import pickle
 import multiprocessing as mp
+import generate_train_functions as gt
 import result_analysis_functions as ra
 import hyperparameters as hp
 
@@ -31,7 +32,6 @@ ising_fpr_tpr_dict_vet.append(naive_chisq_fpr_tpr_dict)
 # ra.plot_roc(naive_chisq_fpr_tpr_dict, "Naive_Chisq", "ising_data")
 
 del naive_chisq_null_result_dict, naive_chisq_alt_result_dict, naive_chisq_fpr_tpr_dict
-
 
 # Mixture data
 with open('results/result_dict/mixture_data/naive_chisq_null_result_dict.p', 'rb') as fp:
@@ -164,49 +164,66 @@ del ising_mixture_mp_fpr_tpr_dict
 ############################################
 # Ising Model with Wald test statistic jxy #
 ############################################
-method_name_vet.append("Ising Jxy")
-
-# Ising Data
-ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
-                                     alt_result_dict=ising_true_result_alt_dict,
-                                     test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
-                                     trial_index_vet=trial_index_vet, jxy_boolean=True)
-
-ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
-# ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
-
-del ising_wald_fpr_tpr_dict
-
-ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
-                                           alt_result_dict=alt_ising_mixture_result_dict,
-                                           test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
-                                           trial_index_vet=trial_index_vet, jxy_boolean=True)
-
-mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
-
-del ising_mixture_wald_fpr_tpr_dict
+# method_name_vet.append("Ising Jxy")
+#
+# # Ising Data
+# ising_network_test = gt.FullyConnectedNetworkTest(number_forward_layers=1, input_dim=hp.dim_z,
+#                                                   hidden_dim=hp.hidden_1_out_dim, output_dim=3)
+# ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
+#                                      alt_result_dict=ising_true_result_alt_dict,
+#                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+#                                      trial_index_vet=trial_index_vet, network_test=ising_network_test)
+#
+# ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
+# # ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
+#
+# del ising_wald_fpr_tpr_dict
+#
+# ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
+#                                            alt_result_dict=alt_ising_mixture_result_dict,
+#                                            test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
+#                                            trial_index_vet=trial_index_vet, jxy_boolean=True)
+#
+# mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
+#
+# del ising_mixture_wald_fpr_tpr_dict
 
 ###################################################
 # Ising Model with Wald test statistic last layer #
 ###################################################
-method_name_vet.append("Ising Theta")
+method_name_vet.append("Ising Wald")
 
 # Ising Data
-ising_wald_theta_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
+ising_network_test_args_dict = {"number_forward_layers": 1, "input_dim": hp.dim_z, "hidden_dim": hp.hidden_1_out_dim,
+                                "output_dim": 3}
+ising_network_test_args_dict_dict = {"null": ising_network_test_args_dict, "alt": ising_network_test_args_dict}
+ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
                                      alt_result_dict=ising_true_result_alt_dict,
-                                     test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
-                                     trial_index_vet=trial_index_vet, jxy_boolean=False)
+                                     test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                                     trial_index_vet=trial_index_vet, data_directory_name="ising_data",
+                                     network_test_args_dict_dict=ising_network_test_args_dict_dict)
 
-ising_fpr_tpr_dict_vet.append(ising_wald_theta_fpr_tpr_dict)
+ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
 # ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
 
-ising_mixture_wald_theta_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
-                                           alt_result_dict=alt_ising_mixture_result_dict,
-                                           test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
-                                           trial_index_vet=trial_index_vet, jxy_boolean=False)
+# Mixture Data
+mixture_network_test_args_dict_dict = {"null": {"number_forward_layers": hp.mixture_number_forward_layer_null,
+                                                "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim_null,
+                                                "output_dim": 3},
+                                       "alt": {"number_forward_layers": hp.mixture_number_forward_layer_alt,
+                                               "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim_alt,
+                                               "output_dim": 3}
+                                       }
+ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
+                                             alt_result_dict=alt_ising_mixture_result_dict,
+                                             test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                                             trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
+                                             network_test_args_dict_dict=mixture_network_test_args_dict_dict)
 
-mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_theta_fpr_tpr_dict)
-ra.plot_roc(ising_mixture_wald_theta_fpr_tpr_dict, f"Ising Theta", "ising_data")
+mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
+# ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Wald", "mixture_data")
+
+del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
 
 ###########################################################
 # Analyze Different Train and Test Split for Ising Models #
@@ -269,7 +286,6 @@ mixture_fpr_tpr_dict_vet.append(ccit_fpr_tpr_dict)
 
 # ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")
 del ccit_null_result_dict, ccit_alt_result_dict, ccit_fpr_tpr_dict
-
 
 ra.summary_roc_plot(fpr_tpr_dict_vet=ising_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
                     data_directory_name="ising_data", result_plot_name="ising_data_breg_explore")

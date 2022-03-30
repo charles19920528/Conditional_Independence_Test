@@ -9,6 +9,7 @@ from scipy.optimize import fsolve
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import generate_train_functions as gt
+import test_statistic as ts
 import hyperparameters as hp
 
 # Only run on CPU
@@ -19,36 +20,53 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 # Get test statistic for one trial. #
 #####################################
 # Wald Test
-def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
-    sample_size = x_y_mat.shape[0]
-
-    # calculate under h_0
-    if not perturb_boolean:
-        parameter_mat[:, 2] = 0
-    parameter_mat = tf.Variable(parameter_mat)
-
-    with tf.GradientTape() as t2:
-        with tf.GradientTape() as t1:
-            ln = gt.log_ising_likelihood(x_y_mat=x_y_mat, parameter_mat=parameter_mat)
-        dl_dj = t1.gradient(ln, parameter_mat)
-    hessian = np.diag(t2.jacobian(dl_dj, parameter_mat)[:, 2, :, 2])
-
-    if perturb_boolean:
-        sn = dl_dj[:, 2] * np.random.normal(size=sample_size) / np.sqrt(sample_size)
-    else:
-        sn = dl_dj[:, 2] / np.sqrt(sample_size)
-    an = - sample_size / hessian
-    tn = an * sn
-
-    return tf.reduce_sum(tf.square(tn)).numpy()
+# def wald_test_statistics(parameter_mat, x_y_mat, perturb_boolean):
+#     sample_size = x_y_mat.shape[0]
+#
+#     # calculate under h_0
+#     if not perturb_boolean:
+#         parameter_mat[:, 2] = 0
+#     parameter_mat = tf.Variable(parameter_mat)
+#
+#     with tf.GradientTape() as t2:
+#         with tf.GradientTape() as t1:
+#             ln = gt.log_ising_likelihood(x_y_mat=x_y_mat, parameter_mat=parameter_mat)
+#         dl_dj = t1.gradient(ln, parameter_mat)
+#     hessian = np.diag(t2.jacobian(dl_dj, parameter_mat)[:, 2, :, 2])
+#
+#     if perturb_boolean:
+#         sn = dl_dj[:, 2] * np.random.normal(size=sample_size) / np.sqrt(sample_size)
+#     else:
+#         sn = dl_dj[:, 2] / np.sqrt(sample_size)
+#     an = - sample_size / hessian
+#     tn = an * sn
+#
+#     return tf.reduce_sum(tf.square(tn)).numpy()
 
 
 def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
-                                        data_directory_name):
+                                        data_directory_name, network_test_args_dict_dict):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
-    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    train_indices_vet = np.arange(sample_size)[~np.in1d(np.arange(sample_size), test_indices_vet)]
+    train_indices_boolean = False
+    if train_indices_boolean:
+        indices_vet = train_indices_vet
+    else:
+        indices_vet = test_indices_vet
+
+    # predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
     network_weights_vet = one_sample_size_result_dict[trial_index]["network_weights_vet"]
 
+    x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
+    x_y_mat = x_y_mat[indices_vet, :]
+
+
+    z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt")
+    z_mat = z_mat[indices_vet, :]
+
+    test_statistic = ts.wald_test_beta(x_y_mat=x_y_mat, z_mat=z_mat,
+                                       network_test_args_dict=network_test_args_dict_dict[scenario],
+                                       network_weights_vet=network_weights_vet)
     # x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     # x_y_mat = x_y_mat[test_indices_vet, :]
     #
@@ -57,8 +75,8 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
     # test_statistics = np.sum(predicted_parameter_mat[: 2]**2) * len(test_indices_vet)
     # weights_vet = np.concatenate([network_weights_vet[-2][:, 2], network_weights_vet[-1]])
     # test_statistics = np.sum(weights_vet ** 2) * (sample_size - len(test_indices_vet))
-    test_statistics = np.mean(predicted_parameter_mat[: 2] ** 2)
-    return test_statistics
+    # test_statistics = np.mean(predicted_parameter_mat[: 2] ** 2)
+    return test_statistic
 
 
 def ising_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, jxy_boolean):
@@ -142,6 +160,7 @@ def i_projection(predicted_parameter_mat):
                                                args=(predicted_parameter_mat[i, :]))
 
     return projected_parameter_mat
+
 
 def ising_test_statistic_one_trial(trial_index, one_sample_size_result_dict):
     """
@@ -331,7 +350,7 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
             trials which are of the sample size and generated under the alt.
     """
     if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
-    # if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial}:
+        # if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial}:
         null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
                                                                   one_sample_size_result_dict=
                                                                   one_sample_size_null_result_dict,
