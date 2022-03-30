@@ -318,7 +318,7 @@ class NetworkTrainingTuning:
         :param x_y_mat: an n by p dimension numpy array or tensor. n is the sample size and p is the dimension.
             This the response.
         :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
-        neural network to fit on the data.
+        neural network to fit on the data. It needs to have "final_linear_input_mat" attribute.
     :param network_model_class_kwargs: Keyword arguments to be passed in to the constructor of the network_model_class.
         :param epoch: An integer indicating the number of times training process pass through the data set.
         :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
@@ -408,7 +408,7 @@ class NetworkTrainingTuning:
             true_network.dummy_run()
             true_network.set_weights(true_weights_array)
 
-            true_test_parameter_mat = true_network(test_z_mat)
+            true_test_parameter_mat = true_network.call(test_z_mat)
             if is_null_boolean:
                 true_test_parameter_mat = true_test_parameter_mat[:, :2]
 
@@ -483,7 +483,8 @@ class NetworkTrainingTuning:
         network_weights_vet = [network_weights.numpy() for network_weights in network_weights_vet]
         result_dict = {"test_indices_vet": test_indices_vet,
                        "predicted_parameter_mat": predicted_parameter_mat,
-                       "network_weights_vet": network_weights_vet}
+                       "network_weights_vet": network_weights_vet,
+                       "final_linear_input_mat": network_model.final_linear_input_mat}
 
         return result_dict
 
@@ -589,47 +590,11 @@ class NetworkTrainingTuning:
 #
 #         return output
 
+
 class FullyConnectedNetwork(tf.keras.Model):
     # This is the class network we fit on the data.
     def __init__(self, number_forward_layers, input_dim, hidden_dim, output_dim):
         super(FullyConnectedNetwork, self).__init__()
-
-        self.input_dim = input_dim
-        self.number_forward_layers = number_forward_layers
-
-        self.initial_block = tf.keras.layers.Dense(
-            units=hidden_dim,
-            input_dim=(input_dim, ),
-            activation="elu"
-        )
-
-        if number_forward_layers > 1:
-            self.feed_forward_rest_vet = [tf.keras.layers.Dense(
-                units=hidden_dim, input_dim=(hidden_dim,), activation="elu"
-            ) for _ in np.arange(number_forward_layers - 1)]
-
-        self.final_linear = tf.keras.layers.Dense(
-            units=output_dim,
-            input_shape=(hidden_dim,)
-        )
-
-
-    def call(self, inputs):
-        output = self.initial_block(inputs)
-        if self.number_forward_layers == 1:
-            output = self.final_linear(output)
-        else:
-            for i in np.arange(self.number_forward_layers - 1):
-                output = self.feed_forward_rest_vet[i](output)
-            output = self.final_linear(output)
-
-        return output
-
-
-class FullyConnectedNetworkTest(tf.keras.Model):
-    # This is the class network we fit on the data.
-    def __init__(self, number_forward_layers, input_dim, hidden_dim, output_dim):
-        super(FullyConnectedNetworkTest, self).__init__()
 
         self.input_dim = input_dim
         self.number_forward_layers = number_forward_layers

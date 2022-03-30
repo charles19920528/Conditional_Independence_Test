@@ -60,22 +60,13 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     x_y_mat = x_y_mat[indices_vet, :]
 
-
     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt")
     z_mat = z_mat[indices_vet, :]
 
-    test_statistic = ts.wald_test_beta(x_y_mat=x_y_mat, z_mat=z_mat,
-                                       network_test_args_dict=network_test_args_dict_dict[scenario],
-                                       network_weights_vet=network_weights_vet)
-    # x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
-    # x_y_mat = x_y_mat[test_indices_vet, :]
-    #
-    # test_statistics = wald_test_statistics(parameter_mat=predicted_parameter_mat, x_y_mat=x_y_mat,
-    #                                        perturb_boolean=False)
-    # test_statistics = np.sum(predicted_parameter_mat[: 2]**2) * len(test_indices_vet)
-    # weights_vet = np.concatenate([network_weights_vet[-2][:, 2], network_weights_vet[-1]])
-    # test_statistics = np.sum(weights_vet ** 2) * (sample_size - len(test_indices_vet))
-    # test_statistics = np.mean(predicted_parameter_mat[: 2] ** 2)
+    test_statistic = ts.wald_test(x_y_mat=x_y_mat, z_mat=z_mat,
+                                  network_test_args_dict=network_test_args_dict_dict[scenario],
+                                  network_weights_vet=network_weights_vet)
+
     return test_statistic
 
 
