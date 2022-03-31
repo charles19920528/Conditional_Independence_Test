@@ -160,13 +160,11 @@ class WaldTest:
                                                                 final_linear_input_mat=self.final_linear_input_mat,
                                                                 j_mat=self.j_mat, gradient_boolean=True,
                                                                 hessian_boolean=True)
-        self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat, np.identity(self.hessian_mat.shape[0]))
-
         if self.sandwich_boolean:
-            inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
+            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
             gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
 
-            meat_mat = inverse_hessian_mat.dot(gradient_cov_mat).dot(inverse_hessian_mat)
+            meat_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat)
             # meat_inverse_mat = np.linalg.solve(meat_mat, np.identity(meat_mat.shape[0]))
             meat_inverse_mat = np.linalg.pinv(meat_mat)
             self.test_statistic = self.theta_vet.T.dot(meat_inverse_mat).dot(self.theta_vet)[0, 0] * self.j_mat.shape[0]
@@ -177,8 +175,7 @@ class WaldTest:
     def get_test_statistic(self):
         if self.test_statistic is None:
             self._compute_test_statistic()
-        else:
-            return self.test_statistic
+        return self.test_statistic
 
     def p_value(self, n_trials):
         if self.test_statistic is None:

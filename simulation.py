@@ -60,7 +60,7 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 ###############
 # Ising Model #
 ###############
-scenario_vet = ["null", "alt"]
+scenario_vet = ["alt"]
 
 # Mixture data
 mixture_number_forward_layer_vet = [hp.mixture_number_forward_layer_null, hp.mixture_number_forward_layer_alt]
@@ -101,22 +101,21 @@ true_network_model_class_kwargs = {"number_forward_layers": 1, "input_dim": hp.d
                                    "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
 true_network_model_class_kwargs_vet = [true_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
 
-for test_sample_prop in hp.test_prop_list:
-    for scenario in scenario_vet:
-        np.random.seed(hp.seed_index)
-        tf.random.set_seed(hp.seed_index)
+for scenario in scenario_vet:
+    np.random.seed(hp.seed_index)
+    tf.random.set_seed(hp.seed_index)
 
-        start_time = time.time()
-        sf.ising_simulation_loop(pool=pool, scenario=scenario, data_directory_name="ising_data",
-                                 result_dict_name=true_result_dict_name,
-                                 trial_index_vet=np.arange(hp.number_of_trials),
-                                 network_model_class=gt.FullyConnectedNetwork,
-                                 network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
-                                 epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate,
-                                 test_sample_prop=test_sample_prop)
+    start_time = time.time()
+    sf.ising_simulation_loop(pool=pool, scenario=scenario, data_directory_name="ising_data",
+                             result_dict_name=true_result_dict_name,
+                             trial_index_vet=np.arange(hp.number_of_trials),
+                             network_model_class=gt.FullyConnectedNetwork,
+                             network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
+                             epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate,
+                             test_sample_prop=0.1)
 
-        print(f"Ising Data, test prop: {test_sample_prop}, scenario: {scenario}")
-        print(f"Ising simulation on ising data takes %s seconds to finish." % (time.time() - start_time))
+    print(f"Ising Data, test prop: 0.1, scenario: {scenario}")
+    print(f"Ising simulation on ising data takes %s seconds to finish." % (time.time() - start_time))
 #
 # for test_sample_prop in hp.test_prop_list:
 #     # Alternative
