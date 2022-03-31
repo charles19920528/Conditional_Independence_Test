@@ -112,7 +112,7 @@ def wald_test(x_y_mat, z_mat, network_test_args_dict: dict, network_weights_vet,
     final_linear_input_mat = network_test.final_linear_input_mat
 
     gradient_mat, hessian_mat = theta_derivatives(x_y_mat=x_y_mat, final_linear_input_mat=final_linear_input_mat,
-                                                       j_mat=j_mat, gradient_boolean=True, hessian_boolean=True)
+                                                  j_mat=j_mat, gradient_boolean=True, hessian_boolean=True)
     if sandwich_boolean:
         inverse_hessian_mat = np.linalg.pinv(hessian_mat)
         gradient_cov_mat = np.cov(gradient_mat.T, ddof=0)
@@ -127,72 +127,83 @@ def wald_test(x_y_mat, z_mat, network_test_args_dict: dict, network_weights_vet,
     return test_statistic
 
 
-def wald_test_p_value(x_y_mat, z_mat, network_test_args_dict: dict, network_weights_vet):
+def vectorized_cov(data_array):
+    """
+    https://stackoverflow.com/questions/40394775/vectorizing-numpy-covariance-for-3d-array
+    :param data_array: An n_trials by sample_size by par_dim array.
+    :return:
+        A n_trials by par_dim by par_dim array.
+    """
+    sample_size = data_array.shape[1]
+    m1 = data_array - data_array.sum(1, keepdims=True) / sample_size
+    out = np.einsum('ijl,ijk->ikl', m1, m1) / sample_size
+    return out
 
 
 class WaldTest:
-    def __init__(self, x_y_mat, z_mat, network_test: gt.FullyConnectedNetworkTest, network_weights_vet):
+    def __init__(self, x_y_mat, j_mat, final_linear_input_mat, network_weights_vet, sandwich_boolean):
         self.x_y_mat = x_y_mat
-        self.z_mat = z_mat
-
-        self.network_test = network_test
-        self.network_test.call(z_mat[0:2, :])
-        self.network_test.set_weights(network_weights_vet)
 
         self.theta_vet = np.concatenate([network_weights_vet[-2][:, 2], [network_weights_vet[-1][2]]]).reshape(-1, 1)
 
-        self.j_mat = self.network_test.call(z_mat).numpy()
-        self.final_linear_input_mat = self.network_test.final_linear_input_mat
+        self.j_mat = j_mat
+        self.final_linear_input_mat = final_linear_input_mat
+        self.sandwich_boolean = sandwich_boolean
 
         self.test_statistic = None
+        self._bootstrap_test_statistic_vet = None
+        self.hessian_mat = None
+        self.inverse_hessian_mat = None
 
-    def _compute_test_statistic(self, sandwich_boolean):
-        self.gradient_mat, hessian_mat = theta_derivatives(x_y_mat=self.x_y_mat,
-                                                           final_linear_input_mat=self.final_linear_input_mat,
-                                                           j_mat=self.j_mat, gradient_boolean=True,
-                                                           hessian_boolean=True)
-        self.inverse_hessian_mat = np.linalg.pinv(hessian_mat, np.identity(hessian_mat.shape[0]))
+    def _compute_test_statistic(self):
+        self.gradient_mat, self.hessian_mat = theta_derivatives(x_y_mat=self.x_y_mat,
+                                                                final_linear_input_mat=self.final_linear_input_mat,
+                                                                j_mat=self.j_mat, gradient_boolean=True,
+                                                                hessian_boolean=True)
+        self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat, np.identity(self.hessian_mat.shape[0]))
 
-        if sandwich_boolean:
-            inverse_hessian_mat = np.linalg.pinv(hessian_mat)
+        if self.sandwich_boolean:
+            inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
             gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
 
             meat_mat = inverse_hessian_mat.dot(gradient_cov_mat).dot(inverse_hessian_mat)
             # meat_inverse_mat = np.linalg.solve(meat_mat, np.identity(meat_mat.shape[0]))
             meat_inverse_mat = np.linalg.pinv(meat_mat)
-            self.test_statistic = self.theta_vet.T.dot(meat_inverse_mat).dot(self.theta_vet)[0, 0]
+            self.test_statistic = self.theta_vet.T.dot(meat_inverse_mat).dot(self.theta_vet)[0, 0] * self.j_mat.shape[0]
         else:
-            self.test_statistic = self.theta_vet.T.dot(-hessian_mat).dot(self.theta_vet)[0, 0]
+            self.test_statistic = self.theta_vet.T.dot(-self.hessian_mat).dot(self.theta_vet)[0, 0] * \
+                                  self.j_mat.shape[0]
 
-    def get_test_statistic(self, sandwich_boolean):
+    def get_test_statistic(self):
         if self.test_statistic is None:
-            self._compute_test_statistic(sandwich_boolean=sandwich_boolean)
+            self._compute_test_statistic()
         else:
             return self.test_statistic
 
-    def p_value(self, n_trials, sandwich_boolean):
+    def p_value(self, n_trials):
         if self.test_statistic is None:
-            self._compute_test_statistic(sandwich_boolean=sandwich_boolean)
-        sample_size = self.x_y_mat.shape[0]
+            self._compute_test_statistic()
 
-        # b by n
-        noise_mat = np.random.binomial(1, 0.5, (n_trials, sample_size))
-
-        # gradient was n by p, result is b by p by n
-        perturbed_grad_tensor = self.gradient_mat.T * noise_mat[:, np.newaxis, :]
-
-        # change to b by n by p
-        perturbed_grad_tensor = np.swapaxes(perturbed_grad_tensor, 1, 2)
-
-
-
-
-# def is_pos_def(x):
-#     return np.all(np.linalg.eigvals(x) > 0)
-
-# p by n gradient
-grad_mat = np.array([[1,2. ,3], [4, 5, 6]]).T
-# b by p
-noise_mat = np.array([[1, 0, 100, 0.5], [-1, 0, -100, -0.5]]).T
-
-grad_mat * noise_mat[:,np.newaxis, :]
+        # n_trials by sample_size
+        noise_mat = np.random.binomial(1, 0.5, (n_trials, self.x_y_mat.shape[0]))
+        # gradient is sample_size by par_dim, result is n_trials by par_dim by sample_size
+        perturbed_grad_array = self.gradient_mat.T * noise_mat[:, np.newaxis, :]
+        # change to n_trials by sample_size by par_dim
+        perturbed_grad_array = np.swapaxes(perturbed_grad_array, 1, 2)
+        # n_trials by 1 by par_dim
+        sum_perturbed_grad_array = perturbed_grad_array.sum(axis=1, keepdims=True)
+        if self.sandwich_boolean:
+            # n_trials by par_dim by par_dim
+            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
+            meat_mat = np.einsum("ji, bil -> bjl", self.inverse_hessian_mat, gradient_cov_array)
+            meat_mat = meat_mat.dot(self.inverse_hessian_mat)
+            # n_trials by par_dim by par_dim
+            meat_inverse_mat = np.linalg.pinv(meat_mat)
+            self._bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", sum_perturbed_grad_array,
+                                                           meat_inverse_mat)
+            self._bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", self._bootstrap_test_statistic_vet,
+                                                           sum_perturbed_grad_array)
+        else:
+            self._bootstrap_test_statistic_vet = sum_perturbed_grad_array.dot(-self.hessian_mat)
+            self._bootstrap_test_statistic_vet = \
+                (self._bootstrap_test_statistic_vet.squeeze() * sum_perturbed_grad_array.squeeze()).sum(axis=1)
