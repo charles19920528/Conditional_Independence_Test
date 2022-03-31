@@ -60,7 +60,7 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 ###############
 # Ising Model #
 ###############
-scenario_vet = ["alt"]
+scenario_vet = ["null", "alt"]
 
 # Mixture data
 mixture_number_forward_layer_vet = [hp.mixture_number_forward_layer_null, hp.mixture_number_forward_layer_alt]
