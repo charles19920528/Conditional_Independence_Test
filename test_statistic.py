@@ -97,7 +97,7 @@ def theta_derivatives(x_y_mat, final_linear_input_mat, j_mat, gradient_boolean, 
         final_outer_vet = final_linear_input_mat[:, :, np.newaxis] * final_linear_input_mat[:, np.newaxis, :]
         hessian_mat_vet = final_outer_vet * multiplier_vet
 
-        result_list.append(hessian_mat_vet.sum(axis=0))
+        result_list.append(hessian_mat_vet.mean(axis=0))
 
     return result_list
 
@@ -151,7 +151,6 @@ class WaldTest:
         self.sandwich_boolean = sandwich_boolean
 
         self.test_statistic = None
-        self._bootstrap_test_statistic_vet = None
         self.hessian_mat = None
         self.inverse_hessian_mat = None
 
@@ -180,15 +179,19 @@ class WaldTest:
     def p_value(self, n_trials):
         if self.test_statistic is None:
             self._compute_test_statistic()
+        if self.inverse_hessian_mat is None:
+            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
 
         # n_trials by sample_size
-        noise_mat = np.random.binomial(1, 0.5, (n_trials, self.x_y_mat.shape[0]))
+        # noise_mat = 2 * np.random.binomial(1, 0.5, (n_trials, self.x_y_mat.shape[0])) - 1
+        noise_mat = np.random.gamma(shape=4, scale=0.5, size=(n_trials, self.x_y_mat.shape[0])) - 2
         # gradient is sample_size by par_dim, result is n_trials by par_dim by sample_size
         perturbed_grad_array = self.gradient_mat.T * noise_mat[:, np.newaxis, :]
         # change to n_trials by sample_size by par_dim
         perturbed_grad_array = np.swapaxes(perturbed_grad_array, 1, 2)
         # n_trials by 1 by par_dim
-        sum_perturbed_grad_array = perturbed_grad_array.sum(axis=1, keepdims=True)
+        bread_array = perturbed_grad_array.sum(axis=1, keepdims=True) / np.sqrt(self.j_mat.shape[0])
+        bread_array = np.einsum("ij, lnj -> lni", self.inverse_hessian_mat, bread_array)
         if self.sandwich_boolean:
             # n_trials by par_dim by par_dim
             gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
@@ -196,11 +199,14 @@ class WaldTest:
             meat_mat = meat_mat.dot(self.inverse_hessian_mat)
             # n_trials by par_dim by par_dim
             meat_inverse_mat = np.linalg.pinv(meat_mat)
-            self._bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", sum_perturbed_grad_array,
-                                                           meat_inverse_mat)
-            self._bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", self._bootstrap_test_statistic_vet,
-                                                           sum_perturbed_grad_array)
+            bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", bread_array,
+                                                     meat_inverse_mat)
+            bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", bootstrap_test_statistic_vet,
+                                                     bread_array)
         else:
-            self._bootstrap_test_statistic_vet = sum_perturbed_grad_array.dot(-self.hessian_mat)
-            self._bootstrap_test_statistic_vet = \
-                (self._bootstrap_test_statistic_vet.squeeze() * sum_perturbed_grad_array.squeeze()).sum(axis=1)
+            bootstrap_test_statistic_vet = bread_array.dot(-self.hessian_mat)
+            bootstrap_test_statistic_vet = \
+                (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1)
+            # self.x_y_mat.shape[0]
+
+        return sum(bootstrap_test_statistic_vet > self.test_statistic) / n_trials
