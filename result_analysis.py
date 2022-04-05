@@ -92,7 +92,7 @@ del stratified_chisq_result_null_dict, stratified_chisq_result_alt_dict, stratif
 ####################################################
 # Analyze the Ising model fitted on the Ising data #
 ####################################################
-method_name_vet.append("Ising")
+method_name_vet.append("Ising KL")
 
 with open('results/result_dict/ising_data/ising_data_true_architecture_breg_null_test_prop:0.1_result_dict.p',
           'rb') as fp:
@@ -191,39 +191,24 @@ del ising_mixture_mp_fpr_tpr_dict
 ###################################################
 # Ising Model with Wald test statistic last layer #
 ###################################################
-method_name_vet.append("Ising Wald")
+method_name_vet.append("Ising Wald Sandwich")
 
 # Ising Data
-# ising_network_test_args_dict = {"number_forward_layers": 1, "input_dim": hp.dim_z, "hidden_dim": hp.hidden_1_out_dim,
-#                                 "output_dim": 3}
-# ising_network_test_args_dict_dict = {"null": ising_network_test_args_dict, "alt": ising_network_test_args_dict}
-# ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
-#                                      alt_result_dict=ising_true_result_alt_dict,
-#                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
-#                                      trial_index_vet=trial_index_vet, data_directory_name="ising_data",
-#                                      network_test_args_dict_dict=ising_network_test_args_dict_dict)
 ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
                                      alt_result_dict=ising_true_result_alt_dict,
                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                      trial_index_vet=trial_index_vet, data_directory_name="ising_data",
-                                     sandwich_boolean=False)
+                                     sandwich_boolean=True)
 
 ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
 # ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
 
 # Mixture Data
-mixture_network_test_args_dict_dict = {"null": {"number_forward_layers": hp.mixture_number_forward_layer_null,
-                                                "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim_null,
-                                                "output_dim": 3},
-                                       "alt": {"number_forward_layers": hp.mixture_number_forward_layer_alt,
-                                               "input_dim": hp.dim_z, "hidden_dim": hp.mixture_hidden_dim_alt,
-                                               "output_dim": 3}
-                                       }
 ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
                                              alt_result_dict=alt_ising_mixture_result_dict,
                                              test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                              trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
-                                             sandwich_boolean=False)
+                                             sandwich_boolean=True)
 
 mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
 # ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Wald", "mixture_data")
@@ -293,9 +278,9 @@ mixture_fpr_tpr_dict_vet.append(ccit_fpr_tpr_dict)
 del ccit_null_result_dict, ccit_alt_result_dict, ccit_fpr_tpr_dict
 
 ra.summary_roc_plot(fpr_tpr_dict_vet=ising_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
-                    data_directory_name="ising_data", result_plot_name="ising_data_breg_explore")
+                    data_directory_name="ising_data", result_plot_name="ising_data_breg_explore_sandwich")
 ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
-                    data_directory_name="mixture_data", result_plot_name="mixture_data_breg_explore")
+                    data_directory_name="mixture_data", result_plot_name="mixture_data_breg_explore_sandwich")
 
 #############
 # Bootstrap #

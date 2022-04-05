@@ -121,11 +121,11 @@ class WaldTest:
         # change to n_trials by sample_size by par_dim
         perturbed_grad_array = np.swapaxes(perturbed_grad_array, 1, 2)
         # n_trials by 1 by par_dim
-        bread_array = perturbed_grad_array.sum(axis=1, keepdims=True) / np.sqrt(self.j_mat.shape[0])
+        bread_array = perturbed_grad_array.mean(axis=1, keepdims=True)
         bread_array = np.einsum("ij, lnj -> lni", self.inverse_hessian_mat, bread_array)
         if self.sandwich_boolean:
             # n_trials by par_dim by par_dim
-            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
+            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array) / self.j_mat.shape[0]
             meat_mat = np.einsum("ji, bil -> bjl", self.inverse_hessian_mat, gradient_cov_array)
             meat_mat = meat_mat.dot(self.inverse_hessian_mat)
             # n_trials by par_dim by par_dim

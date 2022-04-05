@@ -46,9 +46,9 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
-                                        data_directory_name, sandwich_boolean):
+                                        data_directory_name, sandwich_boolean, n_trials=None):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
-    train_indices_boolean = False
+    train_indices_boolean = True
     if train_indices_boolean:
         train_indices_vet = np.arange(sample_size)[~np.in1d(np.arange(sample_size), test_indices_vet)]
         indices_vet = train_indices_vet
@@ -64,7 +64,11 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
 
     wald_test_instance = ts.WaldTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
                                      network_weights_vet=network_weights_vet, sandwich_boolean=sandwich_boolean)
-    test_statistic = wald_test_instance.get_test_statistic()
+    if n_trials is None:
+        test_statistic = wald_test_instance.get_test_statistic()
+    else:
+        print(f"{scenario}, {sample_size}, trial: {trial_index}, done.")
+        test_statistic = wald_test_instance.p_value(n_trials=n_trials)
 
     return test_statistic
 
@@ -410,14 +414,9 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, t
         one_sample_size_null_result_dict = null_result_dict[sample_size]
         one_sample_size_alt_result_dict = alt_result_dict[sample_size]
 
-        # test_statistic_one_sample_size_tuple = test_statistic_one_sample_size(pool=pool,
-        #                                                                       one_sample_size_null_result_dict=
-        #                                                                       one_sample_size_null_result_dict,
-        #                                                                       one_sample_size_alt_result_dict=
-        #                                                                       one_sample_size_alt_result_dict,
-        #                                                                       trial_index_vet=trial_index_vet,
-        #                                                                       test_statistic_one_trial=
-        #                                                                       test_statistic_one_trial, **kwargs)
+        if test_statistic_one_trial == ising_wald_test_statistic_one_trial and sample_size == 50:
+            trial_index_vet = np.delete(trial_index_vet, 127)
+
         test_statistic_one_sample_size_fun_arg_dict = {
             "pool": pool, "one_sample_size_null_result_dict": one_sample_size_null_result_dict,
             "one_sample_size_alt_result_dict": one_sample_size_alt_result_dict, "trial_index_vet": trial_index_vet,
