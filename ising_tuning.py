@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("TkAgg")
 import numpy as np
 import tensorflow as tf
 import ising_tuning_functions as it
@@ -22,16 +24,18 @@ pool = mp.Pool(processes=process_number)
 ##########################################
 # Fit the full model on the mixture data #
 ##########################################
-number_forward_layers_vet = [1, 4, 12, 16]
-hidden_dim_mixture_vet = [40, 80, 160, 200, 320]
+# number_forward_layers_vet = [1, 4, 12, 16]
+# hidden_dim_mixture_vet = [40, 80, 160, 200, 320]
+number_forward_layers_vet = [16]
+hidden_dim_mixture_vet = [40]
 test_sample_prop = hp.test_sample_prop
-epoch_vet = [500, 300, 150, 100]
+epoch_vet = [250, 180, 120]
 mixture_result_dict_name_vet = []
 
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
 
-for scenario in ["null", "alt"]:
+for scenario in ["null"]:
     for number_forward_layers in number_forward_layers_vet:
         for hidden_dim_mixture in hidden_dim_mixture_vet:
             result_dict_name = f"mixture_{number_forward_layers}_{hidden_dim_mixture}_{hp.learning_rate_mixture}_" \
@@ -43,7 +47,7 @@ for scenario in ["null", "alt"]:
                                    "hidden_dim": hidden_dim_mixture, "output_dim": 3}
             it.tuning_wrapper(pool=pool, scenario=scenario, data_directory_name="mixture_data",
                               network_model_class=gt.FullyConnectedNetwork,
-                              test_sample_prop=hp.test_sample_prop, epoch_vet=epoch_vet,
+                              test_sample_prop_vet=[test_sample_prop]*3, epoch_vet=epoch_vet,
                               trial_index_vet=trial_index_vet, result_dict_name=result_dict_name,
                               network_model_class_kwargs=network_kwargs_dict,
                               sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
@@ -52,7 +56,8 @@ for scenario in ["null", "alt"]:
             print(f"{scenario}, number_forward_layers: {number_forward_layers}, hidden_dim: {hidden_dim_mixture} "
                   f"finished.")
 
-
+# with open(f'tuning/raw_result_dict/mixture_1_40_0.01_test_prop:0.1_null_result_dict.p', 'rb') as fp:
+#     null_ising_mixture_result_dict = pickle.load(fp)
 # Analysis results.
 for mixture_result_dict_name in mixture_result_dict_name_vet:
     tuning_result_dict_name = mixture_result_dict_name + "_null"
@@ -60,10 +65,12 @@ for mixture_result_dict_name in mixture_result_dict_name_vet:
                                       sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
 
 for sample_size, epoch in zip(sample_size_vet, epoch_vet):
-    it.plot_loss_kl(scenario="alt", tuning_result_dict_name=mixture_result_dict_name_vet[4],
+    it.plot_loss_kl(scenario="null", tuning_result_dict_name=mixture_result_dict_name_vet[0],
                     trial_index_vet=[0, 10, 49, 60],
                     sample_size=sample_size, end_epoch=epoch, start_epoch=0, plot_train_loss_boolean=True,
                     plot_kl_boolean=True, plot_test_loss_boolean=True)
+
+
 
 # Full model, Alt, mixture_16_40_0.01_test_prop:0.1. Epoch[96, 30,  110,   74].
 # Full model, Null, mixture_1_40_0.01_test_prop:0.1. Epoch[18,  33,  24, 36].

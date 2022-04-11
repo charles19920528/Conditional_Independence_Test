@@ -92,15 +92,16 @@ class WaldTest:
                                                                 j_mat=self.j_mat, gradient_boolean=True,
                                                                 hessian_boolean=True)
         if self.sandwich_boolean:
-            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
-            gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0) / self.j_mat.shape[0]
+            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
+            gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
 
-            meat_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat)
+            var_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
             # meat_inverse_mat = np.linalg.solve(meat_mat, np.identity(meat_mat.shape[0]))
-            meat_inverse_mat = np.linalg.pinv(meat_mat)
-            self.test_statistic = self.theta_vet.T.dot(meat_inverse_mat).dot(self.theta_vet)[0, 0]
+            var_inverse_mat = np.linalg.pinv(var_mat)
+            self.test_statistic = self.theta_vet.T.dot(var_inverse_mat).dot(self.theta_vet)[0, 0]
         else:
-            self.test_statistic = self.theta_vet.T.dot(-self.hessian_mat).dot(self.theta_vet)[0, 0]
+            self.test_statistic = self.theta_vet.T.dot(-self.hessian_mat).dot(self.theta_vet)[0, 0] * \
+                                  self.j_mat.shape[0]
 
     def get_test_statistic(self):
         if self.test_statistic is None:
@@ -125,9 +126,9 @@ class WaldTest:
         bread_array = np.einsum("ij, lnj -> lni", self.inverse_hessian_mat, bread_array)
         if self.sandwich_boolean:
             # n_trials by par_dim by par_dim
-            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array) / self.j_mat.shape[0]
+            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
             meat_mat = np.einsum("ji, bil -> bjl", self.inverse_hessian_mat, gradient_cov_array)
-            meat_mat = meat_mat.dot(self.inverse_hessian_mat)
+            meat_mat = meat_mat.dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
             # n_trials by par_dim by par_dim
             meat_inverse_mat = np.linalg.pinv(meat_mat)
             bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", bread_array,
@@ -137,7 +138,32 @@ class WaldTest:
         else:
             bootstrap_test_statistic_vet = bread_array.dot(-self.hessian_mat)
             bootstrap_test_statistic_vet = \
-                (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1)
+                (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1) * self.j_mat.shape[0]
             # self.x_y_mat.shape[0]
 
         return sum(bootstrap_test_statistic_vet > self.test_statistic) / n_trials
+    #
+    # def p_value_beta(self, n_trials):
+    #     if self.test_statistic is None:
+    #         self._compute_test_statistic()
+    #     if self.inverse_hessian_mat is None:
+    #         self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
+    #
+    #     ts_list = []
+    #     for _ in np.arange(n_trials):
+    #         noise_vet = np.random.gamma(shape=4, scale=0.5, size=(self.x_y_mat.shape[0], 1)) - 2
+    #         # noise_vet = np.random.normal(size=(self.x_y_mat.shape[0], 1))
+    #         perturbed_grad_array = self.gradient_mat * noise_vet
+    #         bread_array = self.inverse_hessian_mat.dot(perturbed_grad_array.mean(axis=0).T)
+    #         if self.sandwich_boolean:
+    #             gradient_cov_mat = np.cov(perturbed_grad_array.T, ddof=0)
+    #             var_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat) / \
+    #                       self.j_mat.shape[0]
+    #             var_inverse_mat = np.linalg.pinv(var_mat)
+    #             bootstrap_test_statistic = bread_array.dot(var_inverse_mat).dot(bread_array)
+    #         else:
+    #             bootstrap_test_statistic = bread_array.T.dot(-self.hessian_mat).dot(bread_array) * self.j_mat.shape[0]
+    #         ts_list.append(bootstrap_test_statistic)
+    #
+    #
+    #     return sum(np.array(ts_list) > self.test_statistic) / n_trials

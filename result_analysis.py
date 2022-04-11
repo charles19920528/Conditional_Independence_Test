@@ -1,6 +1,7 @@
 import pickle
 import multiprocessing as mp
-import generate_train_functions as gt
+import matplotlib
+matplotlib.use("TkAgg")
 import result_analysis_functions as ra
 import hyperparameters as hp
 
@@ -94,10 +95,10 @@ del stratified_chisq_result_null_dict, stratified_chisq_result_alt_dict, stratif
 ####################################################
 method_name_vet.append("Ising KL")
 
-with open('results/result_dict/ising_data/ising_data_true_architecture_breg_null_test_prop:0.1_result_dict.p',
+with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0.1_result_dict.p',
           'rb') as fp:
     ising_true_result_null_dict = pickle.load(fp)
-with open('results/result_dict/ising_data/ising_data_true_architecture_breg_alt_test_prop:0.1_result_dict.p',
+with open('results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:0.1_result_dict.p',
           'rb') as fp:
     ising_true_result_alt_dict = pickle.load(fp)
 
@@ -115,13 +116,13 @@ del ising_fpr_tpr_dict
 ######################################################
 # Analyze the Ising model fitted on the mixture data #
 ######################################################
-plot_title = "ising_model_mixture_data_breg"
+# plot_title = "ising_model_mixture_data_breg"
 
 with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
-          f'{hp.mixture_hidden_dim_null}_breg_null_test_prop:0.1_result_dict.p', 'rb') as fp:
+          f'{hp.mixture_hidden_dim_null}_null_test_prop:0.1_result_dict.p', 'rb') as fp:
     null_ising_mixture_result_dict = pickle.load(fp)
 with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
-          f'{hp.mixture_hidden_dim_alt}_breg_alt_test_prop:0.1_result_dict.p', 'rb') as fp:
+          f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0.1_result_dict.p', 'rb') as fp:
     alt_ising_mixture_result_dict = pickle.load(fp)
 
 ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
@@ -160,42 +161,27 @@ ising_mixture_mp_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_isin
 mixture_fpr_tpr_dict_vet.append(ising_mixture_mp_fpr_tpr_dict)
 
 del ising_mixture_mp_fpr_tpr_dict
-
-############################################
-# Ising Model with Wald test statistic jxy #
-############################################
-# method_name_vet.append("Ising Jxy")
-#
-# # Ising Data
-# ising_network_test = gt.FullyConnectedNetworkTest(number_forward_layers=1, input_dim=hp.dim_z,
-#                                                   hidden_dim=hp.hidden_1_out_dim, output_dim=3)
-# ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
-#                                      alt_result_dict=ising_true_result_alt_dict,
-#                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
-#                                      trial_index_vet=trial_index_vet, network_test=ising_network_test)
-#
-# ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
-# # ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
-#
-# del ising_wald_fpr_tpr_dict
-#
-# ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
-#                                            alt_result_dict=alt_ising_mixture_result_dict,
-#                                            test_statistic_one_trial=ra.ising_sq_statistic_one_trial,
-#                                            trial_index_vet=trial_index_vet, jxy_boolean=True)
-#
-# mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
-#
-# del ising_mixture_wald_fpr_tpr_dict
+del null_ising_mixture_result_dict, ising_true_result_null_dict, alt_ising_mixture_result_dict, \
+    ising_true_result_alt_dict
 
 ###################################################
 # Ising Model with Wald test statistic last layer #
 ###################################################
+############
+# Sandwich #
+############
 method_name_vet.append("Ising Wald Sandwich")
 
 # Ising Data
-ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_null_dict,
-                                     alt_result_dict=ising_true_result_alt_dict,
+with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0_result_dict.p',
+          'rb') as fp:
+    null_ising_true_wald_result_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:0_result_dict.p',
+          'rb') as fp:
+    alt_ising_true_wald_result_dict = pickle.load(fp)
+
+ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true_wald_result_dict,
+                                     alt_result_dict=alt_ising_true_wald_result_dict,
                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                      trial_index_vet=trial_index_vet, data_directory_name="ising_data",
                                      sandwich_boolean=True)
@@ -204,8 +190,15 @@ ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
 # ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
 
 # Mixture Data
-ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
-                                             alt_result_dict=alt_ising_mixture_result_dict,
+with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
+          f'{hp.mixture_hidden_dim_null}_null_test_prop:0_result_dict.p', 'rb') as fp:
+    null_ising_mixture_wald_result_dict = pickle.load(fp)
+with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
+          f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
+    alt_ising_mixture_wald_result_dict = pickle.load(fp)
+
+ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_wald_result_dict,
+                                             alt_result_dict=alt_ising_mixture_wald_result_dict,
                                              test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                              trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
                                              sandwich_boolean=True)
@@ -215,34 +208,60 @@ mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
 
 del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
 
+###########
+# Fischer #
+###########
+method_name_vet.append("Ising Wald Fisher")
+# Ising Data
+ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true_wald_result_dict,
+                                     alt_result_dict=alt_ising_true_wald_result_dict,
+                                     test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                                     trial_index_vet=trial_index_vet, data_directory_name="ising_data",
+                                     sandwich_boolean=False)
+
+ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
+
+# Mixture Data
+ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_wald_result_dict,
+                                             alt_result_dict=alt_ising_mixture_wald_result_dict,
+                                             test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                                             trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
+                                             sandwich_boolean=False)
+
+mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
+
+del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
+del null_ising_true_wald_result_dict, alt_ising_true_wald_result_dict, null_ising_mixture_wald_result_dict, \
+    alt_ising_mixture_wald_result_dict
+
 ###########################################################
 # Analyze Different Train and Test Split for Ising Models #
 ###########################################################
-mixture_ising_model_fpr_tpr_dict_list = []
-for test_prop in hp.test_prop_list:
-    # with open(f'results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:{test_prop}_result_dict.p',
-    #           'rb') as fp:
-    #     null_ising_mixture_result_dict = pickle.load(fp)
-    # with open(f'results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:{test_prop}_result_dict.p',
-    #           'rb') as fp:
-    #     alt_ising_mixture_result_dict = pickle.load(fp)
-
-    with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
-              f'{hp.mixture_hidden_dim_null}_breg_null_test_prop:{test_prop}_result_dict.p', 'rb') as fp:
-        null_ising_mixture_result_dict = pickle.load(fp)
-    with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
-              f'{hp.mixture_hidden_dim_alt}_breg_alt_test_prop:{test_prop}_result_dict.p', 'rb') as fp:
-        alt_ising_mixture_result_dict = pickle.load(fp)
-
-    ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
-                                            alt_result_dict=alt_ising_mixture_result_dict,
-                                            test_statistic_one_trial=ra.ising_test_statistic_one_trial,
-                                            trial_index_vet=trial_index_vet)
-    mixture_ising_model_fpr_tpr_dict_list.append(ising_mixture_fpr_tpr_dict)
-
-ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_ising_model_fpr_tpr_dict_list, method_name_vet=hp.test_prop_list,
-                    data_directory_name="mixture_data", result_plot_name="ising_model_with_different_test_prop_under "
-                                                                         "mixture_data_(breg)")
+# mixture_ising_model_fpr_tpr_dict_list = []
+# for test_prop in hp.test_prop_list:
+#     # with open(f'results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:{test_prop}_result_dict.p',
+#     #           'rb') as fp:
+#     #     null_ising_mixture_result_dict = pickle.load(fp)
+#     # with open(f'results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:{test_prop}_result_dict.p',
+#     #           'rb') as fp:
+#     #     alt_ising_mixture_result_dict = pickle.load(fp)
+#
+#     with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
+#               f'{hp.mixture_hidden_dim_null}_breg_null_test_prop:{test_prop}_result_dict.p', 'rb') as fp:
+#         null_ising_mixture_result_dict = pickle.load(fp)
+#     with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
+#               f'{hp.mixture_hidden_dim_alt}_breg_alt_test_prop:{test_prop}_result_dict.p', 'rb') as fp:
+#         alt_ising_mixture_result_dict = pickle.load(fp)
+#
+#     ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
+#                                             alt_result_dict=alt_ising_mixture_result_dict,
+#                                             test_statistic_one_trial=ra.ising_test_statistic_one_trial,
+#                                             trial_index_vet=trial_index_vet)
+#     mixture_ising_model_fpr_tpr_dict_list.append(ising_mixture_fpr_tpr_dict)
+#
+# ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_ising_model_fpr_tpr_dict_list, method_name_vet=hp.test_prop_list,
+#                     data_directory_name="mixture_data", result_plot_name="ising_model_with_different_test_prop_under "
+#                                                                          "mixture_data_(breg)")
 
 ####################
 # Analyze the CCIT #
@@ -278,9 +297,11 @@ mixture_fpr_tpr_dict_vet.append(ccit_fpr_tpr_dict)
 del ccit_null_result_dict, ccit_alt_result_dict, ccit_fpr_tpr_dict
 
 ra.summary_roc_plot(fpr_tpr_dict_vet=ising_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
-                    data_directory_name="ising_data", result_plot_name="ising_data_breg_explore_sandwich")
+                    data_directory_name="ising_data", result_plot_name="ising_data_summary",
+                    suptitle="RoC Curves under Ising Data")
 ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
-                    data_directory_name="mixture_data", result_plot_name="mixture_data_breg_explore_sandwich")
+                    data_directory_name="mixture_data", result_plot_name="mixture_data_summary",
+                    suptitle="RoC Curves under Mixture Data")
 
 #############
 # Bootstrap #

@@ -50,7 +50,7 @@ def simulation_loop(pool, simulation_method, scenario, data_directory_name, resu
         print(f"{result_dict_name}, {scenario}, {sample_size} finished")
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(result_dict, fp, protocol=4)
 
 
 def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name, trial_index_vet, network_model_class,
@@ -98,7 +98,7 @@ def ising_simulation_loop(pool, scenario, data_directory_name, result_dict_name,
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_test_prop:{test_sample_prop}"
               f"_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(result_dict, fp, protocol=4)
 
 
 def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_result_dict_name, result_dict_name,
@@ -127,7 +127,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
         result_dict[sample_size] = sample_size_result_dict
 
     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-        pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(result_dict, fp, protocol=4)
 
 
 # Not in use.
@@ -164,7 +164,7 @@ def ising_bootstrap_loop(pool, scenario, data_directory_name, ising_simulation_r
 #         result_dict[sample_size] = sample_size_result_dict
 #
 #     with open(f"./results/result_dict/{data_directory_name}/{result_dict_name}_{scenario}_result_dict.p", "wb") as fp:
-#         pickle.dump(result_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+#         pickle.dump(result_dict, fp, protocol=4)
 #
 #     return result_dict
 

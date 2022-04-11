@@ -9,7 +9,7 @@ import hyperparameters as hp
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
-def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, number_of_test_samples,
+def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_name, epoch, test_sample_prop,
                            network_model_class, network_model_class_kwargs, learning_rate=hp.learning_rate,
                            batch_size=hp.batch_size, true_weights_dict=None, cut_off_radius=None):
     """
@@ -23,7 +23,7 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     :param data_directory_name: It should either be "ising_data" or "mixture_data" depending on if the data is generated
         under the Ising or mixture model.
     :param epoch: An integer indicating the number of times training process pass through the data set.
-    :param number_of_test_samples: An integer which is the number of samples used as validation set.
+    :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set.
     :param network_model_class: A subclass of tf.keras.Model with output dimension 3. An instance of the class is the
         neural network to fit on the data.
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
@@ -59,26 +59,25 @@ def ising_tuning_one_trial(trial_index, sample_size, scenario, data_directory_na
     if true_weights_dict is not None:
         true_weights_array = true_weights_dict[sample_size][trial_index]
         loss_kl_array = network_train_tune_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
-                                                           number_of_test_samples=number_of_test_samples,
+                                                           test_sample_prop=test_sample_prop,
                                                            true_weights_array=true_weights_array)
     else:
         loss_kl_array = network_train_tune_instance.tuning(print_loss_boolean=False, is_null_boolean=is_null_boolean,
-                                                           number_of_test_samples=number_of_test_samples,
+                                                           test_sample_prop=test_sample_prop,
                                                            cut_off_radius=cut_off_radius)
 
     print(f"Scenario: {scenario}, sample size: {sample_size}, trial: {trial_index} finished.")
 
-    return (trial_index, loss_kl_array)
+    return trial_index, loss_kl_array
 
 
 def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, network_model_class_kwargs,
-                   weights_or_radius_kwargs, number_of_test_samples_vet, epoch_vet,
+                   weights_or_radius_kwargs, test_sample_prop_vet, epoch_vet,
                    trial_index_vet, result_dict_name, sample_size_vet=hp.sample_size_vet,
                    learning_rate=hp.learning_rate):
     """
-    A wrapper function uses multiprocess Pool class to call the ising_tuning_one_trial function on data with
+        A wrapper function uses multiprocess Pool class to call the ising_tuning_one_trial function on data with
     sample size and trials specified by the arguments of the function.
-
     :param pool: A multiprocessing.pool.Pool instance.
     :param scenario: It should either be "null" or "alt" depending on if the data is generated under the null or
         alternative.
@@ -89,22 +88,22 @@ def tuning_wrapper(pool, scenario, data_directory_name, network_model_class, net
     :param network_model_class_kwargs: A dictionary containing keyword arguments to create an instance of the
         network_model_class.
     :param weights_or_radius_kwargs: A dictionary whose key should either be "true_weights_dict" or "cut_off_radius".
-    :param number_of_test_samples_vet: An array of integers which contains the sample size of data used.
+    :param test_sample_prop_vet: An array of floats between 0 and 1 which contains the proportion of data used for the
+        test set.
     :param epoch_vet: An array of integers. It should have the same length as the sample_size_vet does.
     :param trial_index_vet: An array of integers which contains the trial indices of data used.
     :param result_dict_name: A string ('str' class). The name of the result dictionary.
     :param sample_size_vet: An array of integers which are the sample size of data used.
     :param learning_rate: A scalar which is a (hyper)parameter in the tf.keras.optimizers.Adam function.
-
     :return:
         result_dict: A dictionary. Keys are the sample size in the sample_size_vet. Each value is again a dictionary
         containing the loss_kl_array of each trial.
     """
     result_dict = dict()
-    for sample_size, epoch, number_of_test_samples in zip(sample_size_vet, epoch_vet, number_of_test_samples_vet):
+    for sample_size, epoch, test_sample_prop in zip(sample_size_vet, epoch_vet, test_sample_prop_vet):
         pool_result_vet = pool.map(partial(ising_tuning_one_trial, scenario=scenario, sample_size=sample_size,
                                            data_directory_name=data_directory_name, epoch=epoch,
-                                           number_of_test_samples=number_of_test_samples,
+                                           test_sample_prop=test_sample_prop,
                                            network_model_class=network_model_class,
                                            network_model_class_kwargs=network_model_class_kwargs,
                                            learning_rate=learning_rate, **weights_or_radius_kwargs), trial_index_vet)

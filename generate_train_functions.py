@@ -356,7 +356,7 @@ class NetworkTrainingTuning:
 
         number_of_test_samples = np.int(np.floor(self.sample_size * test_sample_prop))
         if number_of_test_samples == 0:
-            number_of_test_samples = 1
+            return (self.z_mat, self.x_y_mat), None, np.arange(self.sample_size), None
 
         train_indices_vet, test_indices_vet = indices_vet[number_of_test_samples:], indices_vet[:number_of_test_samples]
 
@@ -364,7 +364,6 @@ class NetworkTrainingTuning:
         test_array_tuple = (self.z_mat[test_indices_vet, :], self.x_y_mat[test_indices_vet, :])
 
         return train_array_tuple, test_array_tuple, train_indices_vet, test_indices_vet
-
 
     def tuning(self, print_loss_boolean, is_null_boolean, test_sample_prop, cut_off_radius=None,
                true_weights_array=None):
@@ -375,7 +374,8 @@ class NetworkTrainingTuning:
         assume the data is generated under the Ising model.
 
         :param print_loss_boolean: A boolean value dictating if the method will print loss during training.
-        :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set.
+        :param test_sample_prop: An float between 0 and 1. The percentage of samples used for validation set. We require
+            the number to be larger than 0.
         :param is_null_boolean: A boolean value to indicate if we compute the data is generated under the conditional
             independence assumption (H0).
         :param cut_off_radius: If supplied, it should be a scalar which is the cut_off_radius used when generating
@@ -392,6 +392,7 @@ class NetworkTrainingTuning:
             "Both cut_off_radius and true_weights_array are supplied."
         assert cut_off_radius is not None or true_weights_array is not None, \
             "Neither cut_off_radius nor true_weights_array are supplied."
+        assert 0 < test_sample_prop < 1, "test_sample_prop must be strictly between 0 and 1."
 
         # Prepare training and test data.
         train_array_tuple, test_array_tuple, _ , _= self.train_test_split(test_sample_prop=test_sample_prop)
@@ -464,7 +465,6 @@ class NetworkTrainingTuning:
             self.train_test_split(test_sample_prop=test_sample_prop)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
-        test_z_mat, _ = test_array_tuple
 
         network_model = self.network_model_class(**self.network_model_class_kwargs)
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
