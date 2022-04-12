@@ -102,7 +102,7 @@ for test_sample_prop in hp.test_prop_list:
 
 
 # Ising data
-true_result_dict_name = f"ising_data_true_architecture"
+true_result_dict_name = f"ising_data_true_architecture_large_sample"
 true_network_model_class_kwargs = {"number_forward_layers": 1, "input_dim": hp.dim_z,
                                    "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
 true_network_model_class_kwargs_vet = [true_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]

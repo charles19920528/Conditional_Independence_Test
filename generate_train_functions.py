@@ -222,7 +222,6 @@ def data_generate_network(weights_distribution_string, dim_z=hp.dim_z, hidden_1_
 
     return null_network_generate, alt_network_generate, weights_list
 
-
 ########################
 # pmf for mixture data #
 ########################

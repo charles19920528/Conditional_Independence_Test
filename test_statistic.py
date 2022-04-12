@@ -37,7 +37,7 @@ def theta_derivatives(x_y_mat, final_linear_input_mat, j_mat, gradient_boolean, 
         # n by p
         gradient_mat = final_linear_input_mat * multiplier_vet
         gradient_mat = np.hstack([gradient_mat, multiplier_vet])
-        result_list.append(gradient_mat)
+        result_list.append(-gradient_mat)
 
         del multiplier_vet
 
@@ -54,7 +54,7 @@ def theta_derivatives(x_y_mat, final_linear_input_mat, j_mat, gradient_boolean, 
         final_outer_vet = final_linear_input_mat[:, :, np.newaxis] * final_linear_input_mat[:, np.newaxis, :]
         hessian_mat_vet = final_outer_vet * multiplier_vet
 
-        result_list.append(hessian_mat_vet.mean(axis=0))
+        result_list.append(-hessian_mat_vet.mean(axis=0))
 
     return result_list
 
@@ -67,8 +67,9 @@ def vectorized_cov(data_array):
         A n_trials by par_dim by par_dim array.
     """
     sample_size = data_array.shape[1]
-    m1 = data_array - data_array.sum(1, keepdims=True) / sample_size
-    out = np.einsum('ijl,ijk->ikl', m1, m1) / sample_size
+    # m1 = data_array - data_array.sum(1, keepdims=True) / sample_size
+    # out = np.einsum('ijl,ijk->ikl', m1, m1) / sample_size
+    out = np.einsum('ijl,ijk->ikl', data_array, data_array) / sample_size
     return out
 
 
@@ -93,19 +94,22 @@ class WaldTest:
                                                                 hessian_boolean=True)
         if self.sandwich_boolean:
             self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
-            gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
+            # gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
+            gradient_cov_mat = self.gradient_mat.T.dot(self.gradient_mat) / self.j_mat.shape[0]
 
             var_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
             # meat_inverse_mat = np.linalg.solve(meat_mat, np.identity(meat_mat.shape[0]))
             var_inverse_mat = np.linalg.pinv(var_mat)
             self.test_statistic = self.theta_vet.T.dot(var_inverse_mat).dot(self.theta_vet)[0, 0]
         else:
-            self.test_statistic = self.theta_vet.T.dot(-self.hessian_mat).dot(self.theta_vet)[0, 0] * \
+            self.test_statistic = self.theta_vet.T.dot(self.hessian_mat).dot(self.theta_vet)[0, 0] * \
                                   self.j_mat.shape[0]
 
     def get_test_statistic(self):
         if self.test_statistic is None:
             self._compute_test_statistic()
+        if self.test_statistic < 0:
+            print("Negative test statistic.")
         return self.test_statistic
 
     def p_value(self, n_trials):
@@ -136,7 +140,7 @@ class WaldTest:
             bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", bootstrap_test_statistic_vet,
                                                      bread_array)
         else:
-            bootstrap_test_statistic_vet = bread_array.dot(-self.hessian_mat)
+            bootstrap_test_statistic_vet = bread_array.dot(self.hessian_mat)
             bootstrap_test_statistic_vet = \
                 (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1) * self.j_mat.shape[0]
             # self.x_y_mat.shape[0]
