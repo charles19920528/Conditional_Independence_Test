@@ -11,7 +11,7 @@ import multiprocessing as mp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-trial_index_vet = np.arange(30)
+trial_index_vet = np.arange(24)
 sample_size_vet = hp.sample_size_vet
 
 if len(trial_index_vet) < hp.process_number:
@@ -26,10 +26,10 @@ pool = mp.Pool(processes=process_number)
 ##########################################
 # number_forward_layers_vet = [1, 4, 12, 16]
 # hidden_dim_mixture_vet = [40, 80, 160, 200, 320]
-number_forward_layers_vet = [4]
+number_forward_layers_vet = [2]
 hidden_dim_mixture_vet = [40]
 test_sample_prop = hp.test_sample_prop
-epoch_vet = [80, 60]
+epoch_vet = [50, 50, 50, 50]
 mixture_result_dict_name_vet = []
 
 np.random.seed(hp.seed_index)
@@ -38,16 +38,16 @@ tf.random.set_seed(hp.seed_index)
 for scenario in ["null", "alt"]:
     for number_forward_layers in number_forward_layers_vet:
         for hidden_dim_mixture in hidden_dim_mixture_vet:
-            result_dict_name = f"mixture_{number_forward_layers}_{hidden_dim_mixture}_{hp.learning_rate_mixture}_" \
-                               f"test_prop:0"
+            result_dict_name = f"mixture_reduced_model_{number_forward_layers}_{hidden_dim_mixture}_" \
+                               f"{hp.learning_rate_mixture}_test_prop:{test_sample_prop}"
 
             mixture_result_dict_name_vet.append(result_dict_name)
 
             network_kwargs_dict = {"number_forward_layers": number_forward_layers, "input_dim": hp.dim_z,
-                                   "hidden_dim": hidden_dim_mixture, "output_dim": 3}
+                                   "hidden_dim": hidden_dim_mixture, "output_dim": 2}
             it.tuning_wrapper(pool=pool, scenario=scenario, data_directory_name="mixture_data",
                               network_model_class=gt.FullyConnectedNetwork,
-                              test_sample_prop_vet=[test_sample_prop]*3, epoch_vet=epoch_vet,
+                              test_sample_prop_vet=[test_sample_prop]*len(hp.sample_size_vet), epoch_vet=epoch_vet,
                               trial_index_vet=trial_index_vet, result_dict_name=result_dict_name,
                               network_model_class_kwargs=network_kwargs_dict,
                               sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,
@@ -59,10 +59,12 @@ for scenario in ["null", "alt"]:
 # with open(f'tuning/raw_result_dict/mixture_1_40_0.01_test_prop:0.1_null_result_dict.p', 'rb') as fp:
 #     null_ising_mixture_result_dict = pickle.load(fp)
 # Analysis results.
-for mixture_result_dict_name in ['mixture_4_40_0.01_test_prop:0']:
-    tuning_result_dict_name = mixture_result_dict_name + "_alt"
-    it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
-                                      sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
+for scenario in ["null", "alt"]:
+    for mixture_result_dict_name in mixture_result_dict_name_vet:
+        tuning_result_dict_name = mixture_result_dict_name + f"_{scenario}"
+        it.process_plot_epoch_kl_raw_dict(pool=pool, tuning_result_dict_name=tuning_result_dict_name,
+                                          sample_size_vet=sample_size_vet, trial_index_vet=trial_index_vet)
+
 
 for sample_size, epoch in zip(sample_size_vet, epoch_vet):
     it.plot_loss_kl(scenario="null", tuning_result_dict_name=mixture_result_dict_name_vet[0],
@@ -163,23 +165,23 @@ for mixture_result_dict_name in mixture_result_dict_name_vet:
 ###############################
 np.random.seed(hp.seed_index)
 tf.random.set_seed(hp.seed_index)
-with open('data/ising_data/weights_dict.p', 'rb') as fp:
+with open(f'data/ising_data/weights_dict_{hp.sample_size_vet[-1]}.p', 'rb') as fp:
     true_weights_dict = pickle.load(fp)
-epoch_vet = [20, 10]
+epoch_vet = [35, 35, 35, 35]
 ising_result_dict_name_vet = []
 for scenario in ["null", "alt"]:
     for number_forward_layers in [1]:
         for hidden_dim in [hp.hidden_1_out_dim]:
-            result_dict_name = f"ising_{number_forward_layers}_{hidden_dim}_{hp.learning_rate_mixture}_" \
+            result_dict_name = f"ising_reduced_model_{number_forward_layers}_{hidden_dim}_{hp.learning_rate}_" \
                                f"test_prop:0.1"
 
             ising_result_dict_name_vet.append(result_dict_name)
 
             network_kwargs_dict = {"number_forward_layers": number_forward_layers, "input_dim": hp.dim_z,
-                                   "hidden_dim": hidden_dim, "output_dim": 3}
+                                   "hidden_dim": hidden_dim, "output_dim": 2}
             it.tuning_wrapper(pool=pool, scenario=scenario, data_directory_name="ising_data",
                               network_model_class=gt.FullyConnectedNetwork,
-                              test_sample_prop_vet=[0.1]*2, epoch_vet=epoch_vet,
+                              test_sample_prop_vet=[0.1]*4, epoch_vet=epoch_vet,
                               trial_index_vet=trial_index_vet, result_dict_name=result_dict_name,
                               network_model_class_kwargs=network_kwargs_dict,
                               sample_size_vet=hp.sample_size_vet, learning_rate=hp.learning_rate,

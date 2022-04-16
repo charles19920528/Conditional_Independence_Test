@@ -77,9 +77,14 @@ class WaldTest:
     def __init__(self, x_y_mat, j_mat, final_linear_input_mat, network_weights_vet, sandwich_boolean):
         self.x_y_mat = x_y_mat
 
-        self.theta_vet = np.concatenate([network_weights_vet[-2][:, 2], [network_weights_vet[-1][2]]]).reshape(-1, 1)
-
         self.j_mat = j_mat
+        if self.j_mat.shape[1] == 2:
+            self.test_type = "score"
+            self.j_mat = np.hstack([self.j_mat, np.zeros([self.j_mat.shape[0], 1])])
+        else:
+            self.test_type = "wald"
+            self.theta_vet = np.concatenate([network_weights_vet[-2][:, 2], [network_weights_vet[-1][2]]]).reshape(-1,
+                                                                                                                   1)
         self.final_linear_input_mat = final_linear_input_mat
         self.sandwich_boolean = sandwich_boolean
 
@@ -92,17 +97,23 @@ class WaldTest:
                                                                 final_linear_input_mat=self.final_linear_input_mat,
                                                                 j_mat=self.j_mat, gradient_boolean=True,
                                                                 hessian_boolean=True)
-        if self.sandwich_boolean:
+        if self.test_type == "wald":
+            outer_bread_vet = self.theta_vet
+        else:
             self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
+            outer_bread_vet = self.inverse_hessian_mat.dot(self.gradient_mat.mean(axis=0)).reshape(-1, 1)
+        if self.sandwich_boolean:
+            if self.inverse_hessian_mat is None:
+                self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
             # gradient_cov_mat = np.cov(self.gradient_mat.T, ddof=0)
             gradient_cov_mat = self.gradient_mat.T.dot(self.gradient_mat) / self.j_mat.shape[0]
 
             var_mat = self.inverse_hessian_mat.dot(gradient_cov_mat).dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
             # meat_inverse_mat = np.linalg.solve(meat_mat, np.identity(meat_mat.shape[0]))
             var_inverse_mat = np.linalg.pinv(var_mat)
-            self.test_statistic = self.theta_vet.T.dot(var_inverse_mat).dot(self.theta_vet)[0, 0]
+            self.test_statistic = outer_bread_vet.T.dot(var_inverse_mat).dot(outer_bread_vet)[0, 0]
         else:
-            self.test_statistic = self.theta_vet.T.dot(self.hessian_mat).dot(self.theta_vet)[0, 0] * \
+            self.test_statistic = outer_bread_vet.T.dot(self.hessian_mat).dot(outer_bread_vet)[0, 0] * \
                                   self.j_mat.shape[0]
 
     def get_test_statistic(self):
@@ -112,40 +123,42 @@ class WaldTest:
             print("Negative test statistic.")
         return self.test_statistic
 
-    def p_value(self, n_trials):
+    def p_value(self, n_batches, batch_size):
         if self.test_statistic is None:
             self._compute_test_statistic()
         if self.inverse_hessian_mat is None:
-            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat)
+            self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
 
-        # n_trials by sample_size
-        # noise_mat = 2 * np.random.binomial(1, 0.5, (n_trials, self.x_y_mat.shape[0])) - 1
-        noise_mat = np.random.gamma(shape=4, scale=0.5, size=(n_trials, self.x_y_mat.shape[0])) - 2
-        # gradient is sample_size by par_dim, result is n_trials by par_dim by sample_size
-        perturbed_grad_array = self.gradient_mat.T * noise_mat[:, np.newaxis, :]
-        # change to n_trials by sample_size by par_dim
-        perturbed_grad_array = np.swapaxes(perturbed_grad_array, 1, 2)
-        # n_trials by 1 by par_dim
-        bread_array = perturbed_grad_array.mean(axis=1, keepdims=True)
-        bread_array = np.einsum("ij, lnj -> lni", self.inverse_hessian_mat, bread_array)
-        if self.sandwich_boolean:
-            # n_trials by par_dim by par_dim
-            gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
-            meat_mat = np.einsum("ji, bil -> bjl", self.inverse_hessian_mat, gradient_cov_array)
-            meat_mat = meat_mat.dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
-            # n_trials by par_dim by par_dim
-            meat_inverse_mat = np.linalg.pinv(meat_mat)
-            bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", bread_array,
-                                                     meat_inverse_mat)
-            bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", bootstrap_test_statistic_vet,
-                                                     bread_array)
-        else:
-            bootstrap_test_statistic_vet = bread_array.dot(self.hessian_mat)
-            bootstrap_test_statistic_vet = \
-                (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1) * self.j_mat.shape[0]
-            # self.x_y_mat.shape[0]
+        bootstrap_test_statistic_vet_list = []
+        for _ in range(n_batches):
+            # n_trials by sample_size
+            # noise_mat = 2 * np.random.binomial(1, 0.5, (n_trials, self.x_y_mat.shape[0])) - 1
+            noise_mat = np.random.gamma(shape=4, scale=0.5, size=(batch_size, self.x_y_mat.shape[0])) - 2
+            # gradient is sample_size by par_dim, result is n_trials by par_dim by sample_size
+            perturbed_grad_array = self.gradient_mat.T * noise_mat[:, np.newaxis, :]
+            # change to n_trials by sample_size by par_dim
+            perturbed_grad_array = np.swapaxes(perturbed_grad_array, 1, 2)
+            # n_trials by 1 by par_dim
+            bread_array = perturbed_grad_array.mean(axis=1, keepdims=True)
+            bread_array = np.einsum("ij, lnj -> lni", self.inverse_hessian_mat, bread_array)
+            if self.sandwich_boolean:
+                # n_trials by par_dim by par_dim
+                gradient_cov_array = vectorized_cov(data_array=perturbed_grad_array)
+                meat_mat = np.einsum("ji, bil -> bjl", self.inverse_hessian_mat, gradient_cov_array)
+                meat_mat = meat_mat.dot(self.inverse_hessian_mat) / self.j_mat.shape[0]
+                # n_trials by par_dim by par_dim
+                meat_inverse_mat = np.linalg.pinv(meat_mat)
+                bootstrap_test_statistic_vet = np.einsum("lij, ljk -> lik", bread_array,
+                                                         meat_inverse_mat)
+                bootstrap_test_statistic_vet = np.einsum("loj, lpj -> l", bootstrap_test_statistic_vet,
+                                                         bread_array)
+            else:
+                bootstrap_test_statistic_vet = bread_array.dot(self.hessian_mat)
+                bootstrap_test_statistic_vet = \
+                    (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1) * self.j_mat.shape[0]
+            bootstrap_test_statistic_vet_list.append(bootstrap_test_statistic_vet)
 
-        return sum(bootstrap_test_statistic_vet > self.test_statistic) / n_trials
+        return sum(np.hstack(bootstrap_test_statistic_vet_list) > self.test_statistic) / (n_batches * batch_size)
     #
     # def p_value_beta(self, n_trials):
     #     if self.test_statistic is None:

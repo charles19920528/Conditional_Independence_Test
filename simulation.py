@@ -69,16 +69,17 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 scenario_vet = ["null", "alt"]
 
 # Mixture data
-mixture_number_forward_layer_vet = [hp.mixture_number_forward_layer_null, hp.mixture_number_forward_layer_alt]
-mixture_hidden_dim_vet = [hp.mixture_hidden_dim_null, hp.mixture_hidden_dim_alt]
-mixture_epoch_vet_vet = [hp.full_model_mixture_epoch_vet_null, hp.full_model_mixture_epoch_vet_alt]
+mixture_number_forward_layer_vet = [hp.reduced_model_mixture_number_forward_layer_null,
+                                    hp.reduced_model_mixture_number_forward_layer_alt]
+mixture_hidden_dim_vet = [hp.reduced_model_mixture_hidden_dim_null, hp.reduced_model_mixture_hidden_dim_alt]
+mixture_epoch_vet_vet = [hp.reduced_model_mixture_epoch_vet_null, hp.reduced_model_mixture_epoch_vet_alt]
 
 for test_sample_prop in hp.test_prop_list:
     for mixture_number_forward_layer, mixture_hidden_dim, mixture_epoch_vet, scenario in \
             zip(mixture_number_forward_layer_vet, mixture_hidden_dim_vet, mixture_epoch_vet_vet, scenario_vet):
-        mixture_result_dict_name = f"mixture_data_{mixture_number_forward_layer}_{mixture_hidden_dim}"
+        mixture_result_dict_name = f"mixture_data_reduced_model_{mixture_number_forward_layer}_{mixture_hidden_dim}"
         mixture_network_model_class_kwargs = {"number_forward_layers": mixture_number_forward_layer,
-                                              "input_dim": hp.dim_z, "hidden_dim": mixture_hidden_dim, "output_dim": 3}
+                                              "input_dim": hp.dim_z, "hidden_dim": mixture_hidden_dim, "output_dim": 2}
         mixture_network_model_class_kwargs_vet = [mixture_network_model_class_kwargs for _ in
                                                   range(len(hp.sample_size_vet))]
 
@@ -102,12 +103,13 @@ for test_sample_prop in hp.test_prop_list:
 
 
 # Ising data
-true_result_dict_name = f"ising_data_true_architecture_large_sample"
+true_result_dict_name = f"ising_data_reduced_model_true_architecture"
 true_network_model_class_kwargs = {"number_forward_layers": 1, "input_dim": hp.dim_z,
-                                   "hidden_dim": hp.hidden_1_out_dim, "output_dim": 3}
+                                   "hidden_dim": hp.hidden_1_out_dim, "output_dim": 2}
 true_network_model_class_kwargs_vet = [true_network_model_class_kwargs for _ in range(len(hp.sample_size_vet))]
 for test_sample_prop in hp.test_prop_list:
-    for scenario in scenario_vet:
+    for scenario, epoch_vet in zip(scenario_vet, [hp.reduced_model_ising_epoch_vet_null,
+                                                  hp.reduced_model_ising_epoch_vet_alt]):
         np.random.seed(hp.seed_index)
         tf.random.set_seed(hp.seed_index)
 
@@ -117,7 +119,7 @@ for test_sample_prop in hp.test_prop_list:
                                  trial_index_vet=np.arange(hp.number_of_trials),
                                  network_model_class=gt.FullyConnectedNetwork,
                                  network_model_class_kwargs_vet=true_network_model_class_kwargs_vet,
-                                 epoch_vet=hp.ising_epoch_vet, learning_rate=hp.learning_rate,
+                                 epoch_vet=epoch_vet, learning_rate=hp.learning_rate,
                                  test_sample_prop=test_sample_prop)
 
         print(f"Ising Data, test prop: 0.1, scenario: {scenario}")

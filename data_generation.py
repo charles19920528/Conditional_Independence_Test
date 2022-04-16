@@ -120,7 +120,7 @@ for sample_size in hp.sample_size_vet:
 
     print(f"Ising data. Sample size {sample_size} Done")
 
-with open("data/ising_data/weights_dict.p", "wb") as fp:
+with open(f"data/ising_data/weights_dict_{hp.sample_size_vet[-1]}.p", "wb") as fp:
     pickle.dump(weights_dict, fp, protocol=4)
 
 pool.close()

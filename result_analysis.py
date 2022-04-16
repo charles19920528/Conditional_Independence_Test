@@ -173,13 +173,18 @@ del null_ising_mixture_result_dict, ising_true_result_null_dict, alt_ising_mixtu
 method_name_vet.append("Ising Wald Sandwich")
 
 # Ising Data
-with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0_result_dict.p',
+# with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0_result_dict.p',
+#           'rb') as fp:
+#     null_ising_true_wald_result_dict = pickle.load(fp)
+# with open('results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:0_result_dict.p',
+#           'rb') as fp:
+#     alt_ising_true_wald_result_dict = pickle.load(fp)
+with open('results/result_dict/ising_data/ising_data_reduced_model_true_architecture_null_test_prop:0_result_dict.p',
           'rb') as fp:
     null_ising_true_wald_result_dict = pickle.load(fp)
-with open('results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:0_result_dict.p',
+with open('results/result_dict/ising_data/ising_data_reduced_model_true_architecture_alt_test_prop:0_result_dict.p',
           'rb') as fp:
     alt_ising_true_wald_result_dict = pickle.load(fp)
-
 ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true_wald_result_dict,
                                      alt_result_dict=alt_ising_true_wald_result_dict,
                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
@@ -187,14 +192,21 @@ ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true
                                      sandwich_boolean=True)
 
 ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
-# ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising True Architecture Wald", "ising_data")
+ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising Reduced Model True Architecture Wald", "ising_data")
 
 # Mixture Data
-with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
-          f'{hp.mixture_hidden_dim_null}_null_test_prop:0_result_dict.p', 'rb') as fp:
+# with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
+#           f'{hp.mixture_hidden_dim_null}_null_test_prop:0_result_dict.p', 'rb') as fp:
+#     null_ising_mixture_wald_result_dict = pickle.load(fp)
+# with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
+#           f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
+#     alt_ising_mixture_wald_result_dict = pickle.load(fp)
+
+with open(f'results/result_dict/mixture_data/mixture_data_reduced_model_{hp.reduced_model_mixture_number_forward_layer_null}_'
+          f'{hp.reduced_model_mixture_hidden_dim_null}_null_test_prop:0_result_dict.p', 'rb') as fp:
     null_ising_mixture_wald_result_dict = pickle.load(fp)
-with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
-          f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/mixture_data_reduced_model_{hp.reduced_model_mixture_number_forward_layer_alt}_'
+          f'{hp.reduced_model_mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
     alt_ising_mixture_wald_result_dict = pickle.load(fp)
 
 ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_wald_result_dict,
@@ -204,7 +216,7 @@ ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_is
                                              sandwich_boolean=True)
 
 mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
-# ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Wald", "mixture_data")
+ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Reduced Model Score", "mixture_data")
 
 del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
 

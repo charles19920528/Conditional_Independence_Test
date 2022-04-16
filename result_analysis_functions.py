@@ -46,7 +46,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
-                                        data_directory_name, sandwich_boolean, n_trials=None):
+                                        data_directory_name, sandwich_boolean, n_batches=None, batch_size=None):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
     if test_indices_vet is None:
         indices_vet = np.arange(sample_size)
@@ -62,10 +62,10 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
 
     wald_test_instance = ts.WaldTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
                                      network_weights_vet=network_weights_vet, sandwich_boolean=sandwich_boolean)
-    if n_trials is None:
+    if n_batches is None or batch_size is None:
         test_statistic = wald_test_instance.get_test_statistic()
     else:
-        test_statistic = wald_test_instance.p_value(n_trials=n_trials)
+        test_statistic = wald_test_instance.p_value(n_batches=n_batches, batch_size=batch_size)
         print(f"{scenario}, {sample_size}, trial: {trial_index}, p_value: {test_statistic}.")
 
     return test_statistic

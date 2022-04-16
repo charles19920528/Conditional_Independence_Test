@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from functools import partial
-import sys
+from scipy.special import expit
 import hyperparameters as hp
 
 
@@ -238,12 +237,22 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
     :return: p_mat: An n by 4 dimension numpy array. 4 columns are P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1)
         and P(X = -1, Y = -1).
     """
-    less_than_cut_off_boolean = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat) < cut_off_radius
+    norm_vet = np.apply_along_axis(func1d=np.linalg.norm, axis=1, arr=z_mat)
+    less_than_cut_off_boolean = norm_vet < cut_off_radius
     sample_size = z_mat.shape[0]
     if is_null_boolean:
-        p_mat = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
-        helper_pmf_vet = np.array([0.5, 0, 0, 0.5]).reshape(1, 4)
-        p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
+        # p_mat = np.repeat(0.25, sample_size * 4).reshape(sample_size, 4)
+        # helper_pmf_vet = np.array([0.5, 0, 0, 0.5]).reshape(1, 4)
+        # p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
+
+        # # discrete
+        # p_mat = np.tile([hp.p_g**2, hp.p_g * (1 - hp.p_g), hp.p_g * (1 - hp.p_g), (1 - hp.p_g)**2], (z_mat.shape[0], 1))
+        # p_mat[less_than_cut_off_boolean, :] = np.tile([hp.p_l**2, hp.p_l * (1 - hp.p_l),
+        #                                                hp.p_l * (1 - hp.p_l), (1 - hp.p_l)**2],
+        #                                               (sum(less_than_cut_off_boolean), 1))
+
+        p_vet = expit(norm_vet).reshape(-1, 1)
+        p_mat = np.hstack([p_vet ** 2, p_vet * (1 - p_vet), p_vet * (1 - p_vet), (1 - p_vet)**2])
 
         return p_mat
     else:
