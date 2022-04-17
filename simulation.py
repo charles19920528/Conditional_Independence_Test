@@ -122,7 +122,7 @@ for test_sample_prop in hp.test_prop_list:
                                  epoch_vet=epoch_vet, learning_rate=hp.learning_rate,
                                  test_sample_prop=test_sample_prop)
 
-        print(f"Ising Data, test prop: 0.1, scenario: {scenario}")
+        print(f"Ising Data, test prop: {test_sample_prop}, scenario: {scenario}")
         print(f"Ising simulation on ising data takes %s seconds to finish." % (time.time() - start_time))
 
 
