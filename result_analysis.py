@@ -90,15 +90,16 @@ mixture_fpr_tpr_dict_vet.append(stratified_chisq_fpr_tpr_dict)
 
 del stratified_chisq_result_null_dict, stratified_chisq_result_alt_dict, stratified_chisq_fpr_tpr_dict
 
-####################################################
-# Analyze the Ising model fitted on the Ising data #
-####################################################
+############
+# Ising Kl #
+############
 method_name_vet.append("Ising KL")
 
-with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0.1_result_dict.p',
+# Ising Data
+with open('results/result_dict/ising_data/ising_data_full_model_true_architecture_alt_test_prop:0.1_result_dict.p',
           'rb') as fp:
     ising_true_result_null_dict = pickle.load(fp)
-with open('results/result_dict/ising_data/ising_data_true_architecture_alt_test_prop:0.1_result_dict.p',
+with open('results/result_dict/ising_data/ising_data_full_model_true_architecture_alt_test_prop:0.1_result_dict.p',
           'rb') as fp:
     ising_true_result_alt_dict = pickle.load(fp)
 
@@ -118,11 +119,11 @@ del ising_fpr_tpr_dict
 ######################################################
 # plot_title = "ising_model_mixture_data_breg"
 
-with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
-          f'{hp.mixture_hidden_dim_null}_null_test_prop:0.1_result_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/mixture_data_full_model_{hp.full_model_mixture_number_forward_layer_null}_'
+          f'{hp.full_model_mixture_hidden_dim_null}_null_test_prop:0.1_result_dict.p', 'rb') as fp:
     null_ising_mixture_result_dict = pickle.load(fp)
-with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_alt}_'
-          f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0.1_result_dict.p', 'rb') as fp:
+with open(f'results/result_dict/mixture_data/mixture_data_full_model_{hp.full_model_mixture_number_forward_layer_alt}_'
+          f'{hp.full_model_mixture_hidden_dim_alt}_alt_test_prop:0.1_result_dict.p', 'rb') as fp:
     alt_ising_mixture_result_dict = pickle.load(fp)
 
 ising_mixture_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_result_dict,
@@ -170,7 +171,7 @@ del null_ising_mixture_result_dict, ising_true_result_null_dict, alt_ising_mixtu
 ############
 # Sandwich #
 ############
-method_name_vet.append("Ising Wald Sandwich")
+method_name_vet.append("Ising Score Sandwich")
 
 # Ising Data
 # with open('results/result_dict/ising_data/ising_data_true_architecture_null_test_prop:0_result_dict.p',
@@ -181,18 +182,18 @@ method_name_vet.append("Ising Wald Sandwich")
 #     alt_ising_true_wald_result_dict = pickle.load(fp)
 with open('results/result_dict/ising_data/ising_data_reduced_model_true_architecture_null_test_prop:0_result_dict.p',
           'rb') as fp:
-    null_ising_true_wald_result_dict = pickle.load(fp)
+    null_ising_reduced_model_result_dict = pickle.load(fp)
 with open('results/result_dict/ising_data/ising_data_reduced_model_true_architecture_alt_test_prop:0_result_dict.p',
           'rb') as fp:
-    alt_ising_true_wald_result_dict = pickle.load(fp)
-ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true_wald_result_dict,
-                                     alt_result_dict=alt_ising_true_wald_result_dict,
+    alt_ising_reduced_model_result_dict = pickle.load(fp)
+ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_reduced_model_result_dict,
+                                     alt_result_dict=alt_ising_reduced_model_result_dict,
                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                      trial_index_vet=trial_index_vet, data_directory_name="ising_data",
                                      sandwich_boolean=True)
 
 ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
-ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising Reduced Model True Architecture Wald", "ising_data")
+# ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising Reduced Model True Architecture Score", "ising_data")
 
 # Mixture Data
 # with open(f'results/result_dict/mixture_data/mixture_data_{hp.mixture_number_forward_layer_null}_'
@@ -202,31 +203,32 @@ ra.plot_roc(ising_wald_fpr_tpr_dict, f"Ising Reduced Model True Architecture Wal
 #           f'{hp.mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
 #     alt_ising_mixture_wald_result_dict = pickle.load(fp)
 
-with open(f'results/result_dict/mixture_data/mixture_data_reduced_model_{hp.reduced_model_mixture_number_forward_layer_null}_'
+with open(f'results/result_dict/mixture_data/'
+          f'mixture_data_reduced_model_{hp.reduced_model_mixture_number_forward_layer_null}_'
           f'{hp.reduced_model_mixture_hidden_dim_null}_null_test_prop:0_result_dict.p', 'rb') as fp:
-    null_ising_mixture_wald_result_dict = pickle.load(fp)
+    null_mixture_reduced_model_result_dict = pickle.load(fp)
 with open(f'results/result_dict/mixture_data/mixture_data_reduced_model_{hp.reduced_model_mixture_number_forward_layer_alt}_'
           f'{hp.reduced_model_mixture_hidden_dim_alt}_alt_test_prop:0_result_dict.p', 'rb') as fp:
-    alt_ising_mixture_wald_result_dict = pickle.load(fp)
+    alt_mixture_reduced_model_result_dict = pickle.load(fp)
 
-ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_wald_result_dict,
-                                             alt_result_dict=alt_ising_mixture_wald_result_dict,
+ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_mixture_reduced_model_result_dict,
+                                             alt_result_dict=alt_mixture_reduced_model_result_dict,
                                              test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                              trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
                                              sandwich_boolean=True)
 
 mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
-ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Reduced Model Score", "mixture_data")
+# ra.plot_roc(ising_mixture_wald_fpr_tpr_dict, f"Ising Reduced Model Score", "mixture_data")
 
 del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
 
 ###########
 # Fischer #
 ###########
-method_name_vet.append("Ising Wald Fisher")
+method_name_vet.append("Ising Score Fisher")
 # Ising Data
-ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true_wald_result_dict,
-                                     alt_result_dict=alt_ising_true_wald_result_dict,
+ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_reduced_model_result_dict,
+                                     alt_result_dict=alt_ising_reduced_model_result_dict,
                                      test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                      trial_index_vet=trial_index_vet, data_directory_name="ising_data",
                                      sandwich_boolean=False)
@@ -234,8 +236,8 @@ ising_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_true
 ising_fpr_tpr_dict_vet.append(ising_wald_fpr_tpr_dict)
 
 # Mixture Data
-ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_ising_mixture_wald_result_dict,
-                                             alt_result_dict=alt_ising_mixture_wald_result_dict,
+ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_mixture_reduced_model_result_dict,
+                                             alt_result_dict=alt_mixture_reduced_model_result_dict,
                                              test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
                                              trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
                                              sandwich_boolean=False)
@@ -243,8 +245,8 @@ ising_mixture_wald_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=null_is
 mixture_fpr_tpr_dict_vet.append(ising_mixture_wald_fpr_tpr_dict)
 
 del ising_wald_fpr_tpr_dict, ising_mixture_wald_fpr_tpr_dict
-del null_ising_true_wald_result_dict, alt_ising_true_wald_result_dict, null_ising_mixture_wald_result_dict, \
-    alt_ising_mixture_wald_result_dict
+del null_ising_reduced_model_result_dict, alt_ising_reduced_model_result_dict, null_mixture_reduced_model_result_dict, \
+    alt_mixture_reduced_model_result_dict
 
 ###########################################################
 # Analyze Different Train and Test Split for Ising Models #
@@ -308,6 +310,11 @@ mixture_fpr_tpr_dict_vet.append(ccit_fpr_tpr_dict)
 # ra.plot_roc(ccit_fpr_tpr_dict, "CCIT", "mixture_data")
 del ccit_null_result_dict, ccit_alt_result_dict, ccit_fpr_tpr_dict
 
+with open(f"./results/result_dict/ising_data/ising_fpr_tpr_vet.p", "wb") as fp:
+    pickle.dump(ising_fpr_tpr_dict_vet, fp, protocol=4)
+with open(f"./results/result_dict/ising_data/ising_fpr_tpr_vet.p", "wb") as fp:
+    pickle.dump(mixture_fpr_tpr_dict_vet, fp, protocol=4)
+
 ra.summary_roc_plot(fpr_tpr_dict_vet=ising_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
                     data_directory_name="ising_data", result_plot_name="ising_data_summary",
                     suptitle="RoC Curves under Ising Data")
@@ -315,29 +322,31 @@ ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=m
                     data_directory_name="mixture_data", result_plot_name="mixture_data_summary",
                     suptitle="RoC Curves under Mixture Data")
 
+
+
 #############
 # Bootstrap #
 #############
-trial_index_vet = list(range(200))
-ra.bootstrap_qqplot(data_directory_name="ising_data", scenario="null", result_dict_name="nfl:10_hd:40_50_100")
-
-nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
-result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_50_100" for
-                        number_forward_layers, hidden_dim in nfl_hd_vet]
-
-ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
-                        train_p_value_boolean=True, trial_index_vet=trial_index_vet)
-
-ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
-               sample_size_int=100, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
-
-nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40), (10, 100)]
-result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500" for
-                        number_forward_layers, hidden_dim in nfl_hd_vet]
-ra.bootstrap_roc_500(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet[0:2],
-                     train_p_value_boolean=True, trial_index_vet=trial_index_vet)
-ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
-               sample_size_int=500, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
+# trial_index_vet = list(range(200))
+# ra.bootstrap_qqplot(data_directory_name="ising_data", scenario="null", result_dict_name="nfl:10_hd:40_50_100")
+#
+# nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (2, 40), (10, 40)]
+# result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_50_100" for
+#                         number_forward_layers, hidden_dim in nfl_hd_vet]
+#
+# ra.bootstrap_roc_50_100(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+#                         train_p_value_boolean=True, trial_index_vet=trial_index_vet)
+#
+# ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+#                sample_size_int=100, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
+#
+# nfl_hd_vet = [(1, 10), (1, 100), (1, 200), (10, 40), (10, 100)]
+# result_dict_name_vet = [f"bootstrap_refit_reduced_nfl:{number_forward_layers}_hd:{hidden_dim}_500" for
+#                         number_forward_layers, hidden_dim in nfl_hd_vet]
+# ra.bootstrap_roc_500(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet[0:2],
+#                      train_p_value_boolean=True, trial_index_vet=trial_index_vet)
+# ra.power_curve(pool=pool, data_directory_name="ising_data", result_dict_name_vet=result_dict_name_vet,
+#                sample_size_int=500, train_p_value_boolean=False, trial_index_vet=trial_index_vet)
 
 pool.close()
 pool.join()

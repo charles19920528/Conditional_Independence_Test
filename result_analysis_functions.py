@@ -476,7 +476,7 @@ def summary_roc_plot(fpr_tpr_dict_vet: list, method_name_vet: list, data_directo
     :return:
         None.
     """
-    fig, ax = plt.subplots(1, 3, figsize=(13, 4))
+    fig, ax = plt.subplots(1, 4, figsize=(13, 4))
     plt.subplots_adjust(right=0.85)
     for i, sample_size in enumerate(hp.sample_size_vet):
         for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):

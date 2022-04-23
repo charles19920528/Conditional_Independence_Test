@@ -36,13 +36,17 @@ hidden_1_out_dim = 40
 # Training epochs for samples sizes in the sample_size_vet
 reduced_model_ising_epoch_vet_null = np.array([22, 12, 10, 18])
 reduced_model_ising_epoch_vet_alt = np.array([26, 15, 19, 25])
+
+full_model_ising_epoch_vet_null = np.array([5, 9, 6, 19])
+full_model_ising_epoch_vet_alt = np.array([6, 10, 8, 22])
 # ising_epoch_vet = np.array([1, 8, 11])
 # ising_epoch_vet = np.array([15, 7])
 
 reduced_model_mixture_epoch_vet_alt = np.array([7, 6, 13, 19])
-# discrete
-# reduced_model_mixture_epoch_vet_null = np.array([23, 26, 28])
 reduced_model_mixture_epoch_vet_null = np.array([16, 10, 18, 29])
+
+full_model_mixture_epoch_vet_alt = np.array([36, 42,  43, 43])
+full_model_mixture_epoch_vet_null = np.array([18, 11, 13, 33])
 # full_model_mixture_epoch_vet_alt = np.array([30, 110, 74])
 # full_model_mixture_epoch_vet_null = np.array([42, 76, 60])
 # full_model_mixture_epoch_vet_alt = np.array([61, 52])
@@ -62,11 +66,11 @@ learning_rate_mixture = 0.01
 ####################################
 # Architecture on the mixture data #
 ####################################
-mixture_number_forward_layer_null = 16
-mixture_hidden_dim_null = 40
+full_model_mixture_number_forward_layer_null = 2
+full_model_mixture_hidden_dim_null = 40
 
-mixture_number_forward_layer_alt = 16
-mixture_hidden_dim_alt = 40
+full_model_mixture_number_forward_layer_alt = 2
+full_model_mixture_hidden_dim_alt = 40
 
 reduced_model_mixture_number_forward_layer_null = 2
 reduced_model_mixture_hidden_dim_null = 40
