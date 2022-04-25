@@ -2,9 +2,9 @@ from functools import partial
 import os
 import pickle
 import numpy as np
-import tensorflow as tf
 import statsmodels.api as sm
 import scipy.stats.distributions as dist
+from scipy.stats import chi2
 from scipy.optimize import fsolve
 from sklearn import metrics
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 #####################################
 # Get test statistic for one trial. #
 #####################################
-# def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
+# def ising_score_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
 #                                         data_directory_name, network_test_args_dict_dict):
 #     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
 #     train_indices_vet = np.arange(sample_size)[~np.in1d(np.arange(sample_size), test_indices_vet)]
@@ -38,14 +38,14 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 #     z_mat = np.loadtxt(f"./data/{data_directory_name}/z_mat/z_mat_{sample_size}_{trial_index}.txt")
 #     z_mat = z_mat[indices_vet, :]
 #
-#     test_statistic = ts.wald_test(x_y_mat=x_y_mat, z_mat=z_mat,
+#     test_statistic = ts.score_test(x_y_mat=x_y_mat, z_mat=z_mat,
 #                                   network_test_args_dict=network_test_args_dict_dict[scenario],
 #                                   network_weights_vet=network_weights_vet)
 #
 #     return test_statistic
 
 
-def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
+def ising_score_test_statistic_one_trial(trial_index, one_sample_size_result_dict, sample_size, scenario,
                                         data_directory_name, sandwich_boolean, n_batches=None, batch_size=None):
     test_indices_vet = one_sample_size_result_dict[trial_index]["test_indices_vet"]
     if test_indices_vet is None:
@@ -60,12 +60,12 @@ def ising_wald_test_statistic_one_trial(trial_index, one_sample_size_result_dict
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     x_y_mat = x_y_mat[indices_vet, :]
 
-    wald_test_instance = ts.WaldTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
+    score_test_instance = ts.scoreTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
                                      network_weights_vet=network_weights_vet, sandwich_boolean=sandwich_boolean)
     if n_batches is None or batch_size is None:
-        test_statistic = wald_test_instance.get_test_statistic()
+        test_statistic = score_test_instance.get_test_statistic()
     else:
-        test_statistic = wald_test_instance.p_value(n_batches=n_batches, batch_size=batch_size)
+        test_statistic = score_test_instance.p_value(n_batches=n_batches, batch_size=batch_size)
         print(f"{scenario}, {sample_size}, trial: {trial_index}, p_value: {test_statistic}.")
 
     return test_statistic
@@ -224,18 +224,23 @@ def naive_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPva
         return chisq_statistic
 
 
-def stratified_sq_statistic_one_trial(trial_index, one_sample_size_result_dict):
+def stratified_sq_statistic_one_trial(trial_index, one_sample_size_result_dict, isPvalue=False, cluster_number=None):
     """
     Obtain the sum of the test statistic of the stratified Chi Squared test based on data of {trial_index}th trial.
 
     :param trial_index: An integer.
     :param one_sample_size_result_dict: A dictionary which contains simulation results of trials of a particular sample
         size.
+    :param isPvalue: A boolean. If true, return p-value. Otherwise, return the Chi-squared test statistic.
+    :param cluster_number: An integer. It must be provided if isPvalue is True. Otherwise, it is ignored.
 
     :return:
         A scalar.
     """
     test_statistic = one_sample_size_result_dict[trial_index]
+    if isPvalue:
+        test_statistic = chi2.sf(test_statistic, df=cluster_number)
+
     return test_statistic
 
 
@@ -341,7 +346,7 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
         2. alt_test_statistic_vet_one_sample_vet: An array of scalars which are test statistics computed based on
             trials which are of the sample size and generated under the alt.
     """
-    if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
+    if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_score_test_statistic_one_trial}:
         # if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial}:
         null_test_statistic_vet_one_sample_vet = pool.map(partial(test_statistic_one_trial,
                                                                   one_sample_size_result_dict=
@@ -367,6 +372,48 @@ def test_statistic_one_sample_size(pool, one_sample_size_null_result_dict, one_s
 
     return null_test_statistic_vet_one_sample_vet, alt_test_statistic_vet_one_sample_vet
 
+
+##########################
+# College Test Statistic #
+##########################
+def collect_test_statistic(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, trial_index_vet,
+                           **kwargs):
+    """
+    A wrapper function which calculate test statistics for all samples sizes.
+
+    :param pool: A multiprocessing.pool.Pool instance.
+    :param null_result_dict: A dictionary. It should be an output of the sf.(ising_)simulation_loop function called on
+        null samples.
+    :param alt_result_dict: A dictionary. It should be an output of the sf.(ising_)simulation_loop function called on
+        alternative samples.
+    :param test_statistic_one_sample_size_tuple: A tuple of outputs of the test_statistic_one_sample_size function.
+    :param trial_index_vet: An array of integers which contains the trial indices of data used.
+    :param kwargs: Additional keyword arguments to pass into the test_statistic_one_trial function if necessary.
+
+    :return:
+        test_statistic_dict: A dictionary containing lists of test statistics of all sample sizes.
+    """
+    test_statistic_dict = dict()
+    for sample_size in null_result_dict.keys():
+        one_sample_size_null_result_dict = null_result_dict[sample_size]
+        one_sample_size_alt_result_dict = alt_result_dict[sample_size]
+
+        if test_statistic_one_trial == ising_score_test_statistic_one_trial and sample_size == 50:
+            trial_index_vet = np.delete(trial_index_vet, 127)
+
+        test_statistic_one_sample_size_fun_arg_dict = {
+            "pool": pool, "one_sample_size_null_result_dict": one_sample_size_null_result_dict,
+            "one_sample_size_alt_result_dict": one_sample_size_alt_result_dict, "trial_index_vet": trial_index_vet,
+            "test_statistic_one_trial": test_statistic_one_trial
+        }
+        if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_score_test_statistic_one_trial}:
+            test_statistic_one_sample_size_fun_arg_dict["sample_size"] = sample_size
+        test_statistic_one_sample_size_tuple = \
+            test_statistic_one_sample_size(**test_statistic_one_sample_size_fun_arg_dict, **kwargs)
+
+        test_statistic_dict[sample_size] = test_statistic_one_sample_size_tuple
+
+    return test_statistic_dict
 
 #######################
 # Compute fpr and tpr #
@@ -412,7 +459,7 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, t
         one_sample_size_null_result_dict = null_result_dict[sample_size]
         one_sample_size_alt_result_dict = alt_result_dict[sample_size]
 
-        if test_statistic_one_trial == ising_wald_test_statistic_one_trial and sample_size == 50:
+        if test_statistic_one_trial == ising_score_test_statistic_one_trial and sample_size == 50:
             trial_index_vet = np.delete(trial_index_vet, 127)
 
         test_statistic_one_sample_size_fun_arg_dict = {
@@ -420,7 +467,7 @@ def fpr_tpr(pool, null_result_dict, alt_result_dict, test_statistic_one_trial, t
             "one_sample_size_alt_result_dict": one_sample_size_alt_result_dict, "trial_index_vet": trial_index_vet,
             "test_statistic_one_trial": test_statistic_one_trial
         }
-        if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_wald_test_statistic_one_trial}:
+        if test_statistic_one_trial in {ising_powerful_test_statistic_one_trial, ising_score_test_statistic_one_trial}:
             test_statistic_one_sample_size_fun_arg_dict["sample_size"] = sample_size
         test_statistic_one_sample_size_tuple = \
             test_statistic_one_sample_size(**test_statistic_one_sample_size_fun_arg_dict, **kwargs)
@@ -627,3 +674,33 @@ def power_curve(pool, data_directory_name, result_dict_name_vet, train_p_value_b
     fig.suptitle(f"Power Curves for Sample Size {sample_size_int}")
     handles, labels = ax[1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')
+
+
+def test_statistic_histogram(test_statistic_list_dict, threshold, figsize, suptitle, smaller_boolean=True):
+    fig, axs = plt.subplots(1, 4, figsize=figsize)
+    axs = axs.ravel()
+    i = 0
+    for sample_size, p_value_tuple in test_statistic_list_dict.items():
+        axs[i].hist(p_value_tuple[0], alpha=0.5, label="Null",
+                    weights=np.ones(len(p_value_tuple[0])) / len(p_value_tuple[0]))
+        if smaller_boolean:
+            null_rejection_rate = sum(np.array(p_value_tuple[0]) < threshold) / len(p_value_tuple[0])
+        else:
+            null_rejection_rate = sum(np.array(p_value_tuple[0]) > threshold) / len(p_value_tuple[0])
+
+        axs[i].hist(p_value_tuple[1], alpha=0.5, label="ALt",
+                    weights=np.ones(len(p_value_tuple[0])) / len(p_value_tuple[0]))
+        if smaller_boolean:
+            alt_rejection_rate = sum(np.array(p_value_tuple[1]) < threshold) / len(p_value_tuple[1])
+        else:
+            alt_rejection_rate = sum(np.array(p_value_tuple[1]) > threshold) / len(p_value_tuple[1])
+
+        axs[i].axvline(x=threshold, color="r")
+        axs[i].set_title(f"N: {sample_size}. Null: {np.round(null_rejection_rate, 3)}. "
+                         f"Alt: {np.round(alt_rejection_rate, 3)}")
+        i += 1
+    fig.suptitle(suptitle)
+    handles, labels = axs[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="right")
+    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    fig.show()

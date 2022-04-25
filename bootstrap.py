@@ -4,7 +4,6 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
-import generate_train_functions as gt
 import result_analysis_functions as ra
 import hyperparameters as hp
 
@@ -33,7 +32,7 @@ for test_prop in hp.test_prop_list:
             one_sample_size_p_value_tuple = ra.test_statistic_one_sample_size(
                 pool=pool, one_sample_size_null_result_dict=ising_true_result_null_dict[sample_size],
                 one_sample_size_alt_result_dict=ising_true_result_alt_dict[sample_size],
-                test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                test_statistic_one_trial=ra.ising_score_test_statistic_one_trial,
                 trial_index_vet=trial_index_vet, data_directory_name="ising_data",
                 sample_size=sample_size, sandwich_boolean=sandwich_boolean, n_batches=6, batch_size=90)
             time2 = time.time()
@@ -85,7 +84,7 @@ for test_prop in hp.test_prop_list:
             one_sample_size_p_value_tuple = ra.test_statistic_one_sample_size(
                 pool=pool, one_sample_size_null_result_dict=null_ising_mixture_result_dict[sample_size],
                 one_sample_size_alt_result_dict=alt_ising_mixture_result_dict[sample_size],
-                test_statistic_one_trial=ra.ising_wald_test_statistic_one_trial,
+                test_statistic_one_trial=ra.ising_score_test_statistic_one_trial,
                 trial_index_vet=trial_index_vet, data_directory_name="mixture_data",
                 sample_size=sample_size, sandwich_boolean=sandwich_boolean, n_batches=9, batch_size=60)
             time2 = time.time()

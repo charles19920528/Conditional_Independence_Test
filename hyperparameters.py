@@ -97,3 +97,8 @@ process_number = os.cpu_count()
 ###########################################
 number_of_boostrap_samples = 10**3
 
+
+##########################
+# Stratified Chisq2 Test #
+##########################
+cluster_number = 2

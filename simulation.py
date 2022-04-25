@@ -57,11 +57,11 @@ sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scen
 # Mixture data
 sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="null",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq",
-                   trial_index_vet=np.arange(hp.number_of_trials), cluster_number=2)
+                   trial_index_vet=np.arange(hp.number_of_trials), cluster_number=hp.cluster_number)
 
 sf.simulation_loop(pool=pool, simulation_method=sf.stratified_chisq_method, scenario="alt",
                    data_directory_name="mixture_data", result_dict_name="stratified_chisq",
-                   trial_index_vet=np.arange(hp.number_of_trials), cluster_number=2)
+                   trial_index_vet=np.arange(hp.number_of_trials), cluster_number=hp.cluster_number)
 
 #######################
 # Reduced Ising Model #
