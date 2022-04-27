@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from scipy.sparse import vstack
 import generate_train_functions as gt
 import tensorflow as tf
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def preprocess(adult_dt_path, categorical_feature_encoder, sex_encoder, race_encoder, income_encoder,
-               encoder_fit_boolean):
+               encoder_fit_boolean, drop_prop_male_poor=None):
     """
     Preprocess the adult data.
 
@@ -46,14 +46,43 @@ def preprocess(adult_dt_path, categorical_feature_encoder, sex_encoder, race_enc
                  "income-label": income_encoder.transform(adult_dt["income-label"]),
                  "categorical-features": categorical_feature_encoder.transform(adult_dt[categorical_colnames_list]),
                  "continuous-features": adult_dt[continuous_colnames_list]}
+    if drop_prop_male_poor is not None:
+        male_poor_boolean = (data_dict["sex"] == 1) & (data_dict["income-label"] == 0)
+        drop_boolean = np.repeat(False, sum(male_poor_boolean))
+        drop_n_male_poor = np.int(np.floor(drop_prop_male_poor * sum(male_poor_boolean)))
+        drop_boolean[:drop_n_male_poor] = True
+        np.random.shuffle(drop_boolean)
+
+        train_data_dict = {
+            "sex": np.concatenate([data_dict["sex"][male_poor_boolean][~drop_boolean],
+                                   data_dict["sex"][~male_poor_boolean]]),
+            "race": np.concatenate([data_dict["race"][male_poor_boolean][~drop_boolean],
+                                    data_dict["race"][~male_poor_boolean]]),
+            "income-label": np.concatenate([data_dict["income-label"][male_poor_boolean][~drop_boolean],
+                                            data_dict["income-label"][~male_poor_boolean]]),
+            "categorical-features": vstack([data_dict["categorical-features"][male_poor_boolean, :][~drop_boolean, :],
+                                            data_dict["categorical-features"][~male_poor_boolean, :]]),
+            "continuous-features": pd.concat([data_dict["continuous-features"].loc[male_poor_boolean].loc[~drop_boolean],
+                                              data_dict["continuous-features"].loc[~male_poor_boolean]])
+        }
+
+        excessive_data_dict = {
+            "sex": data_dict["sex"][male_poor_boolean][drop_boolean],
+            "race": data_dict["race"][male_poor_boolean][drop_boolean],
+            "income-label": data_dict["income-label"][male_poor_boolean][drop_boolean],
+            "categorical-features": data_dict["categorical-features"][male_poor_boolean, :][drop_boolean, :],
+            "continuous-features": data_dict["continuous-features"].loc[male_poor_boolean].loc[drop_boolean]
+        }
+
+        return train_data_dict, excessive_data_dict
 
     return data_dict
 
 
 class ModelNetwork(tf.keras.Model):
     # This is the class network we fit on the data.
-    def __init__(self, final_dim, n_layers, hidden_dim=None, output_dim=2, education_dim=None,
-                 occupation_dim=None):
+    def __init__(self, final_dim, n_layers, hidden_dim=None, education_dim=None,
+                 occupation_dim=None, final_layer_regularizer=None):
         """
 
         :param n_layers: An integer.
@@ -65,7 +94,7 @@ class ModelNetwork(tf.keras.Model):
         """
         super(ModelNetwork, self).__init__()
 
-        self.number_forward_layers = number_forward_layers
+        self.n_layers = n_layers
         self.categorical_dim = 53
         if education_dim is not None:
             self.education_embedding_layer = tf.keras.layers.Dense(
@@ -83,10 +112,92 @@ class ModelNetwork(tf.keras.Model):
             self.categorical_dim = self.categorical_dim - 15 + occupation_dim
         self.occupation_dim = occupation_dim
 
-        initial_units = final_dim
+        self.feed_forward_rest_vet = _create_connnected_block(n_layers=n_layers, hidden_dim=hidden_dim,
+                                                              output_dim=final_dim, regularizer=final_layer_regularizer)
+
+        self.final_linear = tf.keras.layers.Dense(
+            units=2,
+            input_dim=(final_dim,)
+        )
+
+    def call(self, inputs):
+        continuous_tensor, categorical_tensor = inputs
+        continuous_tensor = tf.cast(continuous_tensor, tf.float32)
+        categorical_tensor = tf.cast(categorical_tensor, tf.float32)
+        if len(continuous_tensor.shape) == 1:
+            continuous_tensor = tf.reshape(continuous_tensor, (1, -1))
+            categorical_tensor = tf.reshape(categorical_tensor, (1, -1))
+
+        # Process Categorical input
+        embedding_boolean_edu_array = np.repeat(True, categorical_tensor.shape[1])
+        embedding_boolean_occ_array = np.repeat(True, categorical_tensor.shape[1])
+        if self.education_dim is not None:
+            embedding_boolean_edu_array[9:25] = False
+            education_tensor = tf.boolean_mask(categorical_tensor, ~embedding_boolean_edu_array, 1)
+            embedded_education_tensor = self.education_embedding_layer(education_tensor)
+        if self.occupation_dim is not None:
+            embedding_boolean_occ_array[32:47] = False
+            occupation_tensor = tf.boolean_mask(categorical_tensor, ~embedding_boolean_occ_array, 1)
+            embedded_occupation_tensor = self.occupation_embedding_layer(occupation_tensor)
+
+        not_embedding_boolean_array = embedding_boolean_edu_array & embedding_boolean_occ_array
+        categorical_tensor = tf.boolean_mask(categorical_tensor, not_embedding_boolean_array, 1)
+        if self.education_dim is not None:
+            categorical_tensor = tf.concat([categorical_tensor, embedded_education_tensor], 1)
+        if self.occupation_dim is not None:
+            categorical_tensor = tf.concat([categorical_tensor, embedded_occupation_tensor], 1)
+
+        input_tensor = tf.concat([continuous_tensor, categorical_tensor], 1)
+        output = input_tensor
+        if self.n_layers != 0:
+            for layer in self.feed_forward_rest_vet:
+                output = layer(output)
+
+        output = self.final_linear(output)
+
+        return output
+
+    def initialize(self):
+        input_tuple = (np.zeros((1, 6)), np.zeros((1, self.categorical_dim)))
+        test = self.call(input_tuple)
+        return test
+
+
+class ModelNetworkTest(tf.keras.Model):
+    # This is the class network we fit on the data.
+    def __init__(self, final_dim, n_layers, hidden_dim=None, education_dim=None,
+                 occupation_dim=None, final_layer_regularizer=None):
+        """
+
+        :param n_layers: An integer.
+        :param hidden_dim: An integer. Ignore unless number_forward_layers is larger than 1.
+        :param final_dim:
+        :param output_dim:
+        :param education_dim:
+        :param occupation_dim:
+        """
+        super(ModelNetwork, self).__init__()
+
+        self.n_layers = n_layers
+        self.categorical_dim = 53
+        if education_dim is not None:
+            self.education_embedding_layer = tf.keras.layers.Dense(
+                units=education_dim,
+                input_dim=(16,)
+            )
+            self.categorical_dim = self.categorical_dim - 16 + education_dim
+        self.education_dim = education_dim
+
+        if occupation_dim is not None:
+            self.occupation_embedding_layer = tf.keras.layers.Dense(
+                units=occupation_dim,
+                input_dim=(15,)
+            )
+            self.categorical_dim = self.categorical_dim - 15 + occupation_dim
+        self.occupation_dim = occupation_dim
 
         self.feed_forward_rest_vet = _create_connnected_block(n_layers=n_layers, hidden_dim=hidden_dim,
-                                                              output_dim=final_dim)
+                                                              output_dim=final_dim, regularizer=final_layer_regularizer)
 
         self.final_linear = tf.keras.layers.Dense(
             units=2,
@@ -123,20 +234,19 @@ class ModelNetwork(tf.keras.Model):
             categorical_tensor = tf.concat([categorical_tensor, embedded_occupation_tensor], 1)
 
         input_tensor = tf.concat([continuous_tensor, categorical_tensor], 1)
-
-        output = self.initial_block(input_tensor)
-        if self.number_forward_layers != 1:
-            for i in np.arange(self.number_forward_layers - 1):
-                output = self.feed_forward_rest_vet[i](output)
-        self.final_linear_input_mat = output.numpy()
+        output = input_tensor
+        if self.n_layers != 0:
+            for layer in self.feed_forward_rest_vet:
+                output = layer(output)
+        self.final_linear_input_mat = output
         output = self.final_linear(output)
 
         return output
 
-    def initialize(self):
-        input_tuple = (np.zeros((1, 6)), np.zeros((1, self.categorical_dim)))
-        test = self.call(input_tuple)
-        return test
+    # def initialize(self):
+    #     input_tuple = (np.zeros((1, 6)), np.zeros((1, self.categorical_dim)))
+    #     test = self.call(input_tuple)
+    #     return test
 
 
 def _create_connnected_block(n_layers, hidden_dim, output_dim, regularizer=None):
@@ -150,6 +260,8 @@ def _create_connnected_block(n_layers, hidden_dim, output_dim, regularizer=None)
             layers_list.append(tf.keras.layers.Dense(units=hidden_dim, kernel_regularizer=regularizer))
 
     return layers_list
+
+
 #
 #
 # class BranchesModel(tf.keras.Model):
@@ -262,7 +374,7 @@ def ising_likelihood(y_true, y_pred):
     return gt.log_ising_likelihood(x_y_mat=y_true, parameter_mat=y_pred, reduce_boolean=True) / y_true.shape[0]
 
 
-def ising_predict(parameter_mat, x_threshold=0.5, y_threshold=0.5):
+def ising_predict(parameter_mat, x_threshold=0.5, y_threshold=0.5, prob_boolean=True):
     # prob_pred = gt.pmf_collection(parameter_mat=parameter_mat)
     # prob_pred = tf.reshape(prob_pred, (-1, 4))
 
@@ -277,11 +389,14 @@ def ising_predict(parameter_mat, x_threshold=0.5, y_threshold=0.5):
     prob_x_1_tensor = prob_pred[:, 0] + prob_pred[:, 1]
     prob_y_1_tensor = prob_pred[:, 0] + prob_pred[:, 2]
 
-    x_y_pred_array = np.tile((1, 1), (parameter_mat.shape[0], 1))
-    x_y_pred_array[prob_x_1_tensor < x_threshold, 0] = -1
-    x_y_pred_array[prob_y_1_tensor < y_threshold, 1] = -1
+    if not prob_boolean:
+        x_y_pred_array = np.tile((1, 1), (parameter_mat.shape[0], 1))
+        x_y_pred_array[prob_x_1_tensor < x_threshold, 0] = -1
+        x_y_pred_array[prob_y_1_tensor < y_threshold, 1] = -1
 
-    return x_y_pred_array
+        return tf.constant(x_y_pred_array)
+
+    return tf.concat([tf.reshape(prob_x_1_tensor, (-1, 1)), tf.reshape(prob_y_1_tensor, (-1, 1))], axis=1)
 
 
 class Metric(tf.keras.metrics.Metric):
@@ -304,7 +419,7 @@ class Metric(tf.keras.metrics.Metric):
         :param sample_weight:
         :return:
         """
-        x_y_pred_array = ising_predict(parameter_mat=y_pred)
+        x_y_pred_array = ising_predict(parameter_mat=y_pred, prob_boolean=False)
 
         # we made class we want to calculate based on to have label 1.
         if self.response_name == "sex":
@@ -336,7 +451,9 @@ def sklearn_score_summary(model, feature_mat, y_true, pos_label):
     return score_summary(y_true=y_true, y_pred=y_pred, pos_label=pos_label)
 
 
-def tf_score_summary(model, dataset, pos_label, activation=None):
+def tf_score_summary(model, dataset,
+                     activation=lambda x: ising_predict(x, prob_boolean=False),
+                     pos_label_tuple=(-1, 1)):
     output_list = []
     y_true_list = []
     for input, y_true in dataset:
@@ -347,11 +464,15 @@ def tf_score_summary(model, dataset, pos_label, activation=None):
         output_tensor = activation(output_tensor)
     y_true_tensor = tf.concat(y_true_list, axis=0)
 
-    return score_summary(y_true=y_true_tensor.numpy(), y_pred=output_tensor.numpy(), pos_label=pos_label)
+    sex_score_df = score_summary(y_true=y_true_tensor.numpy()[:, 0],
+                                    y_pred=output_tensor.numpy()[:, 0], pos_label=pos_label_tuple[0])
+    income_score_df = score_summary(y_true=y_true_tensor.numpy()[:, 1],
+                                       y_pred=output_tensor.numpy()[:, 1], pos_label=pos_label_tuple[1])
 
+    result_df = pd.concat([sex_score_df, income_score_df])
+    result_df.index = [f"sex{pos_label_tuple[0]}", f"income{pos_label_tuple[1]}"]
 
-
-
+    return result_df
 # model = BranchesModel(n_shared_layers=2, shared_hidden_dim=5, shared_output_dim=2, n_x_layers=2, x_hidden_dim=3,
 #                       n_y_layers=3, y_hidden_dim=4)
 # model = BranchesModel(n_shared_layers=1, shared_hidden_dim=5, shared_output_dim=2, n_x_layers=0, x_hidden_dim=3,
@@ -366,3 +487,7 @@ def tf_score_summary(model, dataset, pos_label, activation=None):
 # metric.update_state(y_true=y_true, y_pred=y_pred)
 # test = metric.result()
 # metric.reset_state()
+# model_args_dict = {"n_layers": 1, "final_dim": 0, "hidden_dim": None,
+#                    "education_dim": None, "occupation_dim": None}
+# model = ModelNetwork(**model_args_dict)
+# model.initialize()

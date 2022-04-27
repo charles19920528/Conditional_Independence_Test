@@ -109,9 +109,10 @@ def log_ising_likelihood(x_y_mat, parameter_mat, reduce_boolean=True):
         [1, -1, 1],
         [1, 1, -1]
     ], dtype=tf.float32)
+
     normalizing_constant = tf.constant(0., dtype=tf.float32)
-    normalizing_constant_tensorarray =tf.TensorArray(tf.float32, size=sample_size, dynamic_size=True,
-                                                         clear_after_read=False)
+    normalizing_constant_tensorarray = tf.TensorArray(tf.float32, size=sample_size, dynamic_size=True,
+                                                      clear_after_read=False)
 
     for i in tf.range(sample_size):
         parameter_vet = parameter_mat[i, :]
@@ -143,7 +144,7 @@ def generate_x_y_mat(p_mat):
     sample_size = p_mat.shape[0]
     raw_sample_mat = np.zeros((sample_size, 4))
     for i in np.arange(sample_size):
-#        p_vet = p_mat[i, :]
+        #        p_vet = p_mat[i, :]
         p_vet = p_mat[i, :] / np.sum(p_mat[i, :])
         raw_sample = np.random.multinomial(1, p_vet)
         raw_sample_mat[i, :] = raw_sample
@@ -219,6 +220,7 @@ def data_generate_network(weights_distribution_string, dim_z=hp.dim_z, hidden_1_
 
     return null_network_generate, alt_network_generate, weights_list
 
+
 ########################
 # pmf for mixture data #
 ########################
@@ -250,7 +252,7 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
         #                                               (sum(less_than_cut_off_boolean), 1))
 
         p_vet = expit(norm_vet).reshape(-1, 1)
-        p_mat = np.hstack([p_vet ** 2, p_vet * (1 - p_vet), p_vet * (1 - p_vet), (1 - p_vet)**2])
+        p_mat = np.hstack([p_vet ** 2, p_vet * (1 - p_vet), p_vet * (1 - p_vet), (1 - p_vet) ** 2])
 
         return p_mat
     else:
@@ -259,6 +261,7 @@ def conditional_pmf_collection_mixture(z_mat, is_null_boolean, cut_off_radius):
         p_mat[~less_than_cut_off_boolean] = np.tile(helper_pmf_vet, (sum(~less_than_cut_off_boolean), 1))
 
         return p_mat
+
 
 ##################################
 # Functions for parameter tuning #
@@ -312,6 +315,7 @@ def train_network(train_ds, optimizer, network_model):
         optimizer.apply_gradients(grads_and_vars=zip(grads, network_model.variables))
 
     return loss.numpy()
+
 
 class NetworkTrainingTuning:
     def __init__(self, z_mat, x_y_mat, network_model_class, network_model_class_kwargs, epoch,
@@ -401,7 +405,7 @@ class NetworkTrainingTuning:
         assert 0 < test_sample_prop < 1, "test_sample_prop must be strictly between 0 and 1."
 
         # Prepare training and test data.
-        train_array_tuple, test_array_tuple, _ , _= self.train_test_split(test_sample_prop=test_sample_prop)
+        train_array_tuple, test_array_tuple, _, _ = self.train_test_split(test_sample_prop=test_sample_prop)
         train_ds = tf.data.Dataset.from_tensor_slices(train_array_tuple)
         train_ds = train_ds.shuffle(self.buffer_size).batch(self.batch_size)
         test_z_mat, test_x_y_mat = test_array_tuple
@@ -493,8 +497,6 @@ class NetworkTrainingTuning:
                        "final_linear_input_mat": network_model.final_linear_input_mat}
 
         return result_dict
-
-
 
 
 # def __ising_bootstrap_one_trial(_, fitted_train_p_mat, z_mat, train_indices_vet, ,
