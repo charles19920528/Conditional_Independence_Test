@@ -82,7 +82,7 @@ class scoreTest:
             self.test_type = "score"
             self.j_mat = np.hstack([self.j_mat, np.zeros([self.j_mat.shape[0], 1])])
         else:
-            self.test_type = "score"
+            self.test_type = "wald"
             self.theta_vet = np.concatenate([network_weights_vet[-2][:, 2], [network_weights_vet[-1][2]]]).reshape(-1,
                                                                                                                    1)
         self.final_linear_input_mat = final_linear_input_mat
@@ -97,7 +97,7 @@ class scoreTest:
                                                                 final_linear_input_mat=self.final_linear_input_mat,
                                                                 j_mat=self.j_mat, gradient_boolean=True,
                                                                 hessian_boolean=True)
-        if self.test_type == "score":
+        if self.test_type == "wald":
             outer_bread_vet = self.theta_vet
         else:
             self.inverse_hessian_mat = np.linalg.pinv(self.hessian_mat * self.j_mat.shape[0]) * self.j_mat.shape[0]
