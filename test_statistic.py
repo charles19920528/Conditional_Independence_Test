@@ -73,7 +73,7 @@ def vectorized_cov(data_array):
     return out
 
 
-class scoreTest:
+class ScoreTest:
     def __init__(self, x_y_mat, j_mat, final_linear_input_mat, network_weights_vet, sandwich_boolean):
         self.x_y_mat = x_y_mat
 
@@ -91,6 +91,7 @@ class scoreTest:
         self.test_statistic = None
         self.hessian_mat = None
         self.inverse_hessian_mat = None
+        self.boostrap_ts_vet = None
 
     def _compute_test_statistic(self):
         self.gradient_mat, self.hessian_mat = theta_derivatives(x_y_mat=self.x_y_mat,
@@ -157,8 +158,8 @@ class scoreTest:
                 bootstrap_test_statistic_vet = \
                     (bootstrap_test_statistic_vet.squeeze() * bread_array.squeeze()).sum(axis=1) * self.j_mat.shape[0]
             bootstrap_test_statistic_vet_list.append(bootstrap_test_statistic_vet)
-
-        return sum(np.hstack(bootstrap_test_statistic_vet_list) > self.test_statistic) / (n_batches * batch_size)
+            self.boostrap_ts_vet = np.hstack(bootstrap_test_statistic_vet_list)
+        return sum(self.boostrap_ts_vet > self.test_statistic) / (n_batches * batch_size)
     #
     # def p_value_beta(self, n_trials):
     #     if self.test_statistic is None:

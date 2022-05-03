@@ -60,8 +60,8 @@ def ising_score_test_statistic_one_trial(trial_index, one_sample_size_result_dic
     x_y_mat = np.loadtxt(f"./data/{data_directory_name}/{scenario}/x_y_mat_{sample_size}_{trial_index}.txt")
     x_y_mat = x_y_mat[indices_vet, :]
 
-    score_test_instance = ts.scoreTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
-                                     network_weights_vet=network_weights_vet, sandwich_boolean=sandwich_boolean)
+    score_test_instance = ts.ScoreTest(x_y_mat=x_y_mat, j_mat=j_mat, final_linear_input_mat=final_linear_input_mat,
+                                       network_weights_vet=network_weights_vet, sandwich_boolean=sandwich_boolean)
     if n_batches is None or batch_size is None:
         test_statistic = score_test_instance.get_test_statistic()
     else:
@@ -104,7 +104,7 @@ def ising_powerful_test_statistic_one_trial(trial_index, one_sample_size_result_
     x_neq_1_boolean_vet = x_y_mat[:, 0] == -1
     y_neq_1_boolean_vet = x_y_mat[:, 1] == -1
 
-    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    predicted_parameter_mat = -one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
     predicted_pmf_mat = gt.pmf_collection(parameter_mat=predicted_parameter_mat).numpy()
 
     # calculate and extract pmf of x|z [p(x = 1 | z), p(x = -1 | z)]
@@ -507,7 +507,7 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
 
 
 def summary_roc_plot(fpr_tpr_dict_vet: list, method_name_vet: list, data_directory_name: str, result_plot_name: str,
-                     suptitle: str):
+                     suptitle: str, figsize):
     """
     Assuming there are only four sample size we are simulating. We plot RoC curves of all the methods in the
     method_name_vet and save the plot under the directory
@@ -519,11 +519,12 @@ def summary_roc_plot(fpr_tpr_dict_vet: list, method_name_vet: list, data_directo
     :param data_directory_name: A string ('str' class) of the path towards the simulation data.
     :param result_plot_name: A string which is used as part of the plot file name.
     :param loc: The loc parameter of the legend method.
+    :param figsize: A tuple of 2 numbers.
 
     :return:
         None.
     """
-    fig, ax = plt.subplots(1, 4, figsize=(13, 4))
+    fig, ax = plt.subplots(1, 4, figsize=figsize)
     plt.subplots_adjust(right=0.85)
     for i, sample_size in enumerate(hp.sample_size_vet):
         for fpr_tpr_dict, method_name in zip(fpr_tpr_dict_vet, method_name_vet):

@@ -322,10 +322,10 @@ with open(f"./results/result_dict/mixture_data/mixture_fpr_tpr_vet.p", "wb") as 
 
 ra.summary_roc_plot(fpr_tpr_dict_vet=ising_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
                     data_directory_name="ising_data", result_plot_name="ising_data_summary",
-                    suptitle="RoC Curves under Ising Data")
+                    suptitle="RoC Curves under Ising Data", figsize=(15, 4))
 ra.summary_roc_plot(fpr_tpr_dict_vet=mixture_fpr_tpr_dict_vet, method_name_vet=method_name_vet,
                     data_directory_name="mixture_data", result_plot_name="mixture_data_summary",
-                    suptitle="RoC Curves under Mixture Data")
+                    suptitle="RoC Curves under Mixture Data", figsize=(15, 4))
 
 #############
 # Bootstrap #

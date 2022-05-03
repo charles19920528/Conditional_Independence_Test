@@ -40,7 +40,7 @@ class IsingNetwork(tf.keras.Model):
 def pmf_collection(parameter_mat):
     """
     Compute the full distribution P(X = 1, Y = 1), P(X = 1, Y = -1), P(X = -1, Y = 1) and P(X = -1, Y = -1)
-    under the Ising model.
+    under the Ising model. Note! the function assume the likelihood is -x J_x - y J_y - xy J_xy!
 
     :param parameter_mat: An n by p tensor. Each row contains a parameter for a one sample. If p = 2, we
         assume the sample corresponding to the null model. If p = 3, we assume the sample corresponds to full model.
@@ -78,7 +78,7 @@ def pmf_collection(parameter_mat):
 def log_ising_likelihood(x_y_mat, parameter_mat, reduce_boolean=True):
     """
     Compute negative log likelihood of the Ising model. The function can be used as the loss function for
-    model training.
+    model training. Note! The log likelihood assumes is x J_x + y J_y + xy J_xy!.
 
     :param x_y_mat: An n by 2 tensor which stores observed x's any y's.
     :param parameter_mat: A tensor of shape [n, 2] or [n, 3]. It should be the output of an object of class
