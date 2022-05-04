@@ -263,7 +263,7 @@ def ising_likelihood(y_true, y_pred):
 
 
 def ising_predict(parameter_mat, prob_boolean=True):
-    prob_pred = gt.pmf_collection(parameter_mat=-parameter_mat)
+    prob_pred = gt.pmf_collection(parameter_mat=parameter_mat)
     prob_pred = tf.reshape(prob_pred, (-1, 4))
 
     if prob_boolean:

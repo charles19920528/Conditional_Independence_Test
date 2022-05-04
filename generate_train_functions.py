@@ -89,7 +89,7 @@ def log_ising_likelihood(x_y_mat, parameter_mat, reduce_boolean=True):
     :return: A numeric or a list. negative_log_likelihood
     """
     sample_size = tf.shape(parameter_mat)[0]
-    parameter_mat = tf.cast(-parameter_mat, tf.float32)
+    parameter_mat = tf.cast(parameter_mat, tf.float32)
     if parameter_mat.shape[1] == 2:
         zero_tensor = tf.zeros((parameter_mat.shape[0], 1))
         parameter_mat = tf.concat(values=[parameter_mat, zero_tensor], axis=1)
