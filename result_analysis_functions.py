@@ -104,7 +104,7 @@ def ising_powerful_test_statistic_one_trial(trial_index, one_sample_size_result_
     x_neq_1_boolean_vet = x_y_mat[:, 0] == -1
     y_neq_1_boolean_vet = x_y_mat[:, 1] == -1
 
-    predicted_parameter_mat = -one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
+    predicted_parameter_mat = one_sample_size_result_dict[trial_index]["predicted_parameter_mat"][test_indices_vet, :]
     predicted_pmf_mat = gt.pmf_collection(parameter_mat=predicted_parameter_mat).numpy()
 
     # calculate and extract pmf of x|z [p(x = 1 | z), p(x = -1 | z)]
@@ -495,7 +495,7 @@ def plot_roc(fpr_tpr_dict, title, result_directory_name):
     :return:
         None
     """
-    fig, ax = plt.subplots(1, 3, figsize=(9, 3))
+    fig, ax = plt.subplots(1, 4, figsize=(9, 3))
     for i, sample_size in enumerate(hp.sample_size_vet):
         ax[i].plot(fpr_tpr_dict[sample_size][0], fpr_tpr_dict[sample_size][1])
         #    ax[0, 0].axvline(x=0.05, color="red")

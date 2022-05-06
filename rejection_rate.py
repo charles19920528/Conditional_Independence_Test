@@ -153,7 +153,7 @@ ccit_p_dict = ra.collect_test_statistic(pool=pool, null_result_dict=ccit_null_re
 
 ising_p_dict_list.append(ccit_p_dict)
 
-ra.test_statistic_histogram(test_statistic_list_dict=ccit_p_dict, threshold=0.05, figsize=(14, 5),
+ra.test_statistic_histogram(test_statistic_list_dict=ccit_p_dict, threshold=0.5, figsize=(14, 5),
                             suptitle="CCIT on Ising Data", smaller_boolean=False)
 
 del ccit_null_result_dict, ccit_alt_result_dict, ccit_p_dict
@@ -171,5 +171,5 @@ ccit_p_dict = ra.collect_test_statistic(pool=pool, null_result_dict=ccit_null_re
 
 ising_p_dict_list.append(ccit_p_dict)
 
-ra.test_statistic_histogram(test_statistic_list_dict=ccit_p_dict, threshold=0.05, figsize=(14, 5),
+ra.test_statistic_histogram(test_statistic_list_dict=ccit_p_dict, threshold=0.5, figsize=(14, 5),
                             suptitle="CCIT on Mixture Data", smaller_boolean=False)

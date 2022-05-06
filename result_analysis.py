@@ -97,7 +97,7 @@ del stratified_chisq_result_null_dict, stratified_chisq_result_alt_dict, stratif
 method_name_vet.append("Ising KL")
 
 # Ising Data
-with open('results/result_dict/ising_data/ising_data_full_model_true_architecture_alt_test_prop:0.1_result_dict.p',
+with open('results/result_dict/ising_data/ising_data_full_model_true_architecture_null_test_prop:0.1_result_dict.p',
           'rb') as fp:
     ising_true_result_null_dict = pickle.load(fp)
 with open('results/result_dict/ising_data/ising_data_full_model_true_architecture_alt_test_prop:0.1_result_dict.p',
@@ -111,7 +111,7 @@ ising_fpr_tpr_dict = ra.fpr_tpr(pool=pool, null_result_dict=ising_true_result_nu
 
 ising_fpr_tpr_dict_vet.append(ising_fpr_tpr_dict)
 
-# ra.plot_roc(ising_fpr_tpr_dict, f"Ising True Architecture Breg", "ising_data")
+# ra.plot_roc(ising_fpr_tpr_dict, f"Ising True Architecture KL", "ising_data")
 
 del ising_fpr_tpr_dict
 
