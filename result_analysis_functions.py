@@ -689,6 +689,7 @@ def test_statistic_histogram(test_statistic_list_dict, threshold, figsize, supti
         else:
             null_rejection_rate = sum(np.array(p_value_tuple[0]) > threshold) / len(p_value_tuple[0])
 
+        axs[i].set_ylim([0, 1])
         axs[i].hist(p_value_tuple[1], alpha=0.5, label="ALt",
                     weights=np.ones(len(p_value_tuple[0])) / len(p_value_tuple[0]))
         if smaller_boolean:

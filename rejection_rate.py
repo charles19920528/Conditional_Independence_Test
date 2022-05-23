@@ -109,7 +109,7 @@ with open('results/result_dict/mixture_data/reduced_model_expit_test_prop0_boots
 ##########
 # Fisher #
 ##########
-for key, method_name in zip(["sandwich True", "sandwich False"], ["Ising Sandwich", "Ising Fisher"]):
+for key, method_name in zip(["sandwich True", "sandwich False"], ["Ising Score Sandwich", "Ising Score Fisher"]):
     method_name_list.append(method_name)
     # Ising data
     fisher_p_dict = {}
